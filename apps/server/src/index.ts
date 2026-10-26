@@ -1,1 +1,1 @@
-export const SERVER_PLACEHOLDER = true;
+export { AppModule } from './app.module.js';
