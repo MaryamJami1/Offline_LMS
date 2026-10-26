@@ -8,8 +8,8 @@ dist/
 .env.local
 .env.*.local
 
-# Prisma
-apps/server/prisma/generated/
+# Prisma generated client
+apps/server/src/generated/
 
 # Docker volumes
 infra/pgdata/
@@ -31,8 +31,9 @@ Desktop.ini
 .vscode/settings.json
 .idea/
 
-# Test coverage
+# Test results and coverage
 coverage/
+e2e/test-results/
 
 # Logs
 *.log

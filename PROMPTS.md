@@ -175,13 +175,13 @@ Tell me the plan before writing files.
 
 ```text
 Phase 0, task 3: GitHub project.
-I created an empty private repository: <https://github.com/maryamjami1/lingualab>. Connect this
-folder to it and push main.
+I created an empty public repository: . Connect this
+folder to https://github.com/MaryamJami1/Offline_LMS.git it and push main.
 Then, with the gh CLI: create one milestone per phase (Phase 0 to Phase 5, from
-docs/09-project-plan.md); one issue per requirement ID in docs/01-requirements.md (title like
+docs/docs/09-project-plan.md); one issue per requirement ID in docs/docs/01-requirements.md (title like
 "LAB-04 Broadcast PC"), labelled must, should or could, in the milestone of the phase that builds it,
-with its test IDs from docs/08-testing.md in the description. Add a pull request template with the
-questions from "Working method" in docs/09-project-plan.md.
+with its test IDs from docs/docs/08-testing.md in the description. Add a pull request template with the
+questions from "Working method" in docs/docs/09-project-plan.md.
 Show me the list of issues before creating them.
 ```
 
@@ -189,12 +189,12 @@ Show me the list of issues before creating them.
 
 ```text
 Phase 0, task 4: infrastructure and the first real endpoint.
-Read docs/02-architecture.md (ports) and docs/07-installation.md.
+Read docs/docs/02-architecture.md (ports) and docs/docs/07-installation.md.
 Create infra/docker-compose.yml with PostgreSQL 16, LiveKit and Caddy, plus infra/livekit.yaml and
 infra/Caddyfile. LiveKit must advertise my laptop's LAN IP, not the container's IP, so that other PCs
 can connect; keep that IP and all secrets in a .env file (add .env.example, never commit .env).
 Then, test-first, create the NestJS app in apps/server with GET /api/health reporting server,
-database, LiveKit and disk status (docs/04-api-and-events.md). Write the Supertest test first and
+database, LiveKit and disk status (docs/docs/04-api-and-events.md). Write the Supertest test first and
 show me it failing.
 Tell me the plan before writing files.
 ```
@@ -207,11 +207,11 @@ not test-first and is never shipped (see the spikes rule in CLAUDE.md).
 Goal: prove that screen sharing works over our LAN before we build anything on top of it.
 Build the smallest possible pair of Electron apps:
 - teacher: captures the whole screen with desktopCapturer and publishes it to a LiveKit room
-  (content hint "text", 1080p, 15 fps; see NFR-03 and "Media settings" in docs/04-api-and-events.md);
+  (content hint "text", 1080p, 15 fps; see NFR-03 and "Media settings" in docs/docs/04-api-and-events.md);
 - student: joins the room and shows the screen full-screen.
 A tiny script can create LiveKit tokens with the LiveKit server SDK. The LiveKit address comes from a
 config file, so the student app can run on another PC. If screen capture needs HTTPS, use Caddy's
-local certificate authority as described under "Transport" in docs/06-security-and-data.md.
+local certificate authority as described under "Transport" in docs/docs/06-security-and-data.md.
 Tell me the plan, including how I will run the student side on my second PC.
 ```
 

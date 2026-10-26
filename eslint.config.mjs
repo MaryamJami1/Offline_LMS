@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**", "**/.turbo/**"] },
+  { ignores: ["**/dist/**", "**/node_modules/**", "**/.turbo/**", "**/generated/**"] },
   js.configs.recommended,
   ...tseslint.configs.strict,
   prettier,
@@ -14,6 +14,12 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_" },
       ],
+    },
+  },
+  {
+    files: ["apps/server/src/**/*.module.ts"],
+    rules: {
+      "@typescript-eslint/no-extraneous-class": "off",
     },
   },
 );

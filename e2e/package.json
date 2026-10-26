@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test",
+    "test": "echo \"no e2e tests yet\"",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
