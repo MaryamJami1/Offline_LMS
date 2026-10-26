@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LinguaLab admin panel</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F6F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#0E1726}
+a{color:#1D4ED8}a:hover{color:#1E3A8A}
+button,input,select,textarea{font-family:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid #CBD3DD;background:#FFFFFF;color:#0E1726;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;box-sizing:border-box;white-space:nowrap}
+.btn:hover{border-color:#8D99A8;color:#0E1726}
+.btn:focus-visible,.nav:focus-visible,.seat:focus-visible,.mtab:focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
+.btn-primary{background:#1D4ED8;border-color:#1D4ED8;color:#FFFFFF}
+.btn-primary:hover{background:#1E40AF;border-color:#1E40AF;color:#FFFFFF}
+.btn-sm{min-height:32px;padding:0 10px;font-size:13px}
+.nav{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#C9D2DE;font-size:14px;font-weight:500;cursor:pointer;text-align:left}
+.nav:hover{background:#1B2638;color:#FFFFFF}
+.nav.is-on{background:#1D4ED8;color:#FFFFFF;font-weight:600}
+.card{background:#FFFFFF;border:1px solid #DDE3EA;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;box-sizing:border-box}
+.card-h{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#4A5565}
+.big{font-size:30px;font-weight:700;line-height:1.1}
+.mute{color:#4A5565;font-size:14px;line-height:1.5;margin:0}
+.code{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5565}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#EEF1F5;color:#4A5565;white-space:nowrap}
+.c-ok{background:#E7F5EC;color:#157F3D}.c-warn{background:#FDF1E3;color:#9A4508}.c-info{background:#E8EEFC;color:#1D4ED8}.c-off{background:#EEF1F5;color:#4A5565}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-size:12px;font-weight:600;color:#4A5565;padding:10px 12px;border-bottom:1px solid #DDE3EA;white-space:nowrap;background:#FAFBFC}
+td{padding:11px 12px;border-bottom:1px solid #EEF1F5;white-space:nowrap}
+.bar{height:8px;border-radius:999px;background:#EEF1F5;overflow:hidden}
+.fill{height:100%;border-radius:999px;background:#1D4ED8}
+.seat{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:96px;padding:8px 10px;border:1px solid #DDE3EA;border-radius:8px;background:#FFFFFF;cursor:pointer;text-align:left;color:#0E1726;box-sizing:border-box}
+.seat.is-off{border-style:dashed;background:#EEF1F5}
+.seat.is-sel{border-color:#1D4ED8;box-shadow:inset 0 0 0 1px #1D4ED8;background:#F5F8FF}
+.mtab{border:1px solid #CBD3DD;background:#FFFFFF;border-radius:999px;padding:0 16px;min-height:38px;font-size:14px;font-weight:500;cursor:pointer;color:#0E1726}
+.mtab.is-on{background:#0E1726;border-color:#0E1726;color:#FFFFFF}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.input{min-height:42px;padding:0 12px;border:1px solid #CBD3DD;border-radius:8px;font-size:14px;color:#0E1726;background:#FFFFFF;box-sizing:border-box}
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; flex-wrap:wrap; align-items:stretch">
+
+  <aside style="flex:1 1 240px; max-width:260px; background:#0E1726; color:#FFFFFF; padding:18px 14px; box-sizing:border-box; display:flex; flex-direction:column; gap:18px">
+    <div style="display:flex; align-items:center; gap:10px; padding:0 6px">
+      <div style="width:32px; height:32px; border-radius:8px; background:#1D4ED8; display:flex; align-items:center; justify-content:center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"></path></svg>
+      </div>
+      <div style="display:flex; flex-direction:column"><span style="font-weight:700">LinguaLab</span><span style="font-size:12px; color:#9AA6B6">Admin</span></div>
+    </div>
+    <nav aria-label="Admin sections" style="display:flex; flex-direction:column; gap:2px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="9">
+        <button class="{{n.cls}}" onClick="{{n.go}}">{{n.label}}</button>
+      </sc-for>
+    </nav>
+    <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:10px; background:#1B2638; font-size:12px; color:#C9D2DE">
+      <span style="display:flex; align-items:center; gap:6px"><span style="width:8px; height:8px; border-radius:50%; background:#3FBF6F"></span>Server running · offline mode</span>
+      <span>Last backup: last night, 23:00</span>
+      <a href="Main.dc.html" style="color:#9DB4F0">Switch role</a>
+    </div>
+  </aside>
+
+  <main style="flex:999 1 600px; min-width:0; padding:28px 32px 48px; box-sizing:border-box; display:flex; flex-direction:column; gap:20px">
+
+    <sc-if value="{{is.dashboard}}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <div><h1 style="margin:0; font-size:26px; font-weight:700">Dashboard</h1><p class="mute">Friday, 23 October · sample data</p></div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px">
+        <div class="card"><span class="card-h">Students</span><span class="big">{{studentTotal}}</span><span class="mute">in 3 classes</span></div>
+        <div class="card"><span class="card-h">Teachers</span><span class="big">3</span><span class="mute">all active</span></div>
+        <div class="card"><span class="card-h">Lessons</span><span class="big">{{lessonsTotal}}</span><span class="mute">{{pubCount}} published · {{draftCount}} drafts</span></div>
+        <div class="card"><span class="card-h">Lab 1 PCs</span><span class="big">28 / 30</span><span class="mute">online now</span></div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start">
+        <div class="card" style="flex:2 1 420px">
+          <span class="card-h">In the lab now</span>
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; align-items:center">
+            <div><div style="font-size:17px; font-weight:600">B-12 · Spoken English</div><div class="mute">Ms. Sadia Rehman · started 10:00</div></div>
+            <span class="chip c-ok">In session</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:13px"><span>Attendance</span><strong>27 of 30</strong></div>
+          <div class="bar"><div class="fill" style="width:90%"></div></div>
+        </div>
+        <div class="card" style="flex:1 1 300px">
+          <span class="card-h">Needs attention</span>
+          <div style="display:flex; justify-content:space-between; gap:8px"><span>2 lab PCs offline (B1, D6)</span><button class="btn btn-sm" onClick="{{go.seats}}">View</button></div>
+          <div style="display:flex; justify-content:space-between; gap:8px"><span>{{draftCount}} lessons still in draft</span><button class="btn btn-sm" onClick="{{go.content}}">View</button></div>
+          <div style="display:flex; justify-content:space-between; gap:8px"><span>14 submissions to mark</span><span class="chip c-warn">Teachers</span></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{is.students}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <div><h1 style="margin:0; font-size:26px; font-weight:700">Students</h1><p class="mute">Class B-12 · {{studentCount}} shown</p></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button class="btn" onClick="{{importExcel}}">Import from Excel</button>
+          <button class="btn btn-primary" onClick="{{openAdd}}">Add student</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center">
+        <label for="q" style="position:absolute; left:-9999px">Search students</label>
+        <input id="q" class="input" placeholder="Search by name or ID" value="{{query}}" onChange="{{setQuery}}" style="flex:1 1 280px; max-width:420px">
+        <select class="input" aria-label="Class" style="min-width:200px"><option>B-12 · Spoken English</option><option>B-14 · Evening Grammar</option><option>B-15 · IELTS Preparation</option></select>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Today's seat</th><th>Attendance</th><th>Average</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <sc-for list="{{students}}" as="st" hint-placeholder-count="10">
+                <tr>
+                  <td class="code">{{st.sid}}</td>
+                  <td style="font-weight:600">{{st.name}}</td>
+                  <td class="code">{{st.seat}}</td>
+                  <td>{{st.att}}</td>
+                  <td>{{st.avg}}</td>
+                  <td><span class="{{st.chip}}">{{st.status}}</span></td>
+                  <td><button class="btn btn-sm" onClick="{{st.reset}}">Reset password</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{is.teachers}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <h1 style="margin:0; font-size:26px; font-weight:700">Teachers</h1>
+        <button class="btn btn-primary" onClick="{{addTeacher}}">Add teacher</button>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden"><div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Name</th><th>Username</th><th>Classes</th><th>Modules</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600">Ms. Sadia Rehman</td><td class="code">s.rehman</td><td>B-12 Spoken English</td><td>Speaking, Listening</td><td><span class="chip c-ok">Active</span></td></tr>
+            <tr><td style="font-weight:600">Mr. Kamran Ali</td><td class="code">k.ali</td><td>B-14 Evening Grammar</td><td>Writing, Reading</td><td><span class="chip c-ok">Active</span></td></tr>
+            <tr><td style="font-weight:600">Ms. Nida Akram</td><td class="code">n.akram</td><td>B-15 IELTS Preparation</td><td>All four</td><td><span class="chip c-ok">Active</span></td></tr>
+          </tbody>
+        </table>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{is.classes}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <h1 style="margin:0; font-size:26px; font-weight:700">Classes and batches</h1>
+        <button class="btn btn-primary" onClick="{{addClass}}">New class</button>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px">
+        <div class="card"><span class="chip c-info" style="align-self:flex-start">Batch Fall 2026</span><span style="font-size:18px; font-weight:600">B-12 · Spoken English</span><span class="mute">Ms. Sadia Rehman · Lab 1 · Mon to Thu, 10:00</span><span style="font-size:14px"><strong>30</strong> students · 3 groups</span><button class="btn btn-sm" onClick="{{go.students}}" style="align-self:flex-start">Manage students</button></div>
+        <div class="card"><span class="chip c-info" style="align-self:flex-start">Batch Fall 2026</span><span style="font-size:18px; font-weight:600">B-14 · Evening Grammar</span><span class="mute">Mr. Kamran Ali · Lab 1 · Mon to Thu, 17:00</span><span style="font-size:14px"><strong>24</strong> students · 2 groups</span><button class="btn btn-sm" onClick="{{go.students}}" style="align-self:flex-start">Manage students</button></div>
+        <div class="card"><span class="chip c-info" style="align-self:flex-start">Batch Fall 2026</span><span style="font-size:18px; font-weight:600">B-15 · IELTS Preparation</span><span class="mute">Ms. Nida Akram · Lab 1 · Fri and Sat, 11:00</span><span style="font-size:14px"><strong>18</strong> students · 2 groups</span><button class="btn btn-sm" onClick="{{go.students}}" style="align-self:flex-start">Manage students</button></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{contentList}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <div><h1 style="margin:0; font-size:26px; font-weight:700">Learning content</h1><p class="mute">Lessons, audio, passages and question banks. All stored on the local server.</p></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button class="btn" onClick="{{importZip}}">Import lesson pack</button>
+          <button class="btn btn-primary" onClick="{{newLesson}}">New lesson</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px">
+        <sc-for list="{{mtabs}}" as="m" hint-placeholder-count="4">
+          <button class="{{m.cls}}" onClick="{{m.go}}">{{m.label}}</button>
+        </sc-for>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden"><div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Lesson</th><th>Type</th><th>Contents</th><th>Assigned to</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <sc-for list="{{lessons}}" as="l" hint-placeholder-count="3">
+              <tr>
+                <td style="font-weight:600">{{l.title}}</td>
+                <td>{{l.type}}</td>
+                <td class="code">{{l.items}}</td>
+                <td>{{l.assigned}}</td>
+                <td><span class="{{l.chip}}">{{l.status}}</span></td>
+                <td><button class="btn btn-sm" onClick="{{l.edit}}">Edit</button></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{contentEditor}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <button class="btn btn-sm" onClick="{{edCancel}}" style="align-self:flex-start">← Back to lessons</button>
+          <h1 style="margin:0; font-size:26px; font-weight:700">{{edHeading}}</h1>
+          <p class="mute">Fill in the lesson, add questions and check the preview. Students see it only after you publish.</p>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button class="btn" onClick="{{edDraft}}">Save as draft</button>
+          <button class="btn btn-primary" onClick="{{edPublish}}">Publish</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start">
+        <div style="flex:3 1 520px; min-width:0; display:flex; flex-direction:column; gap:16px">
+          <div class="card" style="gap:14px">
+            <span class="card-h">1 · About the lesson</span>
+            <div class="field">Module
+              <div style="display:flex; flex-wrap:wrap; gap:8px">
+                <sc-for list="{{edModules}}" as="m" hint-placeholder-count="4">
+                  <button class="{{m.cls}}" onClick="{{m.go}}">{{m.label}}</button>
+                </sc-for>
+              </div>
+            </div>
+            <label class="field">Lesson title<input class="input" value="{{edTitle}}" onChange="{{edSetTitle}}" placeholder="e.g. Unit 4: At the hotel"></label>
+            <label class="field">Assign to class<select class="input" value="{{edAssign}}" onChange="{{edSetAssign}}"><option value="B-12">B-12 · Spoken English</option><option value="B-14">B-14 · Evening Grammar</option><option value="B-15">B-15 · IELTS Preparation</option><option value="—">Not assigned yet</option></select></label>
+            <label class="field">Instructions for students<textarea class="input" value="{{edInstr}}" onChange="{{edSetInstr}}" placeholder="e.g. Listen twice, then answer the questions." style="min-height:72px; padding:10px 12px; resize:vertical; font-weight:400"></textarea></label>
+          </div>
+          <div class="card" style="gap:14px">
+            <span class="card-h">2 · Lesson content</span>
+            <label class="field">{{edPassageLabel}}<textarea class="input" value="{{edPassage}}" onChange="{{edSetPassage}}" placeholder="Type or paste the text here (optional)" style="min-height:120px; padding:12px; resize:vertical; font-family:'IBM Plex Serif',Georgia,serif; font-size:15px; line-height:1.6; font-weight:400"></textarea></label>
+            <div class="field">Audio (MP3)
+              <sc-if value="{{edNoAudio}}" hint-placeholder-val="{{ true }}">
+                <button class="btn" onClick="{{edAddAudio}}" style="align-self:flex-start">Upload MP3</button>
+              </sc-if>
+              <sc-if value="{{edHasAudio}}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:10px 12px; border:1px solid #DDE3EA; border-radius:8px; background:#FAFBFC">
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6D28D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                  <span class="code" style="color:#0E1726; font-size:13px; flex:1">lesson-audio.mp3 · 2:00 · 1.9 MB</span>
+                  <button class="btn btn-sm" onClick="{{edRemoveAudio}}">Remove</button>
+                </div>
+              </sc-if>
+              <span class="mute" style="font-size:12px; font-weight:400">Listening and Speaking lessons usually need audio.</span>
+            </div>
+          </div>
+          <div class="card" style="gap:14px">
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px">
+              <span class="card-h">3 · Questions ({{edQCount}})</span>
+              <button class="btn btn-sm" onClick="{{edAddQ}}">+ Add question</button>
+            </div>
+            <sc-for list="{{edQs}}" as="q" hint-placeholder-count="1">
+              <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border:1px solid #DDE3EA; border-radius:10px">
+                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+                  <strong style="font-size:14px">Question {{q.n}}</strong>
+                  <select class="input" aria-label="{{q.typeLabel}}" value="{{q.type}}" onChange="{{q.setType}}" style="min-height:36px; flex:1 1 200px; max-width:280px">
+                    <option value="mcq">Multiple choice</option>
+                    <option value="tf">True or false</option>
+                    <option value="gap">Fill in the blank</option>
+                    <option value="record">Speaking: record an answer</option>
+                    <option value="write">Writing: free answer</option>
+                  </select>
+                  <div style="flex:1"></div>
+                  <button class="btn btn-sm" onClick="{{q.remove}}" aria-label="{{q.removeLabel}}">Remove</button>
+                </div>
+                <input class="input" aria-label="{{q.textLabel}}" value="{{q.text}}" onChange="{{q.setText}}" placeholder="{{q.ph}}">
+                <sc-if value="{{q.isMcq}}" hint-placeholder-val="{{ true }}">
+                  <sc-for list="{{q.opts}}" as="o" hint-placeholder-count="3">
+                    <div style="display:flex; align-items:center; gap:10px">
+                      <input type="radio" name="{{o.group}}" checked="{{o.correct}}" onChange="{{o.pick}}" aria-label="{{o.aria}}" style="width:18px; height:18px; accent-color:#157F3D; flex:none">
+                      <input class="input" aria-label="{{o.ph}}" value="{{o.val}}" onChange="{{o.set}}" placeholder="{{o.ph}}" style="flex:1; min-width:0">
+                    </div>
+                  </sc-for>
+                  <span class="mute" style="font-size:12px">Tick the correct answer. LinguaLab marks it automatically.</span>
+                </sc-if>
+                <sc-if value="{{q.isTf}}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; flex-wrap:wrap; gap:18px; font-size:14px">
+                    <label style="display:flex; align-items:center; gap:6px"><input type="radio" name="{{q.tfGroup}}" checked="{{q.tfTrue}}" onChange="{{q.pickTrue}}" style="width:18px; height:18px; accent-color:#157F3D">The statement is true</label>
+                    <label style="display:flex; align-items:center; gap:6px"><input type="radio" name="{{q.tfGroup}}" checked="{{q.tfFalse}}" onChange="{{q.pickFalse}}" style="width:18px; height:18px; accent-color:#157F3D">The statement is false</label>
+                  </div>
+                </sc-if>
+                <sc-if value="{{q.isGap}}" hint-placeholder-val="{{ false }}">
+                  <label class="field" style="font-weight:500">Correct answer<input class="input" value="{{q.answer}}" onChange="{{q.setAnswer}}" placeholder="e.g. boys'"></label>
+                  <span class="mute" style="font-size:12px">Write ___ (three underscores) in the sentence where the blank goes.</span>
+                </sc-if>
+                <sc-if value="{{q.isTeacher}}" hint-placeholder-val="{{ false }}">
+                  <span class="mute" style="font-size:13px">{{q.teacherNote}}</span>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{edNoQs}}" hint-placeholder-val="{{ false }}">
+              <p class="mute">No questions yet. Press "Add question".</p>
+            </sc-if>
+          </div>
+        </div>
+        <aside style="flex:2 1 340px; min-width:0; display:flex; flex-direction:column; gap:12px">
+          <div class="card" style="gap:12px; background:#FAFBFC">
+            <span class="card-h">Student preview</span>
+            <span class="chip c-info" style="align-self:flex-start">{{edModule}}</span>
+            <span style="font-size:20px; font-weight:700">{{pvTitle}}</span>
+            <sc-if value="{{pvHasInstr}}" hint-placeholder-val="{{ false }}">
+              <p class="mute">{{edInstr}}</p>
+            </sc-if>
+            <sc-if value="{{edHasAudio}}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid #DDE3EA; border-radius:10px; background:#FFFFFF">
+                <span style="width:32px; height:32px; border-radius:50%; background:#1D4ED8; display:flex; align-items:center; justify-content:center; flex:none"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M8 5v14l11-7z"></path></svg></span>
+                <div class="bar" style="flex:1"><div class="fill" style="width:0%"></div></div>
+                <span class="code">0:00 / 2:00</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{pvHasPassage}}" hint-placeholder-val="{{ false }}">
+              <p style="margin:0; font-family:'IBM Plex Serif',Georgia,serif; font-size:15px; line-height:1.7; white-space:pre-line">{{edPassage}}</p>
+            </sc-if>
+            <sc-for list="{{pvQs}}" as="q" hint-placeholder-count="1">
+              <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid #EEF1F5">
+                <span style="font-size:14px; font-weight:600">{{q.label}}</span>
+                <sc-for list="{{q.opts}}" as="o" hint-placeholder-count="3">
+                  <span style="{{o.st}}">{{o.label}}</span>
+                </sc-for>
+                <sc-if value="{{q.hasNote}}" hint-placeholder-val="{{ false }}">
+                  <span class="mute" style="font-size:13px">{{q.note}}</span>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{pvNoQs}}" hint-placeholder-val="{{ true }}">
+              <p class="mute" style="font-size:13px">Questions you write appear here as students will see them.</p>
+            </sc-if>
+            <span class="mute" style="font-size:12px">Correct answers are outlined in green here. Students do not see that.</span>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{is.seats}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <div><h1 style="margin:0; font-size:26px; font-weight:700">Lab 1 · seats and PCs</h1><p class="mute">Each lab PC runs the student app and is bound to one seat. Click a seat for details.</p></div>
+        <button class="btn" onClick="{{editLayout}}">Edit room layout</button>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start">
+        <div class="card" style="flex:999 1 560px; min-width:0">
+          <div style="overflow-x:auto">
+            <div style="display:flex; flex-direction:column; gap:10px; width:max-content">
+              <sc-for list="{{seatRows}}" as="r" hint-placeholder-count="5">
+                <div style="display:flex; align-items:center; gap:22px">
+                  <span class="code" style="width:16px; font-size:14px">{{r.label}}</span>
+                  <sc-for list="{{r.pairs}}" as="p" hint-placeholder-count="3">
+                    <div style="display:flex; gap:6px">
+                      <sc-for list="{{p.seats}}" as="s" hint-placeholder-count="2">
+                        <button class="{{s.cls}}" onClick="{{s.pick}}" aria-label="{{s.aria}}">
+                          <span style="display:flex; align-items:center; gap:6px; font-weight:600; font-size:13px"><span style="{{s.dot}}"></span>{{s.id}}</span>
+                          <span class="code" style="font-size:11px">{{s.host}}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+              <div style="margin-left:38px; height:28px; border-radius:6px; background:#E9EDF2; display:flex; align-items:center; justify-content:center; font-size:12px; color:#4A5565">Front of room · teacher PC LAB1-T</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="flex:1 1 280px">
+          <span class="card-h">Seat {{seat.id}}</span>
+          <span class="{{seat.chip}}" style="align-self:flex-start">{{seat.status}}</span>
+          <div style="display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px">
+            <span class="mute">PC name</span><span class="code" style="font-size:13px; color:#0E1726">{{seat.host}}</span>
+            <span class="mute">IP address</span><span class="code" style="font-size:13px; color:#0E1726">{{seat.ip}}</span>
+            <span class="mute">App version</span><span class="code" style="font-size:13px; color:#0E1726">1.0.0</span>
+            <span class="mute">Last seen</span><span>{{seat.seen}}</span>
+            <span class="mute">Logged in now</span><span>{{seat.student}}</span>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px">
+            <button class="btn btn-sm" onClick="{{rebind}}">Bind another PC</button>
+            <button class="btn btn-sm" onClick="{{pingPc}}">Check connection</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{is.reports}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <div><h1 style="margin:0; font-size:26px; font-weight:700">Reports</h1><p class="mute">B-12 · Spoken English · last 5 weeks</p></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button class="btn" onClick="{{exportPdf}}">Export PDF</button>
+          <button class="btn" onClick="{{exportXls}}">Export Excel</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:stretch">
+        <div class="card" style="flex:1 1 360px">
+          <span class="card-h">Weekly attendance</span>
+          <div style="display:flex; align-items:flex-end; gap:18px; height:200px; padding-top:20px; border-bottom:1px solid #DDE3EA">
+            <sc-for list="{{weeks}}" as="w" hint-placeholder-count="5">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:6px; height:100%">
+                <span style="font-size:12px; font-weight:600">{{w.val}}</span>
+                <div style="{{w.bar}}"></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; gap:18px">
+            <sc-for list="{{weeks}}" as="w" hint-placeholder-count="5"><span style="flex:1; text-align:center; font-size:12px; color:#4A5565">{{w.label}}</span></sc-for>
+          </div>
+        </div>
+        <div class="card" style="flex:1 1 360px">
+          <span class="card-h">Average score by module</span>
+          <sc-for list="{{modAvg}}" as="m" hint-placeholder-count="4">
+            <div style="display:flex; flex-direction:column; gap:6px">
+              <div style="display:flex; justify-content:space-between; font-size:14px"><span>{{m.name}}</span><strong>{{m.val}}</strong></div>
+              <div class="bar"><div style="{{m.bar}}"></div></div>
+            </div>
+          </sc-for>
+          <p class="mute" style="font-size:13px">Writing is lowest: 6 essays still waiting for marks.</p>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{is.backups}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px">
+        <div><h1 style="margin:0; font-size:26px; font-weight:700">Backups</h1><p class="mute">Automatic every night at 23:00 to the second disk. Kept for 14 days.</p></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button class="btn" onClick="{{copyUsb}}">Copy latest to USB</button>
+          <button class="btn btn-primary" onClick="{{backupNow}}">Back up now</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden"><div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>When</th><th>Type</th><th>Includes</th><th>Size</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <sc-for list="{{backups}}" as="b" hint-placeholder-count="4">
+              <tr>
+                <td style="font-weight:600">{{b.when}}</td>
+                <td>{{b.type}}</td>
+                <td>Database, lessons, recordings</td>
+                <td class="code">{{b.size}}</td>
+                <td><span class="chip c-ok">Done</span></td>
+                <td><button class="btn btn-sm" onClick="{{b.restore}}">Restore</button></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{is.settings}}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin:0; font-size:26px; font-weight:700">Settings</h1>
+      <div class="card" style="max-width:640px; gap:16px">
+        <label class="field">Institute name<input class="input" value="[YOUR INSTITUTE NAME]" readonly=""></label>
+        <label class="field">Server address on the lab network<input class="input" value="192.168.10.2" readonly=""></label>
+        <label class="field">Nightly backup time<input class="input" value="23:00" readonly=""></label>
+        <label class="field">Pass mark for quizzes<input class="input" value="60%" readonly=""></label>
+        <button class="btn btn-primary" onClick="{{saveSettings}}" style="align-self:flex-start">Save settings</button>
+      </div>
+    </sc-if>
+  </main>
+
+  <sc-if value="{{addOn}}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(14,23,38,0.55); display:flex; align-items:center; justify-content:center; padding:24px; z-index:20">
+      <div role="dialog" aria-label="Add student" style="width:100%; max-width:440px; background:#FFFFFF; border-radius:14px; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box">
+        <span style="font-size:20px; font-weight:600">Add student</span>
+        <label class="field">Full name<input class="input" value="{{newName}}" onChange="{{setNewName}}" placeholder="e.g. Sara Ahmed"></label>
+        <label class="field">Class<select class="input"><option>B-12 · Spoken English</option><option>B-14 · Evening Grammar</option><option>B-15 · IELTS Preparation</option></select></label>
+        <p class="mute" style="font-size:13px">A student ID and a first-login password are created automatically.</p>
+        <div style="display:flex; justify-content:flex-end; gap:8px">
+          <button class="btn" onClick="{{closeAdd}}">Cancel</button>
+          <button class="btn btn-primary" onClick="{{saveAdd}}">Add student</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{toastOn}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#0E1726; color:#FFFFFF; padding:12px 18px; border-radius:10px; font-size:14px; z-index:30; max-width:90%">{{toast}}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const NAMES = {
+  A: ['Ayesha Khan', 'Bilal Ahmed', 'Hira Malik', 'Usman Tariq', 'Zainab Ali', 'Hamza Iqbal'],
+  B: ['Fatima Noor', 'Ali Raza', 'Sana Javed', 'Omar Farooq', 'Maham Aslam', 'Saad Qureshi'],
+  C: ['Areeba Shah', 'Hassan Mir', 'Iqra Saleem', 'Faizan Akhtar', 'Mehwish Butt', 'Danish Kamal'],
+  D: ['Noor Fatima', 'Talha Yousaf', 'Laiba Hussain', 'Waqas Anwar', 'Rabia Siddiqui', 'Arham Sheikh'],
+  E: ['Kinza Rafiq', 'Shahzaib Khan', 'Amna Zafar', 'Fahad Nadeem', 'Mariam Haider', 'Taimoor Abbas']
+};
+const ROW_BASE = { A: 1001, B: 1007, C: 1013, D: 1019, E: 1025 };
+const OFFLINE = { B1: true, D6: true };
+const ABSENT = { 'S-1007': true, 'S-1010': true, 'S-1024': true };
+const ORDER = ['A', 'B', 'C', 'D', 'E'].reduce(function (acc, r) { return acc.concat([1, 2, 3, 4, 5, 6].map(function (n) { return r + n; })); }, []);
+const ONLINE = ORDER.filter(function (id) { return !OFFLINE[id]; });
+const STUDENT_SIDS = [];
+['A', 'B', 'C', 'D', 'E'].forEach(function (r) { NAMES[r].forEach(function (n, i) { STUDENT_SIDS.push('S-' + (ROW_BASE[r] + i)); }); });
+const PRESENT = STUDENT_SIDS.map(function (s, i) { return i; }).filter(function (i) { return !ABSENT[STUDENT_SIDS[i]]; }).sort(function (a, b) { return (a * 13) % 31 - (b * 13) % 31; });
+const FILL = ONLINE.filter(function (id) { return id !== 'B4'; }).sort(function (a, b) { return (ORDER.indexOf(a) * 7 + 5) % 29 - (ORDER.indexOf(b) * 7 + 5) % 29; });
+const SEAT_OF = {}; const OCC = {};
+PRESENT.forEach(function (si, k) { SEAT_OF[si] = FILL[k]; OCC[FILL[k]] = si; });
+const BASE_STUDENTS = [];
+['A', 'B', 'C', 'D', 'E'].forEach(function (r, ri) {
+  NAMES[r].forEach(function (n, i) {
+    const k = ri * 6 + i; const sid = 'S-' + (ROW_BASE[r] + i);
+    BASE_STUDENTS.push({ sid: sid, name: n, seat: SEAT_OF[k] || '—', att: (84 + (k * 7) % 16) + '%', avg: (62 + (k * 11) % 33) + '%', off: !!ABSENT[sid] });
+  });
+});
+const LETTERS = ['A', 'B', 'C', 'D'];
+const TYPE_LABEL = { Speaking: 'Recording task', Reading: 'Passage + questions', Writing: 'Paragraph', Listening: 'Audio + questions' };
+const SAMPLE = {
+  Speaking: { instructions: 'Listen to the model, then record your own answer.', passage: '', audio: true, qs: [{ type: 'record', text: 'Introduce yourself: your name, where you live and what you like to do.', opts: ['', '', ''], correct: 0, tf: true, answer: '' }] },
+  Reading: { instructions: 'Read the passage, then answer the questions.', passage: "Last Friday, Class B-12 went on a trip to the city museum. The bus left the institute at eight o'clock.", audio: false, qs: [{ type: 'mcq', text: 'When did the bus leave?', opts: ["At seven o'clock", "At eight o'clock", 'After lunch'], correct: 1, tf: true, answer: '' }] },
+  Writing: { instructions: 'Write 80 to 120 words.', passage: '', audio: false, qs: [{ type: 'write', text: 'Write about your best friend. Use at least three apostrophes.', opts: ['', '', ''], correct: 0, tf: true, answer: '' }] },
+  Listening: { instructions: 'Listen twice, then answer the questions.', passage: '', audio: true, qs: [{ type: 'mcq', text: 'What time does the flight leave?', opts: ['9:15', '9:50', '10:15'], correct: 1, tf: true, answer: '' }] }
+};
+function blankQ(type) { return { type: type || 'mcq', text: '', opts: ['', '', ''], correct: 0, tf: true, answer: '' }; }
+const SECTIONS = [
+  ['dashboard', 'Dashboard'], ['students', 'Students'], ['teachers', 'Teachers'], ['classes', 'Classes'],
+  ['content', 'Content'], ['seats', 'Lab and seats'], ['reports', 'Reports'], ['backups', 'Backups'], ['settings', 'Settings']
+];
+const LESSONS = {
+  Speaking: [
+    ['Introduce yourself', 'Recording task', '1 prompt + model audio', 'B-12', 'Published'],
+    ['Daily routine', 'Recording task', '3 prompts', 'B-12, B-14', 'Published'],
+    ['Role-play: at the airport', 'Dialogue', '6 lines', '—', 'Draft']
+  ],
+  Reading: [
+    ['The school trip', 'Passage + questions', '3 MCQ', 'B-12', 'Published'],
+    ['A letter from a friend', 'Passage + questions', '5 MCQ', 'B-12', 'Published'],
+    ['Vocabulary: the city', 'Matching', '12 words', 'B-14', 'Published']
+  ],
+  Writing: [
+    ['Apostrophes paragraph', 'Paragraph', '80–120 words', 'B-12', 'Published'],
+    ['My family', 'Paragraph', '60–100 words', 'B-12', 'Published'],
+    ['Past simple practice', 'Gap-fill', '10 items', '—', 'Draft']
+  ],
+  Listening: [
+    ['Unit 3: At the airport', 'Audio + questions', '2:00 audio · 3 MCQ', 'B-12', 'Published'],
+    ['Unit 2: At the bank', 'Audio + questions', '1:45 audio · 5 MCQ', 'B-12', 'Published'],
+    ['Dictation: numbers and dates', 'Dictation', '8 items', '—', 'Draft']
+  ]
+};
+const WEEKS = [['22 Sep', 91], ['29 Sep', 88], ['6 Oct', 93], ['13 Oct', 90], ['20 Oct', 94]];
+const MOD_AVG = [['Speaking', 71, '#1D4ED8'], ['Reading', 82, '#157F3D'], ['Writing', 69, '#B45309'], ['Listening', 77, '#6D28D9']];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      section: 'dashboard', query: '', extra: [], lessons: JSON.parse(JSON.stringify(LESSONS)), ed: null, addOn: false, newName: '', module: 'Speaking', seat: 'A1',
+      backups: [['22 Oct, 23:00', 'Automatic', '1.8 GB'], ['21 Oct, 23:00', 'Automatic', '1.8 GB'], ['20 Oct, 23:00', 'Automatic', '1.7 GB'], ['18 Oct, 14:10', 'Manual · USB copy', '1.7 GB']],
+      toast: '', toastAt: 0, tick: 0
+    };
+  }
+  componentDidMount() { this.timer = setInterval(() => { const s = this.state; const n = { tick: s.tick + 1 }; if (s.toast && s.tick - s.toastAt >= 3) n.toast = ''; this.setState(n); }, 1000); }
+  componentWillUnmount() { clearInterval(this.timer); }
+  say(msg) { this.setState({ toast: msg, toastAt: this.state.tick }); }
+  openEditor(module, idx) {
+    const m = module || this.state.module;
+    let ed;
+    if (idx === undefined) {
+      ed = { idx: null, origModule: m, module: m, title: '', assign: 'B-12', instructions: '', passage: '', audio: m === 'Listening', qs: [blankQ(m === 'Speaking' ? 'record' : (m === 'Writing' ? 'write' : 'mcq'))] };
+    } else {
+      const l = this.state.lessons[m][idx]; const smp = SAMPLE[m];
+      ed = { idx: idx, origModule: m, module: m, title: l[0], assign: l[3] === '—' ? '—' : l[3].split(',')[0].trim(), instructions: smp.instructions, passage: smp.passage, audio: smp.audio, qs: JSON.parse(JSON.stringify(smp.qs)) };
+    }
+    this.setState({ ed: ed, section: 'content' });
+  }
+  setEd(patch) { this.setState({ ed: Object.assign({}, this.state.ed, patch) }); }
+  setQ(i, patch) { const qs = this.state.ed.qs.slice(); qs[i] = Object.assign({}, qs[i], patch); this.setEd({ qs: qs }); }
+  setOpt(i, oi, val) { const opts = this.state.ed.qs[i].opts.slice(); opts[oi] = val; this.setQ(i, { opts: opts }); }
+  removeQ(i) { const qs = this.state.ed.qs.slice(); qs.splice(i, 1); this.setEd({ qs: qs }); }
+  saveLesson(status) {
+    const ed = this.state.ed;
+    const title = ed.title.trim();
+    if (!title) { this.say('Give the lesson a title first.'); return; }
+    const filled = ed.qs.filter(function (q) { return q.text.trim(); });
+    if (status === 'Published') {
+      if (!filled.length) { this.say('Add at least one question before publishing.'); return; }
+      if (filled.some(function (q) { return q.type === 'mcq' && q.opts.filter(function (o) { return o.trim(); }).length < 2; })) { this.say('Each multiple-choice question needs at least two answers.'); return; }
+      if (filled.some(function (q) { return q.type === 'mcq' && !q.opts[q.correct].trim(); })) { this.say('Tick a correct answer that has text in it.'); return; }
+      if (filled.some(function (q) { return q.type === 'gap' && !q.answer.trim(); })) { this.say('Add the correct answer for each fill-in-the-blank question.'); return; }
+    }
+    const contents = (ed.audio ? 'audio · ' : '') + filled.length + ' question' + (filled.length === 1 ? '' : 's');
+    const row = [title, TYPE_LABEL[ed.module], contents, ed.assign, status];
+    const lessons = JSON.parse(JSON.stringify(this.state.lessons));
+    if (ed.idx !== null && ed.origModule === ed.module) lessons[ed.module][ed.idx] = row;
+    else { if (ed.idx !== null) lessons[ed.origModule].splice(ed.idx, 1); lessons[ed.module].push(row); }
+    const msg = status === 'Published' ? '"' + title + '" is published.' + (ed.assign !== '—' ? ' ' + ed.assign + ' students can open it now.' : ' Assign it to a class so students can see it.') : '"' + title + '" is saved as a draft. Students cannot see it yet.';
+    this.setState({ lessons: lessons, ed: null, module: ed.module, toast: msg, toastAt: this.state.tick });
+  }
+  renderVals() {
+    const s = this.state;
+    const is = {}; const go = {};
+    SECTIONS.forEach((x) => { is[x[0]] = s.section === x[0]; go[x[0]] = () => this.setState({ section: x[0] }); });
+    const nav = SECTIONS.map((x) => ({ label: x[1], cls: 'nav' + (s.section === x[0] ? ' is-on' : ''), go: go[x[0]] }));
+    const all = BASE_STUDENTS.concat(s.extra);
+    const q = s.query.trim().toLowerCase();
+    const students = all.filter((st) => !q || st.name.toLowerCase().indexOf(q) >= 0 || st.sid.toLowerCase().indexOf(q) >= 0).map((st) => ({
+      sid: st.sid, name: st.name, seat: st.seat, att: st.att, avg: st.avg,
+      status: st.isNew ? 'New' : (st.off ? 'Absent today' : 'Present'), chip: 'chip ' + (st.isNew ? 'c-info' : (st.off ? 'c-warn' : 'c-ok')),
+      reset: () => this.say('New first-login password for ' + st.name + ' printed on the slip.')
+    }));
+    const mtabs = Object.keys(LESSONS).map((m) => ({ label: m, cls: 'mtab' + (s.module === m ? ' is-on' : ''), go: () => this.setState({ module: m }) }));
+    const lessons = s.lessons[s.module].map((l, li) => ({ title: l[0], type: l[1], items: l[2], assigned: l[3], status: l[4], chip: 'chip ' + (l[4] === 'Draft' ? 'c-warn' : 'c-ok'), edit: () => this.openEditor(s.module, li) }));
+    const allLessons = Object.keys(s.lessons).reduce(function (acc, k) { return acc.concat(s.lessons[k]); }, []);
+    const draftCount = allLessons.filter(function (l) { return l[4] === 'Draft'; }).length;
+    const ed = s.ed;
+    const qPh = { mcq: 'Type the question', tf: 'Type a statement students mark true or false', gap: 'Type the sentence with ___ for the blank', record: 'What should students say? e.g. Describe your best friend', write: 'What should students write about?' };
+    const edQs = ed ? ed.qs.map((q, i) => ({
+      n: i + 1, type: q.type, text: q.text, ph: qPh[q.type],
+      typeLabel: 'Question ' + (i + 1) + ' type', textLabel: 'Question ' + (i + 1) + ' text', removeLabel: 'Remove question ' + (i + 1),
+      setType: (e) => this.setQ(i, { type: e.target.value }), setText: (e) => this.setQ(i, { text: e.target.value }), remove: () => this.removeQ(i),
+      isMcq: q.type === 'mcq', isTf: q.type === 'tf', isGap: q.type === 'gap', isTeacher: q.type === 'record' || q.type === 'write',
+      teacherNote: q.type === 'record' ? 'Students record their voice. Teachers mark it in the grading inbox for pronunciation, fluency and accuracy.' : 'Students type their answer. Teachers mark it with comments in the grading inbox.',
+      opts: q.opts.map((val, oi) => ({ val: val, group: 'q' + i + '-correct', correct: q.correct === oi, aria: 'Answer ' + LETTERS[oi] + ' is correct', ph: 'Answer ' + LETTERS[oi], pick: () => this.setQ(i, { correct: oi }), set: (e) => this.setOpt(i, oi, e.target.value) })),
+      tfGroup: 'q' + i + '-tf', tfTrue: q.tf === true, tfFalse: q.tf === false, pickTrue: () => this.setQ(i, { tf: true }), pickFalse: () => this.setQ(i, { tf: false }),
+      answer: q.answer, setAnswer: (e) => this.setQ(i, { answer: e.target.value })
+    })) : [];
+    const optSt = function (ok) { return 'display:block; padding:8px 12px; border-radius:8px; font-size:14px; border:' + (ok ? '2px solid #157F3D' : '1px solid #DDE3EA') + '; background:' + (ok ? '#F3FAF6' : '#FFFFFF'); };
+    const pvQs = ed ? ed.qs.filter(function (q) { return q.text.trim(); }).map(function (q, i) {
+      let opts = []; let note = '';
+      if (q.type === 'mcq') opts = q.opts.map(function (o, oi) { return { label: LETTERS[oi] + '. ' + o, st: optSt(oi === q.correct), keep: !!o.trim() }; }).filter(function (o) { return o.keep; });
+      if (q.type === 'tf') opts = [{ label: 'True', st: optSt(q.tf === true) }, { label: 'False', st: optSt(q.tf === false) }];
+      if (q.type === 'gap') note = q.answer.trim() ? 'Students type the missing word. Correct answer: ' + q.answer.trim() : 'Students type the missing word. Add the correct answer.';
+      if (q.type === 'record') note = 'Students record a spoken answer (up to 60 seconds).';
+      if (q.type === 'write') note = 'Students write a free answer.';
+      return { label: (i + 1) + '. ' + q.text, opts: opts, hasNote: !!note, note: note };
+    }) : [];
+    const seatRows = ['E', 'D', 'C', 'B', 'A'].map((r) => ({
+      label: r,
+      pairs: [[1, 2], [3, 4], [5, 6]].map((p) => ({
+        seats: p.map((n) => {
+          const id = r + n; const off = !!OFFLINE[id];
+          return { id: id, host: 'LAB1-' + id, cls: 'seat' + (off ? ' is-off' : '') + (s.seat === id ? ' is-sel' : ''), dot: 'width:8px; height:8px; border-radius:50%; background:' + (off ? '#A7B1BE' : '#157F3D'), aria: 'Seat ' + id + (off ? ', offline' : ', online'), pick: () => this.setState({ seat: id }) };
+        })
+      }))
+    }));
+    const sid = s.seat; const soff = !!OFFLINE[sid];
+    const rowIdx = 'ABCDE'.indexOf(sid.charAt(0));
+    const occIdx = OCC[sid];
+    const stuName = occIdx !== undefined ? BASE_STUDENTS[occIdx].name + ' (' + BASE_STUDENTS[occIdx].sid + ')' : (soff ? 'Nobody: PC is off' : 'Nobody: PC on, no login');
+    const seat = { id: sid, host: 'LAB1-' + sid, ip: '192.168.10.' + (100 + rowIdx * 6 + Number(sid.slice(1))), seen: soff ? 'Yesterday, 16:42' : 'Just now', status: soff ? 'Offline' : (occIdx !== undefined ? 'Online' : 'Online · no login'), chip: 'chip ' + (soff ? 'c-off' : (occIdx !== undefined ? 'c-ok' : 'c-info')), student: stuName };
+    return {
+      nav: nav, is: is, go: go, studentTotal: 72 + s.extra.length,
+      query: s.query, setQuery: (e) => this.setState({ query: e.target.value }), students: students, studentCount: students.length,
+      importExcel: () => this.say('Pick an Excel file with name, class and phone columns.'),
+      openAdd: () => this.setState({ addOn: true, newName: '' }), closeAdd: () => this.setState({ addOn: false }),
+      addOn: s.addOn, newName: s.newName, setNewName: (e) => this.setState({ newName: e.target.value }),
+      saveAdd: () => {
+        const nm = s.newName.trim(); if (!nm) { this.say('Enter the student’s name.'); return; }
+        const next = { sid: 'S-' + (1031 + s.extra.length), name: nm, seat: '—', att: '—', avg: '—', isNew: true };
+        this.setState({ extra: s.extra.concat([next]), addOn: false, query: '' }); this.say(nm + ' added as ' + next.sid + '.');
+      },
+      addTeacher: () => this.say('Opens the form: name, username, classes and modules.'),
+      addClass: () => this.say('Opens the form: course, batch, teacher, timetable and lab.'),
+      mtabs: mtabs, lessons: lessons,
+      importZip: () => this.say('Pick a lesson pack (.zip) exported from another LinguaLab.'),
+      newLesson: () => this.openEditor(s.module),
+      contentList: is.content && !ed, contentEditor: is.content && !!ed,
+      lessonsTotal: allLessons.length, pubCount: allLessons.length - draftCount, draftCount: draftCount,
+      edHeading: ed ? (ed.idx === null ? 'New lesson' : 'Edit lesson') : '',
+      edModule: ed ? ed.module : '', edTitle: ed ? ed.title : '', edAssign: ed ? ed.assign : 'B-12', edInstr: ed ? ed.instructions : '', edPassage: ed ? ed.passage : '',
+      edPassageLabel: ed && ed.module === 'Reading' ? 'Reading passage' : 'Text for students (optional)',
+      edModules: ['Speaking', 'Reading', 'Writing', 'Listening'].map((m) => ({ label: m, cls: 'mtab' + (ed && ed.module === m ? ' is-on' : ''), go: () => this.setEd({ module: m }) })),
+      edSetTitle: (e) => this.setEd({ title: e.target.value }), edSetAssign: (e) => this.setEd({ assign: e.target.value }),
+      edSetInstr: (e) => this.setEd({ instructions: e.target.value }), edSetPassage: (e) => this.setEd({ passage: e.target.value }),
+      edHasAudio: !!(ed && ed.audio), edNoAudio: !(ed && ed.audio),
+      edAddAudio: () => { this.setEd({ audio: true }); this.say('In the real app this opens a file picker for an MP3 on this PC.'); },
+      edRemoveAudio: () => this.setEd({ audio: false }),
+      edQs: edQs, edQCount: edQs.length, edNoQs: !!ed && edQs.length === 0,
+      edAddQ: () => this.setEd({ qs: s.ed.qs.concat([blankQ(s.ed.module === 'Speaking' ? 'record' : (s.ed.module === 'Writing' ? 'write' : 'mcq'))]) }),
+      pvTitle: ed && ed.title.trim() ? ed.title : 'Untitled lesson', pvHasInstr: !!(ed && ed.instructions.trim()), pvHasPassage: !!(ed && ed.passage.trim()),
+      pvQs: pvQs, pvNoQs: pvQs.length === 0,
+      edCancel: () => this.setState({ ed: null }),
+      edDraft: () => this.saveLesson('Draft'), edPublish: () => this.saveLesson('Published'),
+      seatRows: seatRows, seat: seat,
+      editLayout: () => this.say('Opens the layout editor: rows, seats per row and pairs.'),
+      rebind: () => this.say('Waiting for a new PC to announce itself on the network…'),
+      pingPc: () => this.say(soff ? 'LAB1-' + sid + ' did not answer. Check its power and network cable.' : 'LAB1-' + sid + ' answered in 2 ms.'),
+      weeks: WEEKS.map((w) => ({ label: w[0], val: w[1] + '%', bar: 'width:100%; max-width:56px; border-radius:6px 6px 0 0; background:#1D4ED8; height:' + Math.round(w[1] * 1.6) + 'px' })),
+      modAvg: MOD_AVG.map((m) => ({ name: m[0], val: m[1] + '%', bar: 'height:100%; border-radius:999px; background:' + m[2] + '; width:' + m[1] + '%' })),
+      exportPdf: () => this.say('Report saved as PDF to the Reports folder.'),
+      exportXls: () => this.say('Report saved as Excel to the Reports folder.'),
+      backups: s.backups.map((b) => ({ when: b[0], type: b[1], size: b[2], restore: () => this.say('Restore asks for the admin password, then restarts the server.') })),
+      backupNow: () => { this.setState({ backups: [['23 Oct, just now', 'Manual', '1.8 GB']].concat(s.backups) }); this.say('Backup finished: 1.8 GB.'); },
+      copyUsb: () => this.say('Copying the latest backup to the USB drive…'),
+      saveSettings: () => this.say('Settings saved.'),
+      toastOn: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LinguaLab teacher console</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F6F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#0E1726}
+a{color:#1D4ED8}a:hover{color:#1E3A8A}
+button,input{font-family:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid #CBD3DD;background:#FFFFFF;color:#0E1726;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;box-sizing:border-box;white-space:nowrap}
+.btn:hover{border-color:#8D99A8;color:#0E1726}
+.btn:focus-visible,.seat:focus-visible,.tab:focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
+.btn-primary{background:#1D4ED8;border-color:#1D4ED8;color:#FFFFFF}
+.btn-primary:hover{background:#1E40AF;border-color:#1E40AF;color:#FFFFFF}
+.btn-danger{background:#B42318;border-color:#B42318;color:#FFFFFF}
+.btn-danger:hover{background:#912018;border-color:#912018;color:#FFFFFF}
+.btn-sm{min-height:32px;padding:0 10px;font-size:13px}
+.ctl{width:100%;justify-content:flex-start;min-height:44px}
+.ctl svg{flex:none}
+.ctl.is-on{background:#E8EEFC;border-color:#1D4ED8;color:#1D4ED8;box-shadow:inset 0 0 0 1px #1D4ED8}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;padding:10px 0;border:0;border-radius:8px;background:transparent;color:#5A6577;font-size:12px;font-weight:500;cursor:pointer}
+.tab:hover{background:#F4F6F9}
+.tab.is-on{background:#E8EEFC;color:#1D4ED8;font-weight:600}
+.seat{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:108px;height:102px;padding:9px 10px;box-sizing:border-box;border:1px solid #DDE3EA;border-radius:10px;background:#FFFFFF;color:#0E1726;text-align:left;cursor:pointer}
+.seat:hover{border-color:#8D99A8}
+.seat.is-sel{border-color:#1D4ED8;box-shadow:inset 0 0 0 1px #1D4ED8;background:#F5F8FF}
+.seat.is-hand{border-color:#B45309;box-shadow:inset 0 0 0 1px #B45309}
+.seat.is-off{background:#EEF1F5;border-style:dashed;color:#4A5565}
+.dot{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%}
+.dot-on{background:#157F3D}.dot-off{background:#A7B1BE}.dot-hand{background:#B45309}
+.av{width:24px;height:24px;border-radius:50%;background:#E8EEFC;color:#1D4ED8;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.is-off .av{background:#DDE3EA;color:#4A5565}
+.seat.is-empty{background:#FAFBFC;color:#4A5565}
+.av-empty{background:transparent;border:1.5px dashed #A7B1BE;color:#4A5565;box-sizing:border-box}
+.thumb{width:86px;height:24px;border-radius:4px;background:#0E1726;padding:4px 6px;box-sizing:border-box;display:flex;flex-direction:column;gap:3px;flex:none}
+.tl{display:block;height:3px;border-radius:2px;background:#9DB4F0}
+.nm{font-size:13px;font-weight:600;line-height:1.2}
+.code{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4A5565}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;margin-top:auto}
+.b-live{background:#FDECEA;color:#B42318}.b-info{background:#E8EEFC;color:#1D4ED8}.b-ok{background:#E7F5EC;color:#157F3D}.b-warn{background:#FDF1E3;color:#9A4508}.b-mute{background:#EEF1F5;color:#4A5565}
+.card{background:#FFFFFF;border:1px solid #DDE3EA;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card-h{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#4A5565}
+.bar{height:8px;border-radius:999px;background:#EEF1F5;overflow:hidden}
+.fill{height:100%;background:#1D4ED8;border-radius:999px}
+.lv{width:5px;border-radius:2px;background:#1D4ED8}
+.mute{color:#4A5565;font-size:13px;line-height:1.45;margin:0}
+.side-h{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#4A5565;margin:4px 0 2px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border:1px solid #DDE3EA;border-radius:8px;background:#FFFFFF}
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; flex-direction:column; background:#F4F6F9">
+
+  <header style="display:flex; flex-wrap:wrap; align-items:center; gap:12px 16px; padding:12px 24px; background:#FFFFFF; border-bottom:1px solid #DDE3EA">
+    <div style="display:flex; align-items:center; gap:10px">
+      <div style="width:32px; height:32px; border-radius:8px; background:#1D4ED8; display:flex; align-items:center; justify-content:center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"></path></svg>
+      </div>
+      <span style="font-weight:700; font-size:16px">LinguaLab</span>
+      <span class="badge b-mute" style="margin-top:0">Teacher console</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px; padding-left:16px; border-left:1px solid #DDE3EA">
+      <span style="font-size:14px; font-weight:600">Class B-12 · Spoken English · Lab 1</span>
+      <span style="font-size:12px; color:#4A5565">{{classLine}}</span>
+    </div>
+    <div style="flex:1"></div>
+    <sc-if value="{{started}}" hint-placeholder-val="{{ false }}">
+      <span style="display:inline-flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#B42318; padding:0 8px"><span style="width:8px; height:8px; border-radius:50%; background:#B42318"></span>{{clock}}</span>
+    </sc-if>
+    <button class="btn" onClick="{{selectAll}}">{{selectAllLabel}}</button>
+    <button class="btn" onClick="{{toggleLockAll}}">{{lockAllLabel}}</button>
+    <sc-if value="{{notStarted}}" hint-placeholder-val="{{ true }}">
+      <button class="btn btn-primary" onClick="{{startClass}}">Start class</button>
+    </sc-if>
+    <sc-if value="{{started}}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-danger" onClick="{{endClass}}">End class</button>
+    </sc-if>
+    <a class="btn" href="Main.dc.html">Switch role</a>
+  </header>
+
+  <div style="display:flex; flex-wrap:wrap; flex:1; align-items:stretch">
+
+    <aside style="flex:1 1 248px; max-width:280px; display:flex; gap:8px; padding:16px 12px; background:#FFFFFF; border-right:1px solid #DDE3EA; box-sizing:border-box">
+      <nav aria-label="Tool sets" style="display:flex; flex-direction:column; gap:4px">
+        <button class="{{tabCls.teach}}" onClick="{{tabGo.teach}}">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20l4-4 4 4"></path></svg>Teach
+        </button>
+        <button class="{{tabCls.groups}}" onClick="{{tabGo.groups}}">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M16 14a5 5 0 0 1 5 5"></path></svg>Groups
+        </button>
+        <button class="{{tabCls.quiz}}" onClick="{{tabGo.quiz}}">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M3.5 6l1.5 1.5 2.5-2.5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"></path></svg>Quiz
+        </button>
+        <button class="{{tabCls.practice}}" onClick="{{tabGo.practice}}">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"></path><path d="M4 19V5M19 19v2H6"></path></svg>Practice
+        </button>
+        <button class="{{tabCls.reports}}" onClick="{{tabGo.reports}}">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Reports
+        </button>
+      </nav>
+
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; padding-left:8px; border-left:1px solid #EEF1F5">
+        <sc-if value="{{isTeach}}" hint-placeholder-val="{{ true }}">
+          <div class="side-h">Classroom controls</div>
+          <button class="{{ctlCls.broadcast}}" onClick="{{go.broadcast}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>Broadcast PC
+          </button>
+          <button class="{{ctlCls.screendemo}}" onClick="{{go.screendemo}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"></rect><rect x="11" y="9" width="7" height="5" rx="1"></rect><path d="M8 21h8"></path></svg>Screen Demo
+          </button>
+          <button class="{{ctlCls.whiteboard}}" onClick="{{go.whiteboard}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>White Board
+          </button>
+          <button class="{{ctlCls.demo}}" onClick="{{go.demo}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M10 8l6 4-6 4z"></path></svg>Demo
+          </button>
+          <button class="{{ctlCls.quiz}}" onClick="{{go.quiz}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M3.5 6l1.5 1.5 2.5-2.5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"></path></svg>Quiz
+          </button>
+          <button class="{{ctlCls.intercom}}" onClick="{{go.intercom}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"></path></svg>Intercom
+          </button>
+          <button class="{{ctlCls.wholetalk}}" onClick="{{go.wholetalk}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"></path></svg>Whole Talk
+          </button>
+          <button class="{{ctlCls.monitor}}" onClick="{{go.monitor}}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>Monitor
+          </button>
+          <div style="margin-top:12px; padding-top:12px; border-top:1px solid #EEF1F5; display:flex; flex-direction:column; gap:8px">
+            <label for="vol" class="side-h">Mic volume · {{vol}}%</label>
+            <input id="vol" type="range" min="0" max="100" value="{{vol}}" onChange="{{setVol}}" style="width:100%; accent-color:#1D4ED8">
+            <p class="mute" style="font-size:12px">No seat selected: a control goes to the whole class.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isGroups}}" hint-placeholder-val="{{ false }}">
+          <div class="side-h">Groups</div>
+          <button class="btn ctl" onClick="{{groupPairs}}">Pair by seat</button>
+          <button class="btn ctl" onClick="{{groupRandom}}">Random groups of 4</button>
+          <sc-if value="{{hasGroups}}" hint-placeholder-val="{{ false }}">
+            <button class="{{ctlCls.grouptalk}}" onClick="{{go.grouptalk}}">Start Group Talk</button>
+            <div style="display:flex; flex-direction:column; gap:6px; max-height:420px; overflow:auto">
+              <sc-for list="{{groupsList}}" as="g" hint-placeholder-count="4">
+                <div class="item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:8px 10px">
+                  <span style="font-size:13px; font-weight:600">{{g.name}}</span>
+                  <span class="code">{{g.members}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{noGroups}}" hint-placeholder-val="{{ true }}">
+            <p class="mute">Make pairs or groups, then start Group Talk so each group can practise conversation together.</p>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{isQuizTab}}" hint-placeholder-val="{{ false }}">
+          <div class="side-h">Quiz bank</div>
+          <sc-for list="{{quizBank}}" as="q" hint-placeholder-count="3">
+            <div class="item" style="flex-direction:column; align-items:stretch">
+              <span style="font-size:13px; font-weight:600">{{q.title}}</span>
+              <span class="mute" style="font-size:12px">{{q.meta}}</span>
+              <button class="btn btn-sm btn-primary" onClick="{{q.launch}}">Launch</button>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{isPractice}}" hint-placeholder-val="{{ false }}">
+          <div class="side-h">Launch an activity</div>
+          <sc-for list="{{practice}}" as="p" hint-placeholder-count="4">
+            <div class="item" style="flex-direction:column; align-items:stretch">
+              <span class="code">{{p.module}}</span>
+              <span style="font-size:13px; font-weight:600">{{p.title}}</span>
+              <button class="btn btn-sm" onClick="{{p.launch}}">Open on screens</button>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{isReports}}" hint-placeholder-val="{{ false }}">
+          <div class="side-h">Today</div>
+          <div class="item"><span class="mute">Present</span><strong>{{presentLine}}</strong></div>
+          <div class="item"><span class="mute">Class time</span><strong>{{clock}}</strong></div>
+          <div class="item"><span class="mute">Quizzes run</span><strong>{{quizRuns}}</strong></div>
+          <div class="item"><span class="mute">Last quiz average</span><strong>{{lastAvg}}</strong></div>
+          <p class="mute" style="font-size:12px">Full reports, by student and module, are in the Admin panel.</p>
+        </sc-if>
+      </div>
+    </aside>
+
+    <main style="flex:999 1 560px; min-width:0; padding:16px 24px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box">
+      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px">
+        <div style="display:flex; flex-direction:column; gap:2px">
+          <h1 style="margin:0; font-size:20px; font-weight:600">Lab 1 · 30 seats</h1>
+          <span class="mute">{{selLine}}</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:12px; color:#4A5565">
+          <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:8px; height:8px; border-radius:50%; background:#157F3D"></span>Online</span>
+          <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:8px; height:8px; border-radius:50%; background:#A7B1BE"></span>Offline</span>
+          <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:12px; height:12px; border-radius:50%; border:1.5px dashed #A7B1BE; box-sizing:border-box"></span>Empty (no login)</span>
+          <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:8px; height:8px; border-radius:50%; background:#B45309"></span>Hand raised</span>
+          <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:12px; height:12px; border-radius:3px; border:2px solid #1D4ED8; background:#F5F8FF; box-sizing:border-box"></span>Selected</span>
+        </div>
+      </div>
+
+      <sc-if value="{{hasMode}}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:#FFFFFF; border:1px solid #1D4ED8; box-shadow:inset 4px 0 0 #1D4ED8">
+          <span style="width:10px; height:10px; border-radius:50%; background:#B42318; flex:none"></span>
+          <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:2px">
+            <span style="font-size:15px; font-weight:600">{{modeTitle}} · {{targetText}}</span>
+            <span class="mute">{{modeDesc}}</span>
+          </div>
+          <button class="btn btn-danger" onClick="{{stopMode}}">Stop</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showGrid}}" hint-placeholder-val="{{ true }}">
+        <div style="overflow-x:auto; padding:4px">
+          <div style="display:flex; flex-direction:column; gap:10px; width:max-content">
+            <sc-for list="{{rows}}" as="row" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:28px">
+                <span style="width:20px; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; color:#4A5565; text-align:center">{{row.label}}</span>
+                <sc-for list="{{row.pairs}}" as="pair" hint-placeholder-count="3">
+                  <div style="display:flex; gap:6px">
+                    <sc-for list="{{pair.seats}}" as="s" hint-placeholder-count="2">
+                      <button class="{{s.cls}}" onClick="{{s.pick}}" aria-label="{{s.aria}}">
+                        <span class="{{s.dotCls}}"></span>
+                        <sc-if value="{{s.showThumb}}" hint-placeholder-val="{{ false }}">
+                          <span class="thumb"><span class="tl" style="width:70%"></span><span class="tl" style="width:48%"></span><span class="tl" style="width:62%"></span></span>
+                        </sc-if>
+                        <sc-if value="{{s.showAvatar}}" hint-placeholder-val="{{ true }}">
+                          <span class="{{s.avCls}}">{{s.initials}}</span>
+                        </sc-if>
+                        <span class="nm">{{s.first}}</span>
+                        <span class="code">{{s.id}} · {{s.sid}}</span>
+                        <sc-if value="{{s.hasBadge}}" hint-placeholder-val="{{ false }}">
+                          <span class="{{s.badgeCls}}">{{s.badge}}</span>
+                        </sc-if>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+            <div style="margin-left:48px; height:32px; border-radius:8px; background:#E9EDF2; display:flex; align-items:center; justify-content:center; font-size:12px; color:#4A5565">Front of room · teacher desk and board</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isBoard}}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:10px">
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+            <span class="badge b-info" style="margin-top:0">Pen</span>
+            <span class="mute">Draw with the mouse or a pen tablet. Students see each stroke as you draw.</span>
+            <div style="flex:1"></div>
+            <button class="btn btn-sm" onClick="{{clearBoard}}">Clear</button>
+            <button class="btn btn-sm" onClick="{{saveBoard}}">Save to lesson</button>
+          </div>
+          <div style="position:relative; border:1px solid #CBD3DD; border-radius:12px; overflow:hidden; background:#FFFFFF">
+            <svg width="100%" height="460" onPointerDown="{{penDown}}" onPointerMove="{{penMove}}" onPointerUp="{{penUp}}" onPointerLeave="{{penUp}}" style="display:block; touch-action:none; cursor:crosshair" role="img" aria-label="White board drawing area"><path d="{{wbPath}}" fill="none" stroke="#1D4ED8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <sc-if value="{{wbEmpty}}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; color:#8D99A8; font-size:18px">Write or draw here</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+
+    <aside style="flex:1 1 300px; max-width:340px; padding:20px 20px 20px 0; display:flex; flex-direction:column; gap:12px; box-sizing:border-box">
+
+      <sc-if value="{{isQuiz}}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="border-color:#1D4ED8">
+          <span class="card-h">Live quiz</span>
+          <span style="font-size:15px; font-weight:600">{{quizTitle}}</span>
+          <div style="display:flex; justify-content:space-between; font-size:13px"><span>{{quizCount}} of {{quizTotal}} answered</span><span class="code">{{modeClock}}</span></div>
+          <div class="bar"><div class="fill" style="{{quizBar}}"></div></div>
+          <sc-if value="{{quizDone}}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px"><span style="font-size:28px; font-weight:700">{{quizAvg}}%</span><span class="mute">class average</span></div>
+            <sc-for list="{{qstats}}" as="q" hint-placeholder-count="5">
+              <div style="display:flex; flex-direction:column; gap:4px">
+                <div style="display:flex; justify-content:space-between; font-size:12px"><span>{{q.label}}</span><span style="font-weight:600">{{q.pct}}</span></div>
+                <div class="bar" style="height:6px"><div class="fill" style="{{q.bar}}"></div></div>
+              </div>
+            </sc-for>
+            <button class="btn btn-primary" onClick="{{shareResults}}">Show results to students</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isCall}}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="border-color:#B42318">
+          <span class="card-h">Intercom call</span>
+          <span style="font-size:15px; font-weight:600">{{callName}}</span>
+          <span class="mute">Private: only you and this student can hear. {{modeClock}}</span>
+          <div style="display:flex; align-items:flex-end; gap:3px; height:32px">
+            <sc-for list="{{levels}}" as="l" hint-placeholder-count="14"><span class="lv" style="{{l.st}}"></span></sc-for>
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="btn" onClick="{{toggleMute}}">{{muteLabel}}</button>
+            <button class="btn btn-danger" onClick="{{stopMode}}">End call</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isTalk}}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="border-color:#1D4ED8">
+          <span class="card-h">{{modeTitle}}</span>
+          <span class="mute">Your microphone is live · {{modeClock}}</span>
+          <div style="display:flex; align-items:flex-end; gap:3px; height:32px">
+            <sc-for list="{{levels}}" as="l" hint-placeholder-count="14"><span class="lv" style="{{l.st}}"></span></sc-for>
+          </div>
+          <button class="btn" onClick="{{toggleMute}}">{{muteLabel}}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isDemo}}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="border-color:#1D4ED8">
+          <span class="card-h">Now playing</span>
+          <span style="font-size:15px; font-weight:600">{{demoTitle}}</span>
+          <div class="bar"><div class="fill" style="{{demoBar}}"></div></div>
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <span class="code">{{demoTime}}</span>
+            <button class="btn btn-sm" onClick="{{toggleDemo}}">{{demoBtn}}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div class="card">
+        <span class="card-h">Attendance</span>
+        <div style="display:flex; align-items:baseline; gap:8px"><span style="font-size:26px; font-weight:700">{{presentLine}}</span><span class="mute">{{presentWord}}</span></div>
+        <div class="bar"><div class="fill" style="{{attBar}}"></div></div>
+        <p class="mute">{{absentLine}}</p>
+      </div>
+
+      <div class="card">
+        <span class="card-h">Hands raised</span>
+        <sc-if value="{{hasHands}}" hint-placeholder-val="{{ false }}">
+          <sc-for list="{{hands}}" as="h" hint-placeholder-count="1">
+            <div style="display:flex; align-items:center; gap:10px">
+              <span class="av" style="background:#FDF1E3; color:#9A4508">{{h.initials}}</span>
+              <div style="flex:1; display:flex; flex-direction:column"><span style="font-size:14px; font-weight:600">{{h.name}}</span><span class="code">Seat {{h.id}}</span></div>
+              <button class="btn btn-sm btn-primary" onClick="{{h.talk}}">Talk</button>
+            </div>
+          </sc-for>
+        </sc-if>
+        <sc-if value="{{noHands}}" hint-placeholder-val="{{ true }}">
+          <p class="mute">No hands raised.</p>
+        </sc-if>
+      </div>
+
+      <div class="card">
+        <span class="card-h">Selection</span>
+        <p class="mute">{{selLine}}</p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button class="btn btn-sm" onClick="{{lockSelected}}">Lock / unlock</button>
+          <button class="btn btn-sm" onClick="{{sendMessage}}">Send message</button>
+          <button class="btn btn-sm" onClick="{{collectFiles}}">Collect files</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:10px 24px; background:#0E1726; color:#FFFFFF; font-size:13px">
+    <sc-if value="{{hasMode}}" hint-placeholder-val="{{ false }}">
+      <span style="width:8px; height:8px; border-radius:50%; background:#F97066"></span>
+      <span style="flex:1">Live: {{modeTitle}} → {{targetText}} · {{modeClock}}</span>
+      <button class="btn btn-sm" onClick="{{stopMode}}">Stop</button>
+    </sc-if>
+    <sc-if value="{{noMode}}" hint-placeholder-val="{{ true }}">
+      <span style="flex:1; color:#C9D2DE">{{footerIdle}}</span>
+    </sc-if>
+  </footer>
+
+  <sc-if value="{{viewOn}}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(14,23,38,0.55); display:flex; align-items:center; justify-content:center; padding:24px; z-index:20">
+      <div role="dialog" aria-label="Student screen" style="width:100%; max-width:820px; background:#FFFFFF; border-radius:14px; overflow:hidden; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid #DDE3EA">
+          <span class="badge b-live" style="margin-top:0">Live view</span>
+          <span style="font-weight:600">{{viewName}}</span>
+          <span class="code">Seat {{viewSeat}}</span>
+          <div style="flex:1"></div>
+          <button class="btn btn-sm" onClick="{{closeView}}">Close</button>
+        </div>
+        <div style="background:#1F2937; padding:18px">
+          <div style="background:#FFFFFF; border-radius:6px; overflow:hidden">
+            <div style="height:34px; background:#2B579A; display:flex; align-items:center; padding:0 12px; color:#FFFFFF; font-size:12px">Document1 · Word</div>
+            <div style="height:28px; background:#F3F3F3; border-bottom:1px solid #DDDDDD"></div>
+            <div style="padding:28px 56px; font-family:Georgia, serif; font-size:22px; line-height:1.7; color:#111111; min-height:220px">
+              <div style="font-weight:700">Apostrophe</div>
+              <div>Ali's car.</div>
+              <div>Yours book.</div>
+              <div>Saleem's friend.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; padding:14px 18px">
+          <button class="btn btn-primary" onClick="{{takeControl}}">Take control</button>
+          <button class="btn" onClick="{{sendMessage}}">Send message</button>
+          <button class="btn" onClick="{{showToClass}}">Show to class</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{sumOn}}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(14,23,38,0.55); display:flex; align-items:center; justify-content:center; padding:24px; z-index:20">
+      <div role="dialog" aria-label="Class summary" style="width:100%; max-width:440px; background:#FFFFFF; border-radius:14px; padding:24px; display:flex; flex-direction:column; gap:14px">
+        <span class="card-h">Class ended</span>
+        <span style="font-size:20px; font-weight:600">B-12 · Spoken English</span>
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px">
+          <div class="item" style="flex-direction:column; align-items:flex-start"><span class="mute">Present</span><strong style="font-size:18px">{{presentLine}}</strong></div>
+          <div class="item" style="flex-direction:column; align-items:flex-start"><span class="mute">Duration</span><strong style="font-size:18px">{{clock}}</strong></div>
+          <div class="item" style="flex-direction:column; align-items:flex-start"><span class="mute">Quizzes run</span><strong style="font-size:18px">{{quizRuns}}</strong></div>
+          <div class="item" style="flex-direction:column; align-items:flex-start"><span class="mute">Last quiz average</span><strong style="font-size:18px">{{lastAvg}}</strong></div>
+        </div>
+        <p class="mute">Attendance, quiz marks and recordings are saved to this session on the local server.</p>
+        <button class="btn btn-primary" onClick="{{closeSummary}}">Done</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{toastOn}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed; left:50%; bottom:64px; transform:translateX(-50%); background:#0E1726; color:#FFFFFF; padding:12px 18px; border-radius:10px; font-size:14px; z-index:30; max-width:90%">{{toast}}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const ROWS = ['E', 'D', 'C', 'B', 'A'];
+const NAMES = {
+  A: ['Ayesha Khan', 'Bilal Ahmed', 'Hira Malik', 'Usman Tariq', 'Zainab Ali', 'Hamza Iqbal'],
+  B: ['Fatima Noor', 'Ali Raza', 'Sana Javed', 'Omar Farooq', 'Maham Aslam', 'Saad Qureshi'],
+  C: ['Areeba Shah', 'Hassan Mir', 'Iqra Saleem', 'Faizan Akhtar', 'Mehwish Butt', 'Danish Kamal'],
+  D: ['Noor Fatima', 'Talha Yousaf', 'Laiba Hussain', 'Waqas Anwar', 'Rabia Siddiqui', 'Arham Sheikh'],
+  E: ['Kinza Rafiq', 'Shahzaib Khan', 'Amna Zafar', 'Fahad Nadeem', 'Mariam Haider', 'Taimoor Abbas']
+};
+const ROW_BASE = { A: 1001, B: 1007, C: 1013, D: 1019, E: 1025 };
+const OFFLINE = { B1: true, D6: true };
+const ABSENT = { 'S-1007': true, 'S-1010': true, 'S-1024': true };
+const STUDENTS = [];
+['A', 'B', 'C', 'D', 'E'].forEach(function (r) {
+  NAMES[r].forEach(function (n, i) {
+    const parts = n.split(' ');
+    STUDENTS.push({ sid: 'S-' + (ROW_BASE[r] + i), name: n, first: parts[0], initials: parts[0].charAt(0) + parts[1].charAt(0) });
+  });
+});
+const ORDER = ['A', 'B', 'C', 'D', 'E'].reduce(function (acc, r) { return acc.concat([1, 2, 3, 4, 5, 6].map(function (n) { return r + n; })); }, []);
+const ONLINE = ORDER.filter(function (id) { return !OFFLINE[id]; });
+const EMPTY_SEAT = 'B4';
+const PRESENT = STUDENTS.map(function (s, i) { return i; }).filter(function (i) { return !ABSENT[STUDENTS[i].sid]; }).sort(function (a, b) { return (a * 13) % 31 - (b * 13) % 31; });
+const FILL = ONLINE.filter(function (id) { return id !== EMPTY_SEAT; }).sort(function (a, b) { return (ORDER.indexOf(a) * 7 + 5) % 29 - (ORDER.indexOf(b) * 7 + 5) % 29; });
+const ASSIGN = PRESENT.map(function (si, k) { return [FILL[k], si]; });
+const LOGINS_PER_TICK = 4;
+const IQRA = 14;
+const SCORES = [5, 4, 4, 3, 5, 4, 2, 5, 3, 4, 4, 5, 3, 4, 5, 4, 3, 5, 4, 4, 2, 5, 4, 3, 5, 4, 4, 3, 5, 4];
+const MODE_INFO = {
+  broadcast: ['Broadcast PC', 'Students see your screen full-screen. Their keyboard and mouse are locked.'],
+  screendemo: ['Screen Demo', 'Students see your screen in a window and can keep working beside it.'],
+  whiteboard: ['White Board', 'Your board appears live on student screens as you write.'],
+  demo: ['Demo', ''],
+  quiz: ['Quiz', 'The quiz is on student screens. Answers arrive live.'],
+  intercom: ['Intercom', ''],
+  wholetalk: ['Whole Talk', 'Your microphone is live in these students’ headsets.'],
+  grouptalk: ['Group Talk', 'Each group hears only its own members. You can listen in to any group.'],
+  monitor: ['Monitor', 'Live thumbnails of student screens. Click any screen to enlarge it.'],
+  activity: ['Activity', '']
+};
+const QUIZ_BANK = [
+  { title: 'Apostrophes: quick check', meta: '5 questions · 3 min' },
+  { title: 'Past simple or present perfect', meta: '8 questions · 5 min' },
+  { title: 'Vocabulary: at the airport', meta: '10 questions · 6 min' }
+];
+const PRACTICE = [
+  { module: 'Speaking', title: 'Introduce yourself' },
+  { module: 'Reading', title: 'The school trip' },
+  { module: 'Writing', title: 'Apostrophes paragraph' },
+  { module: 'Listening', title: 'Unit 3: At the airport' }
+];
+const Q_LABELS = ["Ali's car", "The boys' bags", "It's or its", "Yours, not your's", "Children's toys"];
+const Q_TH = [2, 3, 4, 5, 3];
+function fmt(t) { const m = Math.floor(t / 60); const s = t % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+function occupancy(count) { const m = {}; ASSIGN.slice(0, count).forEach(function (p) { m[p[0]] = p[1]; }); return m; }
+function seatOf(studentIdx, count) { const p = ASSIGN.slice(0, count).find(function (x) { return x[1] === studentIdx; }); return p ? p[0] : null; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.freshState();
+    this.state.tick = 0;
+  }
+  freshState() {
+    return { started: false, elapsed: 0, logins: 0, sel: {}, mode: null, targets: [], modeAt: 0, answered: {}, hands: {}, handDone: false, locked: {}, tab: 'teach', toast: '', toastAt: 0, view: null, summary: false, strokes: [], drawing: false, demoPos: 0, demoPlaying: false, demoTitle: '', demoStudent: null, quizTitle: '', quizRuns: 0, callId: null, muted: false, vol: 70, groups: [], activity: '' };
+  }
+  componentDidMount() { this.timer = setInterval(() => this.tick(), 1000); }
+  componentWillUnmount() { clearInterval(this.timer); }
+  occ() { return occupancy(this.state.logins); }
+  loggedIds() { const o = this.occ(); return ORDER.filter(function (id) { return o[id] !== undefined; }); }
+  who(id) { const o = this.occ(); return o[id] !== undefined ? STUDENTS[o[id]] : null; }
+  tick() {
+    const s = this.state;
+    const next = { tick: s.tick + 1 };
+    if (s.toast && s.tick - s.toastAt >= 3) next.toast = '';
+    if (!s.summary && s.logins < ASSIGN.length) next.logins = Math.min(ASSIGN.length, s.logins + LOGINS_PER_TICK);
+    if (s.started && !s.summary) {
+      next.elapsed = s.elapsed + 1;
+      if (s.elapsed + 1 >= 9 && !s.handDone) {
+        const seat = seatOf(IQRA, s.logins);
+        if (seat) { next.hands = Object.assign({}, s.hands); next.hands[seat] = true; next.handDone = true; }
+      }
+      if (s.mode === 'quiz') {
+        const left = s.targets.filter(function (id) { return !s.answered[id]; });
+        if (left.length) {
+          left.sort(function (a, b) { return (ORDER.indexOf(a) * 7) % 31 - (ORDER.indexOf(b) * 7) % 31; });
+          const a = Object.assign({}, s.answered);
+          left.slice(0, 2 + (s.tick % 2)).forEach(function (id) { a[id] = true; });
+          next.answered = a;
+        }
+      }
+      if (s.mode === 'demo' && s.demoPlaying) next.demoPos = Math.min(100, s.demoPos + 2);
+    }
+    this.setState(next);
+  }
+  say(msg) { this.setState({ toast: msg, toastAt: this.state.tick }); }
+  startClass() {
+    this.setState(Object.assign(this.freshState(), { started: true, logins: this.state.logins, tab: this.state.tab, vol: this.state.vol, toast: 'Class started. Attendance is taken from student logins.', toastAt: this.state.tick }));
+  }
+  endClass() { this.setState({ summary: true, mode: null, targets: [], view: null }); }
+  closeSummary() {
+    this.setState(Object.assign(this.freshState(), { tab: this.state.tab, vol: this.state.vol, toast: 'Students were logged off. The next class can log in now.', toastAt: this.state.tick }));
+  }
+  startMode(key, extra) {
+    const s = this.state;
+    if (!s.started) { this.say('Press Start class first.'); return; }
+    if (s.mode === key && !extra) { this.stopMode(); return; }
+    const all = this.loggedIds();
+    if (!all.length) { this.say('No students are logged in yet.'); return; }
+    const selected = all.filter(function (id) { return s.sel[id]; });
+    const patch = { mode: key, targets: selected.length ? selected : all, modeAt: s.elapsed, view: null, callId: null };
+    if (key === 'intercom') {
+      const id = extra && extra.id ? extra.id : (selected.length === 1 ? selected[0] : null);
+      if (!id) { this.say('Select one student, then press Intercom.'); return; }
+      patch.targets = [id]; patch.callId = id; patch.muted = false;
+      if (s.hands[id]) { const h = Object.assign({}, s.hands); delete h[id]; patch.hands = h; }
+    }
+    if (key === 'quiz') {
+      patch.answered = {}; patch.quizRuns = s.quizRuns + 1;
+      patch.quizTitle = extra && extra.title ? extra.title : QUIZ_BANK[0].title;
+    }
+    if (key === 'demo') {
+      patch.demoPos = 0; patch.demoPlaying = true;
+      if (selected.length === 1) {
+        patch.demoStudent = selected[0];
+        patch.demoTitle = 'Student demo: ' + this.who(selected[0]).name + ' (' + selected[0] + ')';
+        patch.targets = all.filter(function (id) { return id !== selected[0]; });
+      } else {
+        patch.demoStudent = null;
+        patch.demoTitle = 'Listening · Unit 3: At the airport';
+      }
+    }
+    if (key === 'grouptalk') {
+      if (!s.groups.length) { this.say('Make pairs or groups first.'); return; }
+      patch.targets = all;
+    }
+    if (key === 'monitor') patch.targets = all;
+    if (key === 'activity') patch.activity = extra.title;
+    this.setState(patch);
+  }
+  stopMode() { this.setState({ mode: null, targets: [], view: null, callId: null, demoStudent: null }); }
+  clickSeat(id) {
+    const s = this.state;
+    if (OFFLINE[id]) { this.say('Seat ' + id + ' is offline: that PC is not connected.'); return; }
+    if (!this.who(id)) { this.say('Seat ' + id + ' is empty: no student has logged in on that PC.'); return; }
+    if (s.mode === 'monitor') { this.setState({ view: id }); return; }
+    const sel = Object.assign({}, s.sel);
+    if (sel[id]) delete sel[id]; else sel[id] = true;
+    this.setState({ sel: sel });
+  }
+  selectAll() {
+    if (Object.keys(this.state.sel).length) { this.setState({ sel: {} }); return; }
+    const sel = {}; this.loggedIds().forEach(function (id) { sel[id] = true; });
+    if (!Object.keys(sel).length) { this.say('No students are logged in yet.'); return; }
+    this.setState({ sel: sel });
+  }
+  toggleLockAll() {
+    const s = this.state; const all = this.loggedIds();
+    if (!s.started) { this.say('Press Start class first.'); return; }
+    const allLocked = all.length > 0 && all.every(function (id) { return s.locked[id]; });
+    const locked = {};
+    if (!allLocked) all.forEach(function (id) { locked[id] = true; });
+    this.setState({ locked: locked });
+    this.say(allLocked ? 'All screens unlocked.' : 'All student screens are locked: "Eyes on your teacher".');
+  }
+  lockSelected() {
+    const s = this.state; const ids = Object.keys(s.sel);
+    if (!s.started) { this.say('Press Start class first.'); return; }
+    if (!ids.length) { this.say('Select seats first.'); return; }
+    const locked = Object.assign({}, s.locked);
+    const lockThem = !ids.every(function (id) { return locked[id]; });
+    ids.forEach(function (id) { if (lockThem) locked[id] = true; else delete locked[id]; });
+    this.setState({ locked: locked });
+    this.say((lockThem ? 'Locked ' : 'Unlocked ') + ids.length + ' screen' + (ids.length === 1 ? '' : 's') + '.');
+  }
+  makeGroups(size) {
+    const all = this.loggedIds(); const groups = [];
+    if (!all.length) { this.say('No students are logged in yet.'); return; }
+    let list = all;
+    if (size === 4) list = all.slice().sort(function (a, b) { return (ORDER.indexOf(a) * 11) % 29 - (ORDER.indexOf(b) * 11) % 29; });
+    for (let i = 0; i < list.length; i += size) groups.push({ ids: list.slice(i, i + size) });
+    this.setState({ groups: groups });
+    this.say(groups.length + (size === 2 ? ' pairs' : ' groups') + ' ready. Press Start Group Talk.');
+  }
+  penPoint(e) {
+    const el = e.currentTarget; const r = el.getBoundingClientRect();
+    const k = el.clientWidth && r.width ? el.clientWidth / r.width : 1;
+    return [Math.round((e.clientX - r.left) * k), Math.round((e.clientY - r.top) * k)];
+  }
+  penDown(e) { const p = this.penPoint(e); this.setState({ drawing: true, strokes: this.state.strokes.concat([[p, p]]) }); }
+  penMove(e) {
+    if (!this.state.drawing) return;
+    const p = this.penPoint(e);
+    const strokes = this.state.strokes.slice();
+    strokes[strokes.length - 1] = strokes[strokes.length - 1].concat([p]);
+    this.setState({ strokes: strokes });
+  }
+  penUp() { if (this.state.drawing) this.setState({ drawing: false }); }
+
+  renderVals() {
+    const s = this.state;
+    const occ = occupancy(s.logins);
+    const all = ORDER.filter(function (id) { return occ[id] !== undefined; });
+    const stu = function (id) { return occ[id] !== undefined ? STUDENTS[occ[id]] : null; };
+    const mode = s.mode;
+    const inT = {}; s.targets.forEach(function (id) { inT[id] = true; });
+    const groupOf = {}; s.groups.forEach(function (g, i) { g.ids.forEach(function (id) { groupOf[id] = i + 1; }); });
+    const seatVM = (id) => {
+      const st = stu(id); const off = !!OFFLINE[id]; const empty = !off && !st;
+      const hand = !!s.hands[id] && s.started; const sel = !!s.sel[id];
+      let badge = ''; let bcls = 'badge b-mute';
+      if (s.started && st) {
+        if (mode && inT[id]) {
+          if (mode === 'broadcast') { badge = 'Live'; bcls = 'badge b-live'; }
+          else if (mode === 'screendemo') { badge = 'Watching'; bcls = 'badge b-info'; }
+          else if (mode === 'whiteboard') { badge = 'Board'; bcls = 'badge b-info'; }
+          else if (mode === 'demo') { badge = 'Demo'; bcls = 'badge b-info'; }
+          else if (mode === 'quiz') { badge = s.answered[id] ? 'Answered' : 'Answering'; bcls = s.answered[id] ? 'badge b-ok' : 'badge b-mute'; }
+          else if (mode === 'intercom') { badge = 'On call'; bcls = 'badge b-live'; }
+          else if (mode === 'wholetalk') { badge = 'Listening'; bcls = 'badge b-info'; }
+          else if (mode === 'grouptalk' && groupOf[id]) { badge = 'Group ' + groupOf[id]; bcls = 'badge b-info'; }
+          else if (mode === 'activity') { badge = 'Activity'; bcls = 'badge b-ok'; }
+        }
+        if (mode === 'demo' && s.demoStudent === id) { badge = 'Presenting'; bcls = 'badge b-warn'; }
+        if (!badge && s.locked[id]) { badge = 'Locked'; bcls = 'badge b-mute'; }
+        if (hand) { badge = 'Hand up'; bcls = 'badge b-warn'; }
+      }
+      if (off) { badge = ''; }
+      const thumb = mode === 'monitor' && !!st;
+      return {
+        id: id,
+        sid: st ? st.sid : (off ? 'offline' : 'free'),
+        first: st ? st.first : (off ? 'PC off' : 'Empty'),
+        initials: st ? st.initials : '',
+        avCls: st ? 'av' : 'av av-empty',
+        cls: 'seat' + (sel ? ' is-sel' : '') + (off ? ' is-off' : '') + (empty ? ' is-empty' : '') + (hand ? ' is-hand' : ''),
+        dotCls: 'dot ' + (off ? 'dot-off' : (hand ? 'dot-hand' : 'dot-on')),
+        badge: badge, badgeCls: bcls, hasBadge: !!badge, showThumb: thumb, showAvatar: !thumb,
+        aria: (st ? st.name + ', seat ' + id : 'Seat ' + id + (off ? ', PC offline' : ', empty, no student logged in')) + (sel ? ', selected' : ''),
+        pick: () => this.clickSeat(id)
+      };
+    };
+    const rows = ROWS.map(function (r) {
+      return { label: r, pairs: [[1, 2], [3, 4], [5, 6]].map(function (p) { return { key: r + p[0], seats: p.map(function (n) { return seatVM(r + n); }) }; }) };
+    });
+
+    const info = mode ? MODE_INFO[mode] : ['', ''];
+    let modeDesc = info[1];
+    if (mode === 'demo') modeDesc = s.demoStudent ? 'This student’s screen and voice go to the rest of the class.' : 'Playing on student headsets and screens, in sync.';
+    if (mode === 'intercom' && s.callId && stu(s.callId)) modeDesc = 'Private call. Only you and ' + stu(s.callId).name + ' can hear.';
+    if (mode === 'activity') modeDesc = s.activity + ' is open on student screens.';
+    const tn = s.targets.length;
+    let targetText = tn === all.length ? 'Whole class (' + tn + ')' : tn + (tn === 1 ? ' student: ' : ' students: ') + s.targets.slice(0, 4).join(', ') + (tn > 4 ? '…' : '');
+    if (mode === 'intercom' && s.callId && stu(s.callId)) targetText = stu(s.callId).name + ' (' + s.callId + ')';
+    if (mode === 'demo' && s.demoStudent && stu(s.demoStudent)) targetText = stu(s.demoStudent).name + ' to the class';
+
+    const ctl = function (k) { return 'btn ctl' + (mode === k ? ' is-on' : ''); };
+    const keys = ['broadcast', 'screendemo', 'whiteboard', 'demo', 'quiz', 'intercom', 'wholetalk', 'monitor', 'grouptalk'];
+    const ctlCls = {}; const go = {};
+    keys.forEach((k) => { ctlCls[k] = ctl(k); go[k] = () => this.startMode(k); });
+    const tabKeys = ['teach', 'groups', 'quiz', 'practice', 'reports'];
+    const tabCls = {}; const tabGo = {};
+    tabKeys.forEach((k) => { tabCls[k] = 'tab' + (s.tab === k ? ' is-on' : ''); tabGo[k] = () => this.setState({ tab: k }); });
+
+    const scoreOf = function (id) { return occ[id] !== undefined ? SCORES[occ[id]] : 0; };
+    const ans = s.targets.filter(function (id) { return s.answered[id]; });
+    const scores = ans.map(scoreOf);
+    const quizAvg = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length / 5 * 100) : 0;
+    const qstats = Q_LABELS.map(function (label, i) {
+      const pct = scores.length ? Math.round(scores.filter(function (v) { return v >= Q_TH[i]; }).length / scores.length * 100) : 0;
+      return { label: label, pct: pct + '%', bar: 'width: ' + pct + '%' };
+    });
+    const answeredAll = ORDER.filter(function (id) { return s.answered[id]; }).map(scoreOf);
+    const lastAvg = answeredAll.length ? Math.round(answeredAll.reduce(function (a, b) { return a + b; }, 0) / answeredAll.length / 5 * 100) + '%' : '—';
+
+    const levels = [];
+    for (let i = 0; i < 14; i++) levels.push({ k: i, st: 'height: ' + (s.muted ? 3 : 4 + Math.round(Math.abs(Math.sin((s.tick + 1) * (i + 1) * 0.9)) * 24)) + 'px' });
+
+    const handIds = Object.keys(s.hands).filter(function (id) { return !!stu(id); });
+    const selCount = Object.keys(s.sel).length;
+    const present = all.length;
+    const loggingIn = s.logins < ASSIGN.length;
+    const absentNames = STUDENTS.filter(function (x, i) { return !Object.keys(occ).some(function (k) { return occ[k] === i; }); });
+    const allLocked = all.length > 0 && all.every(function (id) { return s.locked[id]; });
+    const wbPath = s.strokes.map(function (st) { return 'M' + st.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L'); }).join(' ');
+    const callStu = s.callId ? stu(s.callId) : null;
+    const viewStu = s.view ? stu(s.view) : null;
+
+    return {
+      started: s.started, notStarted: !s.started, clock: fmt(s.elapsed),
+      classLine: (s.started ? 'In class · ' : 'Not started · ') + present + ' students logged in · ' + ONLINE.length + ' of 30 PCs online',
+      selectAll: () => this.selectAll(), selectAllLabel: selCount ? 'Clear selection' : 'Select all',
+      toggleLockAll: () => this.toggleLockAll(), lockAllLabel: s.started && allLocked ? 'Unlock all' : 'Lock all',
+      startClass: () => this.startClass(), endClass: () => this.endClass(), closeSummary: () => this.closeSummary(),
+      tabCls: tabCls, tabGo: tabGo,
+      isTeach: s.tab === 'teach', isGroups: s.tab === 'groups', isQuizTab: s.tab === 'quiz', isPractice: s.tab === 'practice', isReports: s.tab === 'reports',
+      ctlCls: ctlCls, go: go,
+      vol: s.vol, setVol: (e) => this.setState({ vol: Number(e.target.value) }),
+      groupPairs: () => this.makeGroups(2), groupRandom: () => this.makeGroups(4),
+      hasGroups: s.groups.length > 0, noGroups: s.groups.length === 0,
+      groupsList: s.groups.map(function (g, i) { return { name: 'Group ' + (i + 1), members: g.ids.join(', ') }; }),
+      quizBank: QUIZ_BANK.map((q) => ({ title: q.title, meta: q.meta, launch: () => this.startMode('quiz', { title: q.title }) })),
+      practice: PRACTICE.map((p) => ({ module: p.module, title: p.title, launch: () => this.startMode('activity', { title: p.module + ' · ' + p.title }) })),
+      presentLine: present + ' / 30', presentWord: s.started ? 'present' : 'logged in', quizRuns: s.quizRuns, lastAvg: lastAvg,
+      selLine: selCount ? selCount + ' seat' + (selCount === 1 ? '' : 's') + ' selected. Controls go to the selection.' : 'No seats selected. Controls go to every logged-in student.',
+      rows: rows,
+      hasMode: !!mode, noMode: !mode, modeTitle: info[0], modeDesc: modeDesc, targetText: targetText, modeClock: fmt(Math.max(0, s.elapsed - s.modeAt)),
+      stopMode: () => this.stopMode(),
+      footerIdle: s.started ? 'Ready. Select seats or use a control for every logged-in student.' : (loggingIn ? 'Students are logging in at any free PC… Press Start class when you are ready.' : 'Press Start class to open the session and save attendance.'),
+      showGrid: mode !== 'whiteboard', isBoard: mode === 'whiteboard',
+      wbPath: wbPath || 'M0 0', wbEmpty: s.strokes.length === 0,
+      penDown: (e) => this.penDown(e), penMove: (e) => this.penMove(e), penUp: () => this.penUp(),
+      clearBoard: () => this.setState({ strokes: [] }), saveBoard: () => this.say('Board saved to today’s lesson as a picture.'),
+      isQuiz: mode === 'quiz', quizTitle: s.quizTitle, quizCount: ans.length, quizTotal: tn,
+      quizBar: 'width: ' + (tn ? Math.round(ans.length / tn * 100) : 0) + '%',
+      quizDone: mode === 'quiz' && tn > 0 && ans.length === tn, quizAvg: quizAvg, qstats: qstats,
+      shareResults: () => this.say('Each student now sees their own score and the correct answers.'),
+      isCall: mode === 'intercom', callName: callStu ? callStu.name + ' · Seat ' + s.callId : '',
+      isTalk: mode === 'wholetalk' || mode === 'grouptalk', levels: levels,
+      muteLabel: s.muted ? 'Unmute' : 'Mute', toggleMute: () => this.setState({ muted: !s.muted }),
+      isDemo: mode === 'demo', demoTitle: s.demoTitle, demoBar: 'width: ' + s.demoPos + '%',
+      demoTime: s.demoStudent ? 'Live' : fmt(Math.round(s.demoPos / 100 * 200)) + ' / 3:20',
+      demoBtn: s.demoPlaying ? 'Pause' : 'Play', toggleDemo: () => this.setState({ demoPlaying: !s.demoPlaying }),
+      attBar: 'width: ' + Math.round(present / 30 * 100) + '%',
+      absentLine: loggingIn ? 'Students are logging in at any free PC…' : (s.started ? 'Absent: ' : 'Not logged in: ') + absentNames.map(function (x) { return x.name; }).join(', '),
+      hasHands: handIds.length > 0, noHands: handIds.length === 0,
+      hands: handIds.map((id) => ({ id: id, name: stu(id).name, initials: stu(id).initials, talk: () => this.startMode('intercom', { id: id }) })),
+      lockSelected: () => this.lockSelected(),
+      sendMessage: () => this.say(selCount || s.view ? 'Message sent to the selected students.' : 'Message sent to every logged-in student.'),
+      collectFiles: () => this.say(s.started ? 'Collecting files from student Documents folders…' : 'Press Start class first.'),
+      viewOn: !!viewStu, viewName: viewStu ? viewStu.name : '', viewSeat: s.view || '',
+      closeView: () => this.setState({ view: null }),
+      takeControl: () => this.say('You now control ' + (s.view || '') + '. Press Esc to hand it back.'),
+      showToClass: () => { const id = s.view; const sel = {}; sel[id] = true; this.setState({ view: null, sel: sel }, () => this.startMode('demo', { student: id })); },
+      sumOn: s.summary,
+      toastOn: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

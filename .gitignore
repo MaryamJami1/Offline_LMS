@@ -1,0 +1,40 @@
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Prisma
+apps/server/prisma/generated/
+
+# Docker volumes
+infra/pgdata/
+infra/livekit-data/
+
+# Electron
+apps/teacher/out/
+apps/student/out/
+
+# Vite
+apps/admin/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

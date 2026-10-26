@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LinguaLab: choose a role</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F6F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#0E1726}
+a{color:#1D4ED8}a:hover{color:#1E3A8A}
+.role{display:flex;flex-direction:column;gap:12px;padding:24px;border:1px solid #DDE3EA;border-radius:14px;background:#FFFFFF;text-decoration:none;color:#0E1726;min-height:220px;box-sizing:border-box;transition:border-color .15s, box-shadow .15s}
+.role:hover{border-color:#1D4ED8;box-shadow:0 0 0 3px #E8EEFC;color:#0E1726}
+.role:focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height:100vh; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 24px; gap:40px">
+  <div style="display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center">
+    <div style="width:56px; height:56px; border-radius:14px; background:#1D4ED8; display:flex; align-items:center; justify-content:center">
+      <svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"></path></svg>
+    </div>
+    <h1 style="margin:0; font-size:36px; font-weight:700; letter-spacing:-0.5px">LinguaLab</h1>
+    <p style="margin:0; font-size:17px; color:#5A6577; max-width:560px; line-height:1.5">Digital Language Lab for English: classroom control console and learning system, running on the institute's own server.</p>
+    <span style="font-size:12px; font-weight:600; color:#B45309; background:#FDF1E3; padding:4px 10px; border-radius:999px">Prototype · sample data</span>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:20px; width:100%; max-width:960px">
+    <a class="role" href="Teacher.dc.html">
+      <div style="width:44px; height:44px; border-radius:10px; background:#E8EEFC; display:flex; align-items:center; justify-content:center">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
+      </div>
+      <div style="font-size:20px; font-weight:600">Teacher console</div>
+      <div style="font-size:14px; color:#5A6577; line-height:1.5">Seat grid of the lab. Broadcast, white board, demo, quiz, intercom and monitor.</div>
+      <div style="margin-top:auto; font-size:14px; font-weight:600; color:#1D4ED8">Open console →</div>
+    </a>
+    <a class="role" href="Student.dc.html">
+      <div style="width:44px; height:44px; border-radius:10px; background:#E7F5EC; display:flex; align-items:center; justify-content:center">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#157F3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"></path><path d="M6 12v5c3 2 9 2 12 0v-5"></path></svg>
+      </div>
+      <div style="font-size:20px; font-weight:600">Student app</div>
+      <div style="font-size:14px; color:#5A6577; line-height:1.5">Log in at any free lab PC. Assigned lessons, the four English modules, voice recording, quizzes and marks.</div>
+      <div style="margin-top:auto; font-size:14px; font-weight:600; color:#157F3D">Open as a student →</div>
+    </a>
+    <a class="role" href="Admin.dc.html">
+      <div style="width:44px; height:44px; border-radius:10px; background:#FDF1E3; display:flex; align-items:center; justify-content:center">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+      </div>
+      <div style="font-size:20px; font-weight:600">Admin panel</div>
+      <div style="font-size:14px; color:#5A6577; line-height:1.5">Students, teachers, classes, lesson content, lab seats, reports and backups.</div>
+      <div style="margin-top:auto; font-size:14px; font-weight:600; color:#B45309">Open admin →</div>
+    </a>
+  </div>
+  <p style="margin:0; font-size:13px; color:#5A6577; display:flex; align-items:center; gap:8px">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#157F3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17l9-10"></path></svg>
+    Works offline on the lab network · 30 seats in Lab 1
+  </p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

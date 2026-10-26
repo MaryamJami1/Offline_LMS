@@ -1,0 +1,17 @@
+{
+  "name": "@lingualab/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo \"not yet\"",
+    "dev": "echo \"not yet\"",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.1"
+  }
+}

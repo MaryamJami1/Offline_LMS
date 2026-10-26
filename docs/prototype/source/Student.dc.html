@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LinguaLab student app</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Serif:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F6F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#0E1726}
+a{color:#1D4ED8}a:hover{color:#1E3A8A}
+button,textarea{font-family:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid #CBD3DD;background:#FFFFFF;color:#0E1726;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;box-sizing:border-box;white-space:nowrap}
+.btn:hover{border-color:#8D99A8;color:#0E1726}
+.btn:focus-visible,.opt:focus-visible,.tile:focus-visible,.nav:focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
+.btn-primary{background:#1D4ED8;border-color:#1D4ED8;color:#FFFFFF}
+.btn-primary:hover{background:#1E40AF;border-color:#1E40AF;color:#FFFFFF}
+.btn-warn{background:#FDF1E3;border-color:#B45309;color:#9A4508}
+.btn-sm{min-height:34px;padding:0 12px;font-size:13px}
+.nav{border:0;background:transparent;padding:10px 12px;border-radius:8px;font-size:14px;font-weight:500;color:#4A5565;cursor:pointer;min-height:44px}
+.nav.is-on{background:#E8EEFC;color:#1D4ED8;font-weight:600}
+.card{background:#FFFFFF;border:1px solid #DDE3EA;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
+.card-h{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#4A5565}
+.mute{color:#4A5565;font-size:14px;line-height:1.5;margin:0}
+.bar{height:8px;border-radius:999px;background:#EEF1F5;overflow:hidden}
+.fill{height:100%;border-radius:999px;background:#1D4ED8}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#EEF1F5;color:#4A5565;align-self:flex-start}
+.chip-new{background:#E8EEFC;color:#1D4ED8}.chip-done{background:#E7F5EC;color:#157F3D}
+.tile{display:flex;flex-direction:column;gap:10px;padding:18px;border:1px solid #DDE3EA;border-radius:14px;background:#FFFFFF;text-align:left;cursor:pointer;color:#0E1726}
+.tile:hover{border-color:#1D4ED8}
+.ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.opt{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:10px 14px;border:1px solid #CBD3DD;border-radius:10px;background:#FFFFFF;font-size:15px;text-align:left;cursor:pointer;color:#0E1726;box-sizing:border-box}
+.opt:hover{border-color:#8D99A8}
+.opt.is-sel{border-color:#1D4ED8;background:#F5F8FF;box-shadow:inset 0 0 0 1px #1D4ED8}
+.opt.is-right{border-color:#157F3D;background:#E7F5EC;box-shadow:inset 0 0 0 1px #157F3D}
+.opt.is-wrong{border-color:#B42318;background:#FDECEA;box-shadow:inset 0 0 0 1px #B42318}
+.ltr{width:26px;height:26px;border-radius:50%;background:#EEF1F5;color:#4A5565;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-size:12px;font-weight:600;color:#4A5565;padding:10px 12px;border-bottom:1px solid #DDE3EA;white-space:nowrap}
+td{padding:12px;border-bottom:1px solid #EEF1F5;vertical-align:top}
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; flex-direction:column; position:relative">
+
+  <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:8px 24px; background:#FDF1E3; border-bottom:1px solid #F3D9B8; position:relative; z-index:40">
+    <span style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#9A4508">Prototype</span>
+    <span style="font-size:13px; color:#5B3A12">See what the student sees when the teacher:</span>
+    <button class="btn btn-sm" onClick="{{simBroadcast}}">Broadcasts screen</button>
+    <button class="btn btn-sm" onClick="{{simQuiz}}">Launches a quiz</button>
+    <button class="btn btn-sm" onClick="{{simLock}}">Locks screens</button>
+    <sc-if value="{{hasTakeover}}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-sm btn-primary" onClick="{{endTakeover}}">Teacher stops</button>
+    </sc-if>
+    <a class="btn btn-sm" href="Main.dc.html" style="margin-left:auto">Switch role</a>
+  </div>
+
+  <sc-if value="{{loggedIn}}" hint-placeholder-val="{{ false }}">
+  <header style="display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; padding:12px 24px; background:#FFFFFF; border-bottom:1px solid #DDE3EA">
+    <div style="display:flex; align-items:center; gap:10px">
+      <div style="width:32px; height:32px; border-radius:8px; background:#1D4ED8; display:flex; align-items:center; justify-content:center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"></path></svg>
+      </div>
+      <span style="font-weight:700; font-size:16px">LinguaLab</span>
+    </div>
+    <nav aria-label="Main" style="display:flex; gap:4px">
+      <button class="{{navHome}}" onClick="{{goHome}}">Home</button>
+      <button class="{{navResults}}" onClick="{{goResults}}">My results</button>
+    </nav>
+    <div style="flex:1"></div>
+    <button class="{{handCls}}" onClick="{{toggleHand}}">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"></path></svg>{{handLabel}}
+    </button>
+    <div style="display:flex; align-items:center; gap:10px">
+      <span style="width:36px; height:36px; border-radius:50%; background:#E8EEFC; color:#1D4ED8; font-weight:600; font-size:13px; display:flex; align-items:center; justify-content:center">AK</span>
+      <div style="display:flex; flex-direction:column"><span style="font-size:14px; font-weight:600">Ayesha Khan</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#4A5565">S-1001 · Seat D3 today</span></div>
+    </div>
+    <button class="btn btn-sm" onClick="{{logout}}">Log out</button>
+  </header>
+
+  <main style="flex:1; width:100%; max-width:1200px; margin:0 auto; padding:28px 24px 48px; box-sizing:border-box; display:flex; flex-direction:column; gap:24px">
+
+    <sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex; flex-direction:column; gap:4px">
+        <h1 style="margin:0; font-size:28px; font-weight:700">Good morning, Ayesha</h1>
+        <p class="mute">Class B-12 · Spoken English · Teacher: Ms. Rehman · Today you are at seat D3</p>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start">
+        <div style="flex:999 1 560px; min-width:0; display:flex; flex-direction:column; gap:24px">
+          <section style="display:flex; flex-direction:column; gap:12px">
+            <h2 style="margin:0; font-size:18px; font-weight:600">Today from your teacher</h2>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px">
+              <div class="card">
+                <span class="{{todayL.chip}}">{{todayL.status}}</span>
+                <span class="card-h" style="color:#6D28D9">Listening</span>
+                <span style="font-size:17px; font-weight:600">Unit 3: At the airport</span>
+                <span class="mute">Listen twice, then answer 3 questions.</span>
+                <button class="btn btn-primary" onClick="{{goListening}}">{{todayL.cta}}</button>
+              </div>
+              <div class="card">
+                <span class="{{todayS.chip}}">{{todayS.status}}</span>
+                <span class="card-h" style="color:#1D4ED8">Speaking</span>
+                <span style="font-size:17px; font-weight:600">Introduce yourself</span>
+                <span class="mute">Record 30 to 45 seconds for your teacher.</span>
+                <button class="btn btn-primary" onClick="{{goSpeaking}}">{{todayS.cta}}</button>
+              </div>
+              <div class="card">
+                <span class="{{todayW.chip}}">{{todayW.status}}</span>
+                <span class="card-h" style="color:#9A4508">Writing</span>
+                <span style="font-size:17px; font-weight:600">Apostrophes paragraph</span>
+                <span class="mute">80 to 120 words about your best friend.</span>
+                <button class="btn btn-primary" onClick="{{goWriting}}">{{todayW.cta}}</button>
+              </div>
+            </div>
+          </section>
+          <section style="display:flex; flex-direction:column; gap:12px">
+            <h2 style="margin:0; font-size:18px; font-weight:600">Your modules</h2>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px">
+              <button class="tile" onClick="{{goSpeaking}}">
+                <span class="ic" style="background:#E8EEFC"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"></path></svg></span>
+                <span style="font-size:16px; font-weight:600">Speaking</span>
+                <span style="display:flex; justify-content:space-between; font-size:13px; color:#4A5565"><span>8 of 12 lessons</span><span style="font-weight:600; color:#0E1726">72%</span></span>
+                <span class="bar" style="display:block"><span class="fill" style="display:block; width:67%; background:#1D4ED8"></span></span>
+              </button>
+              <button class="tile" onClick="{{goReading}}">
+                <span class="ic" style="background:#E7F5EC"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157F3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"></path></svg></span>
+                <span style="font-size:16px; font-weight:600">Reading</span>
+                <span style="display:flex; justify-content:space-between; font-size:13px; color:#4A5565"><span>10 of 12 lessons</span><span style="font-weight:600; color:#0E1726">84%</span></span>
+                <span class="bar" style="display:block"><span class="fill" style="display:block; width:83%; background:#157F3D"></span></span>
+              </button>
+              <button class="tile" onClick="{{goWriting}}">
+                <span class="ic" style="background:#FDF1E3"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A4508" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></span>
+                <span style="font-size:16px; font-weight:600">Writing</span>
+                <span style="display:flex; justify-content:space-between; font-size:13px; color:#4A5565"><span>6 of 10 lessons</span><span style="font-weight:600; color:#0E1726">68%</span></span>
+                <span class="bar" style="display:block"><span class="fill" style="display:block; width:60%; background:#B45309"></span></span>
+              </button>
+              <button class="tile" onClick="{{goListening}}">
+                <span class="ic" style="background:#F1EAFD"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6D28D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"></path></svg></span>
+                <span style="font-size:16px; font-weight:600">Listening</span>
+                <span style="display:flex; justify-content:space-between; font-size:13px; color:#4A5565"><span>9 of 12 lessons</span><span style="font-weight:600; color:#0E1726">79%</span></span>
+                <span class="bar" style="display:block"><span class="fill" style="display:block; width:75%; background:#6D28D9"></span></span>
+              </button>
+            </div>
+          </section>
+        </div>
+        <aside style="flex:1 1 300px; display:flex; flex-direction:column; gap:14px">
+          <div class="card">
+            <span class="card-h">Latest feedback</span>
+            <div style="display:flex; flex-direction:column; gap:4px; padding-bottom:12px; border-bottom:1px solid #EEF1F5">
+              <div style="display:flex; justify-content:space-between"><span style="font-weight:600">Speaking · Daily routine</span><span style="font-weight:700">7/10</span></div>
+              <p class="mute">Good fluency. Practise the "th" sound in "three" and "think".</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px">
+              <div style="display:flex; justify-content:space-between"><span style="font-weight:600">Writing · My family</span><span style="font-weight:700">8/10</span></div>
+              <p class="mute">Clear paragraph. Check apostrophes: "my sisters' room".</p>
+            </div>
+          </div>
+          <div class="card">
+            <span class="card-h">Coming up</span>
+            <p class="mute"><strong style="color:#0E1726">Quiz:</strong> Past simple or present perfect · Thursday</p>
+            <p class="mute"><strong style="color:#0E1726">Speaking test:</strong> Role-play at the airport · next week</p>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isExercise}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:6px">
+        <button class="btn btn-sm" onClick="{{goHome}}" style="align-self:flex-start">← Back to home</button>
+        <span class="card-h" style="margin-top:8px">{{ex.kind}}</span>
+        <h1 style="margin:0; font-size:26px; font-weight:700">{{ex.title}}</h1>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start">
+        <div style="flex:1 1 320px; display:flex; flex-direction:column; gap:14px">
+          <sc-if value="{{ex.isListening}}" hint-placeholder-val="{{ true }}">
+            <div class="card">
+              <span class="card-h">Audio</span>
+              <div style="display:flex; align-items:center; gap:14px">
+                <button class="btn btn-primary" onClick="{{togglePlay}}" aria-label="{{playLabel}}" style="width:52px; height:52px; border-radius:50%; padding:0">
+                  <sc-if value="{{playing}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></sc-if>
+                  <sc-if value="{{paused}}" hint-placeholder-val="{{ true }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M8 5v14l11-7z"></path></svg></sc-if>
+                </button>
+                <div style="flex:1; display:flex; flex-direction:column; gap:6px">
+                  <div class="bar"><div class="fill" style="{{playBar}}"></div></div>
+                  <div style="display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#4A5565"><span>{{playTime}}</span><span>2:00</span></div>
+                </div>
+              </div>
+              <p class="mute">Use your headphones. You can play this audio 2 times. The transcript appears after you submit.</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ex.isReading}}" hint-placeholder-val="{{ false }}">
+            <div class="card">
+              <span class="card-h">Read the passage</span>
+              <p style="margin:0; font-family:'IBM Plex Serif',Georgia,serif; font-size:18px; line-height:1.75">{{ex.passage}}</p>
+              <p class="mute">Words to know: <strong style="color:#0E1726">museum</strong> (a building with old and important things), <strong style="color:#0E1726">report</strong> (a short piece of writing about something).</p>
+            </div>
+          </sc-if>
+        </div>
+        <div style="flex:1 1 420px; display:flex; flex-direction:column; gap:14px">
+          <sc-for list="{{ex.qs}}" as="q" hint-placeholder-count="3">
+            <div class="card">
+              <span style="font-size:13px; font-weight:600; color:#4A5565">Question {{q.n}}</span>
+              <span style="font-size:17px; font-weight:600">{{q.text}}</span>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <sc-for list="{{q.opts}}" as="o" hint-placeholder-count="3">
+                  <button class="{{o.cls}}" onClick="{{o.pick}}"><span class="ltr">{{o.letter}}</span>{{o.label}}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ex.notDone}}" hint-placeholder-val="{{ true }}">
+            <button class="btn btn-primary" onClick="{{submitEx}}" style="align-self:flex-start">Submit answers</button>
+          </sc-if>
+          <sc-if value="{{ex.done}}" hint-placeholder-val="{{ false }}">
+            <div class="card" style="border-color:#157F3D; background:#F3FAF6">
+              <span style="font-size:20px; font-weight:700">You scored {{ex.score}} of 3</span>
+              <p class="mute">Correct answers are marked in green. Your score is saved to your Reading and Listening progress.</p>
+              <button class="btn" onClick="{{goHome}}" style="align-self:flex-start">Back to home</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isSpeaking}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:6px">
+        <button class="btn btn-sm" onClick="{{goHome}}" style="align-self:flex-start">← Back to home</button>
+        <span class="card-h" style="margin-top:8px">Speaking</span>
+        <h1 style="margin:0; font-size:26px; font-weight:700">Introduce yourself</h1>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start">
+        <div class="card" style="flex:1 1 340px">
+          <span class="card-h">Your task</span>
+          <p style="margin:0; font-size:17px; line-height:1.6">Speak for 30 to 45 seconds. Say your name, where you live, what you study and what you like to do in your free time.</p>
+          <p class="mute">Listen to the model answer first if you like.</p>
+          <button class="btn" onClick="{{toggleModel}}" style="align-self:flex-start">{{modelLabel}}</button>
+        </div>
+        <div class="card" style="flex:1 1 400px; align-items:center; text-align:center; gap:16px; padding:32px 20px">
+          <sc-if value="{{recIdle}}" hint-placeholder-val="{{ true }}">
+            <button class="btn btn-primary" onClick="{{startRec}}" aria-label="Start recording" style="width:88px; height:88px; border-radius:50%; padding:0">
+              <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"></path></svg>
+            </button>
+            <span style="font-size:16px; font-weight:600">Press to record</span>
+            <p class="mute">Your microphone records through your headset.</p>
+          </sc-if>
+          <sc-if value="{{recOn}}" hint-placeholder-val="{{ false }}">
+            <button class="btn" onClick="{{stopRec}}" aria-label="Stop recording" style="width:88px; height:88px; border-radius:50%; padding:0; background:#B42318; border-color:#B42318">
+              <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="#FFFFFF"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+            </button>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; color:#B42318">{{recTime}}</span>
+            <div style="display:flex; align-items:flex-end; gap:3px; height:36px">
+              <sc-for list="{{levels}}" as="l" hint-placeholder-count="18"><span style="{{l.st}}"></span></sc-for>
+            </div>
+            <p class="mute">Recording… press the square to stop.</p>
+          </sc-if>
+          <sc-if value="{{recDone}}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:16px; font-weight:600">Your recording · {{recTime}}</span>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center">
+              <button class="btn" onClick="{{toggleRecPlay}}">{{recPlayLabel}}</button>
+              <button class="btn" onClick="{{resetRec}}">Record again</button>
+              <button class="btn btn-primary" onClick="{{sendRec}}">Send to teacher</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{recSent}}" hint-placeholder-val="{{ false }}">
+            <span style="width:56px; height:56px; border-radius:50%; background:#E7F5EC; display:flex; align-items:center; justify-content:center"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#157F3D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17l9-10"></path></svg></span>
+            <span style="font-size:18px; font-weight:600">Sent to Ms. Rehman</span>
+            <p class="mute">You will get a mark for pronunciation, fluency and accuracy, with voice or written feedback.</p>
+            <button class="btn" onClick="{{goHome}}">Back to home</button>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isWriting}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:6px">
+        <button class="btn btn-sm" onClick="{{goHome}}" style="align-self:flex-start">← Back to home</button>
+        <span class="card-h" style="margin-top:8px">Writing</span>
+        <h1 style="margin:0; font-size:26px; font-weight:700">Apostrophes paragraph</h1>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start">
+        <div class="card" style="flex:1 1 300px">
+          <span class="card-h">Your task</span>
+          <p style="margin:0; font-size:16px; line-height:1.6">Write 80 to 120 words about your best friend. Use at least three apostrophes, for example "my friend's house" or "it's".</p>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:14px">
+            <span style="display:flex; justify-content:space-between"><span>Words</span><strong>{{wordCount}}</strong></span>
+            <span style="display:flex; justify-content:space-between"><span>Apostrophes used</span><strong>{{aposCount}}</strong></span>
+          </div>
+        </div>
+        <div style="flex:2 1 420px; display:flex; flex-direction:column; gap:12px">
+          <label for="essay" style="font-size:14px; font-weight:600">Your paragraph</label>
+          <textarea id="essay" value="{{essay}}" onChange="{{setEssay}}" disabled="{{essayLocked}}" placeholder="My best friend's name is…" style="width:100%; min-height:260px; box-sizing:border-box; padding:16px; border:1px solid #CBD3DD; border-radius:12px; font-size:17px; line-height:1.7; resize:vertical; font-family:'IBM Plex Serif',Georgia,serif; color:#0E1726"></textarea>
+          <sc-if value="{{essayOpen}}" hint-placeholder-val="{{ true }}">
+            <button class="btn btn-primary" onClick="{{submitEssay}}" style="align-self:flex-start">Submit to teacher</button>
+          </sc-if>
+          <sc-if value="{{essayLocked}}" hint-placeholder-val="{{ false }}">
+            <div class="card" style="border-color:#157F3D; background:#F3FAF6">
+              <span style="font-size:18px; font-weight:600">Submitted</span>
+              <p class="mute">Ms. Rehman will mark it with comments and a score. You will see it under My results.</p>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isResults}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:4px">
+        <h1 style="margin:0; font-size:26px; font-weight:700">My results</h1>
+        <p class="mute">Only you and your teachers can see this page.</p>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px">
+        <div class="card"><span class="card-h">Speaking</span><span style="font-size:30px; font-weight:700">72%</span><div class="bar"><div class="fill" style="width:72%; background:#1D4ED8"></div></div></div>
+        <div class="card"><span class="card-h">Reading</span><span style="font-size:30px; font-weight:700">84%</span><div class="bar"><div class="fill" style="width:84%; background:#157F3D"></div></div></div>
+        <div class="card"><span class="card-h">Writing</span><span style="font-size:30px; font-weight:700">68%</span><div class="bar"><div class="fill" style="width:68%; background:#B45309"></div></div></div>
+        <div class="card"><span class="card-h">Listening</span><span style="font-size:30px; font-weight:700">79%</span><div class="bar"><div class="fill" style="width:79%; background:#6D28D9"></div></div></div>
+      </div>
+      <div class="card" style="padding:8px 8px 4px">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Date</th><th>Module</th><th>Activity</th><th>Mark</th><th>Teacher feedback</th></tr></thead>
+            <tbody>
+              <tr><td>21 Oct</td><td>Speaking</td><td>Daily routine</td><td><strong>7/10</strong></td><td>Good fluency. Practise the "th" sound.</td></tr>
+              <tr><td>20 Oct</td><td>Writing</td><td>My family</td><td><strong>8/10</strong></td><td>Clear paragraph. Check plural apostrophes.</td></tr>
+              <tr><td>19 Oct</td><td>Listening</td><td>Unit 2: At the bank</td><td><strong>4/5</strong></td><td>Auto-marked</td></tr>
+              <tr><td>16 Oct</td><td>Reading</td><td>A letter from a friend</td><td><strong>5/5</strong></td><td>Auto-marked</td></tr>
+              <tr><td>15 Oct</td><td>Quiz</td><td>Present simple</td><td><strong>9/10</strong></td><td>Well done.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{loggedOut}}" hint-placeholder-val="{{ true }}">
+    <main style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px; box-sizing:border-box">
+      <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:20px">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center">
+          <div style="width:52px; height:52px; border-radius:14px; background:#1D4ED8; display:flex; align-items:center; justify-content:center"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"></path></svg></div>
+          <h1 style="margin:0; font-size:26px; font-weight:700">Log in to LinguaLab</h1>
+          <span class="chip" style="align-self:center; font-family:'IBM Plex Mono',monospace">This PC: LAB1-D3 · Seat D3</span>
+        </div>
+        <div class="card" style="gap:16px">
+          <label for="sid" style="display:flex; flex-direction:column; gap:6px; font-size:14px; font-weight:600">Student ID
+            <input id="sid" value="{{sidVal}}" onChange="{{setSid}}" onKeyDown="{{loginKey}}" placeholder="e.g. S-1001" autocomplete="username" style="min-height:48px; padding:0 14px; border:1px solid #CBD3DD; border-radius:8px; font-size:16px; color:#0E1726; box-sizing:border-box; width:100%; font-family:'IBM Plex Mono',monospace">
+          </label>
+          <label for="pw" style="display:flex; flex-direction:column; gap:6px; font-size:14px; font-weight:600">Password
+            <input id="pw" type="password" value="{{pwVal}}" onChange="{{setPw}}" onKeyDown="{{loginKey}}" autocomplete="current-password" style="min-height:48px; padding:0 14px; border:1px solid #CBD3DD; border-radius:8px; font-size:16px; color:#0E1726; box-sizing:border-box; width:100%">
+          </label>
+          <sc-if value="{{hasLoginErr}}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin:0; color:#B42318; font-size:14px">{{loginErr}}</p>
+          </sc-if>
+          <button class="btn btn-primary" onClick="{{login}}" style="width:100%; min-height:48px; font-size:15px">Log in</button>
+        </div>
+        <p class="mute" style="text-align:center; font-size:14px">Sit at any free PC. Your lessons, recordings and marks follow your account, not the computer.</p>
+        <p class="mute" style="text-align:center; font-size:12px">Prototype: log in with S-1001 and any password.</p>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{isBroadcast}}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:30; background:#0B1220; display:flex; flex-direction:column; padding-top:52px; box-sizing:border-box">
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 20px; color:#FFFFFF; font-size:14px">
+        <span style="width:8px; height:8px; border-radius:50%; background:#F97066"></span>
+        Your teacher is sharing their screen · keyboard and mouse are locked
+      </div>
+      <div style="flex:1; padding:0 20px 20px; display:flex">
+        <div style="flex:1; background:#FFFFFF; border-radius:6px; overflow:hidden; display:flex; flex-direction:column">
+          <div style="height:36px; background:#2B579A; display:flex; align-items:center; padding:0 14px; color:#FFFFFF; font-size:12px">Document1 · Word</div>
+          <div style="height:30px; background:#F3F3F3; border-bottom:1px solid #DDDDDD"></div>
+          <div style="padding:40px 10%; font-family:Georgia, serif; font-size:30px; line-height:1.7; color:#111111">
+            <div style="font-weight:700">Apostrophe</div>
+            <div>Ali's car.</div>
+            <div>Yours book.</div>
+            <div>Saleem's friend.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isLocked}}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:30; background:#1D4ED8; color:#FFFFFF; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; padding:24px">
+      <svg aria-hidden="true" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+      <span style="font-size:34px; font-weight:700">Eyes on your teacher</span>
+      <span style="font-size:16px; color:#DCE6FF">Your screen is locked for a moment.</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isQuizTake}}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:30; background:rgba(14,23,38,0.6); display:flex; align-items:center; justify-content:center; padding:72px 24px 24px; box-sizing:border-box">
+      <div role="dialog" aria-label="Quiz from your teacher" style="width:100%; max-width:620px; background:#FFFFFF; border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+          <span class="card-h">Quiz from your teacher</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:#B42318">{{quizTime}}</span>
+        </div>
+        <span style="font-size:20px; font-weight:700">Apostrophes: quick check</span>
+        <sc-if value="{{quizOpen}}" hint-placeholder-val="{{ true }}">
+          <div class="bar"><div class="fill" style="{{quizBar}}"></div></div>
+          <span style="font-size:13px; font-weight:600; color:#4A5565">Question {{quizN}} of 5</span>
+          <span style="font-size:18px; font-weight:600">{{quizQ}}</span>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <sc-for list="{{quizOpts}}" as="o" hint-placeholder-count="3">
+              <button class="{{o.cls}}" onClick="{{o.pick}}"><span class="ltr">{{o.letter}}</span>{{o.label}}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex; justify-content:space-between; gap:8px">
+            <button class="btn" onClick="{{quizPrev}}" disabled="{{quizFirst}}">Back</button>
+            <button class="btn btn-primary" onClick="{{quizNext}}">{{quizNextLabel}}</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{quizSent}}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:17px; font-weight:600">Answers sent</span>
+          <p class="mute">You answered {{quizAnswered}} of 5. Your teacher will show the results on your screen.</p>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{toastOn}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#0E1726; color:#FFFFFF; padding:12px 18px; border-radius:10px; font-size:14px; z-index:50; max-width:90%">{{toast}}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const EXERCISES = {
+  listening: {
+    kind: 'Listening', title: 'Unit 3: At the airport',
+    qs: [
+      { t: 'What time does the flight leave?', o: ['9:15', '9:50', '10:15'], a: 1 },
+      { t: 'Which gate should passengers go to?', o: ['Gate 14', 'Gate 4', 'Gate 40'], a: 0 },
+      { t: 'What must passengers show at the desk?', o: ['A student card', 'Only their ticket', 'Passport and boarding pass'], a: 2 }
+    ]
+  },
+  reading: {
+    kind: 'Reading', title: 'The school trip',
+    passage: "Last Friday, Class B-12 went on a trip to the city museum. The bus left the institute at eight o'clock. Sana's favourite room was the one with old coins, but Ali liked the model boats best. After lunch, the students wrote a short report about what they had learned.",
+    qs: [
+      { t: 'When did the bus leave?', o: ["At seven o'clock", "At eight o'clock", 'After lunch'], a: 1 },
+      { t: 'What did Ali like best?', o: ['The model boats', 'The old coins', 'The lunch'], a: 0 },
+      { t: 'What did the students do after lunch?', o: ['They went home', 'They wrote a report', 'They visited a park'], a: 1 }
+    ]
+  }
+};
+const QUIZ = [
+  { t: 'Choose the correct sentence.', o: ['This is Alis car.', "This is Ali's car.", "This is Alis' car."] },
+  { t: "The ___ bags are in the hall. (more than one boy)", o: ["boy's", "boys'", 'boys'] },
+  { t: '___ raining outside.', o: ['Its', "It's", "Its'"] },
+  { t: 'This book is ___.', o: ["your's", 'yours', "yours'"] },
+  { t: 'The ___ toys are new.', o: ["childrens'", "children's", 'childrens'] }
+];
+const LETTERS = ['A', 'B', 'C', 'D'];
+function fmt(t) { const m = Math.floor(t / 60); const s = t % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { loggedIn: false, sidVal: '', pwVal: '', loginErr: '', screen: 'home', ex: 'listening', ans: { listening: {}, reading: {} }, done: { listening: false, reading: false }, playing: false, pos: 0, takeover: null, hand: false, rec: 'idle', recSecs: 0, recPlay: false, model: false, essay: '', essaySent: false, qi: 0, qAns: {}, qSent: false, qSecs: 180, tick: 0, toast: '', toastAt: 0 };
+  }
+  componentDidMount() { this.timer = setInterval(() => this.tick(), 1000); }
+  componentWillUnmount() { clearInterval(this.timer); }
+  tick() {
+    const s = this.state; const next = { tick: s.tick + 1 };
+    if (s.toast && s.tick - s.toastAt >= 3) next.toast = '';
+    if (s.playing) { next.pos = Math.min(120, s.pos + 3); if (next.pos >= 120) next.playing = false; }
+    if (s.rec === 'recording') next.recSecs = s.recSecs + 1;
+    if (s.takeover === 'quiz' && !s.qSent && s.qSecs > 0) next.qSecs = s.qSecs - 1;
+    this.setState(next);
+  }
+  say(msg) { this.setState({ toast: msg, toastAt: this.state.tick }); }
+  go(screen, ex) { const p = { screen: screen, playing: false }; if (ex) { p.ex = ex; p.pos = 0; } this.setState(p); }
+  pick(ex, qi, oi) {
+    const s = this.state; if (s.done[ex]) return;
+    const ans = Object.assign({}, s.ans); ans[ex] = Object.assign({}, ans[ex]); ans[ex][qi] = oi;
+    this.setState({ ans: ans });
+  }
+  submitEx() {
+    const s = this.state; const ex = s.ex;
+    if (Object.keys(s.ans[ex]).length < 3) { this.say('Answer all 3 questions first.'); return; }
+    const done = Object.assign({}, s.done); done[ex] = true;
+    this.setState({ done: done, playing: false });
+  }
+  login() {
+    const id = this.state.sidVal.trim().toUpperCase();
+    if (!id || !this.state.pwVal) { this.setState({ loginErr: 'Enter your student ID and password.' }); return; }
+    if (id !== 'S-1001') { this.setState({ loginErr: 'Student ID not found. In this prototype, use S-1001.' }); return; }
+    this.setState({ loggedIn: true, loginErr: '', pwVal: '', screen: 'home', toast: 'Logged in at seat D3. Your teacher can see you now.', toastAt: this.state.tick });
+  }
+  logout() {
+    this.setState({ loggedIn: false, sidVal: '', pwVal: '', loginErr: '', screen: 'home', playing: false, hand: false, rec: this.state.rec === 'recording' ? 'idle' : this.state.rec });
+  }
+  renderVals() {
+    const s = this.state;
+    const exd = EXERCISES[s.ex]; const exAns = s.ans[s.ex]; const exDone = s.done[s.ex];
+    let score = 0;
+    const qs = exd.qs.map((q, qi) => {
+      if (exAns[qi] === q.a) score++;
+      return {
+        n: qi + 1, text: q.t,
+        opts: q.o.map((label, oi) => {
+          let cls = 'opt';
+          if (exDone) { if (oi === q.a) cls = 'opt is-right'; else if (exAns[qi] === oi) cls = 'opt is-wrong'; }
+          else if (exAns[qi] === oi) cls = 'opt is-sel';
+          return { label: label, letter: LETTERS[oi], cls: cls, pick: () => this.pick(s.ex, qi, oi) };
+        })
+      };
+    });
+    const status = (done, inProgress) => done ? { chip: 'chip chip-done', status: 'Done', cta: 'Review' } : { chip: 'chip chip-new', status: inProgress ? 'In progress' : 'New', cta: inProgress ? 'Continue' : 'Start' };
+    const levels = [];
+    for (let i = 0; i < 18; i++) levels.push({ st: 'display:block; width:5px; border-radius:2px; background:#B42318; height:' + (4 + Math.round(Math.abs(Math.sin((s.tick + 1) * (i + 1) * 0.7)) * 28)) + 'px' });
+    const words = s.essay.trim() ? s.essay.trim().split(/\s+/).length : 0;
+    const apos = (s.essay.match(/['’]/g) || []).length;
+    const qq = QUIZ[s.qi];
+    const quizOpts = qq.o.map((label, oi) => ({ label: label, letter: LETTERS[oi], cls: s.qAns[s.qi] === oi ? 'opt is-sel' : 'opt', pick: () => { const a = Object.assign({}, this.state.qAns); a[this.state.qi] = oi; this.setState({ qAns: a }); } }));
+    const take = s.takeover;
+    return {
+      simBroadcast: () => this.setState({ takeover: 'broadcast' }),
+      simQuiz: () => this.setState({ takeover: 'quiz', qi: 0, qAns: {}, qSent: false, qSecs: 180 }),
+      simLock: () => this.setState({ takeover: 'locked' }),
+      endTakeover: () => this.setState({ takeover: null }),
+      hasTakeover: !!take, isBroadcast: take === 'broadcast', isLocked: take === 'locked', isQuizTake: take === 'quiz',
+      navHome: 'nav' + (s.screen !== 'results' ? ' is-on' : ''), navResults: 'nav' + (s.screen === 'results' ? ' is-on' : ''),
+      goHome: () => this.go('home'), goResults: () => this.go('results'),
+      goListening: () => this.go('exercise', 'listening'), goReading: () => this.go('exercise', 'reading'),
+      goSpeaking: () => this.go('speaking'), goWriting: () => this.go('writing'),
+      handCls: s.hand ? 'btn btn-warn' : 'btn', handLabel: s.hand ? 'Hand raised' : 'Raise hand',
+      toggleHand: () => { const h = !s.hand; this.setState({ hand: h }); this.say(h ? 'Your teacher can see your raised hand.' : 'Hand lowered.'); },
+      isHome: s.screen === 'home', isExercise: s.screen === 'exercise', isSpeaking: s.screen === 'speaking', isWriting: s.screen === 'writing', isResults: s.screen === 'results',
+      todayL: status(s.done.listening, Object.keys(s.ans.listening).length > 0),
+      todayS: status(s.rec === 'sent', s.rec === 'done'),
+      todayW: status(s.essaySent, s.essay.length > 0),
+      ex: { kind: exd.kind, title: exd.title, passage: exd.passage || '', isListening: s.ex === 'listening', isReading: s.ex === 'reading', qs: qs, done: exDone, notDone: !exDone, score: score },
+      submitEx: () => this.submitEx(),
+      playing: s.playing, paused: !s.playing, playLabel: s.playing ? 'Pause audio' : 'Play audio',
+      togglePlay: () => this.setState({ playing: !s.playing, pos: s.pos >= 120 ? 0 : s.pos }),
+      playBar: 'width: ' + Math.round(s.pos / 120 * 100) + '%', playTime: fmt(s.pos),
+      modelLabel: s.model ? 'Pause model answer' : 'Play model answer', toggleModel: () => this.setState({ model: !s.model }),
+      recIdle: s.rec === 'idle', recOn: s.rec === 'recording', recDone: s.rec === 'done', recSent: s.rec === 'sent',
+      recTime: fmt(s.recSecs), levels: levels,
+      startRec: () => this.setState({ rec: 'recording', recSecs: 0 }),
+      stopRec: () => this.setState({ rec: 'done', recPlay: false }),
+      resetRec: () => this.setState({ rec: 'idle', recSecs: 0 }),
+      sendRec: () => this.setState({ rec: 'sent' }),
+      recPlayLabel: s.recPlay ? 'Pause' : 'Play back', toggleRecPlay: () => this.setState({ recPlay: !s.recPlay }),
+      essay: s.essay, setEssay: (e) => this.setState({ essay: e.target.value }),
+      wordCount: words + ' / 80–120', aposCount: apos + ' / 3',
+      essayLocked: s.essaySent, essayOpen: !s.essaySent,
+      submitEssay: () => { if (words < 1) { this.say('Write your paragraph first.'); return; } this.setState({ essaySent: true }); },
+      quizTime: fmt(s.qSecs), quizOpen: !s.qSent, quizSent: s.qSent,
+      quizN: s.qi + 1, quizQ: qq.t, quizOpts: quizOpts, quizFirst: s.qi === 0,
+      quizBar: 'width: ' + Math.round((s.qi + 1) / 5 * 100) + '%',
+      quizNextLabel: s.qi === 4 ? 'Submit answers' : 'Next',
+      quizPrev: () => { if (s.qi > 0) this.setState({ qi: s.qi - 1 }); },
+      quizNext: () => { if (s.qi < 4) this.setState({ qi: s.qi + 1 }); else this.setState({ qSent: true }); },
+      quizAnswered: Object.keys(s.qAns).length,
+      loggedIn: s.loggedIn, loggedOut: !s.loggedIn, sidVal: s.sidVal, pwVal: s.pwVal,
+      setSid: (e) => this.setState({ sidVal: e.target.value, loginErr: '' }),
+      setPw: (e) => this.setState({ pwVal: e.target.value, loginErr: '' }),
+      loginKey: (e) => { if (e.key === 'Enter') this.login(); },
+      login: () => this.login(), logout: () => this.logout(),
+      hasLoginErr: !!s.loginErr, loginErr: s.loginErr,
+      toastOn: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

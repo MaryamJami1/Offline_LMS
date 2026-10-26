@@ -1,0 +1,76 @@
+# 6. Security and data
+
+Three roles, a server-side check on every request, and nightly backups keep student data safe on the institute's own server.
+
+## Roles and permissions
+
+Yes = allowed; Own = only their own classes (teacher) or own data (student); No = refused by the server with 403.
+
+| Action | Admin | Teacher | Student |
+| --- | --- | --- | --- |
+| Create, edit, deactivate users; set first passwords | Yes | No | No |
+| Reset a student's password | Yes | Own classes | No |
+| Import students | Yes | No | No |
+| Manage courses, batches, classes, enrolments | Yes | No | No |
+| Make groups | Yes | Own | No |
+| Manage labs, seats, approve PCs | Yes | No | No |
+| Start and end a class; use lab controls | No | Own | No |
+| Create and edit lessons | Yes | Yes (own drafts; shared once published) | No |
+| Publish lessons; assign work | Yes | Own classes | No |
+| See lessons | Yes | Yes | Assigned only |
+| Submit answers and recordings | No | No | Own |
+| Mark work, give feedback | No | Own classes | No |
+| See marks and progress | All | Own classes | Own |
+| Reports and exports | All | Own classes | No |
+| Settings (including branding), backups, restore, audit log | Yes | No | No |
+
+Each row is enforced by a NestJS guard and covered by an access test that tries the action as every role (test-driven: the refusal tests are written first).
+
+## Authentication, sessions and device trust
+
+**Passwords**
+
+- Hashed with Argon2id; never stored or logged in plain text.
+- The admin sets each new account's first-login password and prints a slip; the user must change it at first login (at least 8 characters). Teachers can reset passwords only for students in their own classes, and every reset goes in the audit log.
+- Five wrong attempts lock the account for 10 minutes; the admin can unlock it.
+
+**Tokens**
+
+- Access token: JWT, 15 minutes. Refresh token: random, stored hashed in `refresh_tokens`.
+- Staff refresh tokens last 7 days. Student refresh tokens end at logout, at End class, or after 30 minutes idle.
+- Logging in elsewhere ends a student's older login, so one student cannot be logged in on two PCs.
+
+**Device trust (lab PCs)**
+
+1. On first start, the student app sends `POST /devices/register` with its hostname and MAC address.
+2. The PC appears as "waiting" in Lab and seats; the admin approves it and binds it to a seat.
+3. The server issues a device key; the app stores it in the Windows Credential Manager.
+4. Student logins and lab events are accepted only with a valid device key, so an unknown laptop on the network cannot join the lab.
+
+**Transport:** everything runs over HTTPS and WSS through Caddy with a local certificate authority. The installer adds the root certificate to each lab PC, which is also what lets the apps use the microphone and screen capture.
+
+**Student app lock-down:** starts with Windows, runs in kiosk mode, blocks Alt+F4 and Task Manager while a teacher control is running, and needs the admin PIN to exit. Students use standard (non-admin) Windows accounts.
+
+## Data protection, privacy and audit
+
+- **All data stays in the institute.** Nothing is sent to the internet; there is no telemetry.
+- **Least data:** LinguaLab stores name, student ID, phone, guardian contact, class records, answers, recordings and marks, and nothing more.
+- **Students see only their own data.** Every student query is filtered by the logged-in student's ID on the server, and access tests prove another student's ID is refused.
+- **Monitoring:** screen thumbnails are shown live and never saved. Students see no "monitored" icon; this is the institute's decision.
+- **Lesson files:** videos and PDFs are shown inside the app only; the student app offers no download or print.
+- **Leaving students** are deactivated, not deleted, so reports stay correct. Full deletion on request is an admin action that is logged.
+- **Audit log** records logins (success and failure), password resets (by admin or teacher), grade changes, deletions, restores, settings changes and every lab command, with who, when and from which PC. The app has no way to edit or delete audit entries.
+- **Error logs** on the server never include passwords, tokens or recordings, and are rotated after 30 days.
+
+## Backup and restore policy
+
+| What | When | Where | Kept |
+| --- | --- | --- | --- |
+| Automatic backup: database dump (`pg_dump`) + changed files in `/data` | Every night at 23:00 (changeable in Settings) | Second disk in the server | 14 days |
+| Manual backup | Any time from the admin panel ("Back up now") | Second disk | Until deleted |
+| USB copy of the latest backup | Weekly, by the admin ("Copy latest to USB") | External USB drive kept away from the lab | 8 weeks (admin rotates drives) |
+
+- Each backup is checked after it is written (file size and a test read of the dump). A failed backup shows on the admin dashboard.
+- **Restore** is done from the admin panel: choose a backup, type the admin password again, and the server restores the database and files, then restarts. It takes under 1 hour for a typical year of data.
+- **Restore drill:** once per term, the admin restores the latest backup onto a spare PC and checks that the lab runs from it (this is also an acceptance criterion).
+- A UPS keeps the server running through short power cuts, so the database is never cut off mid-write.

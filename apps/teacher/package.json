@@ -1,0 +1,13 @@
+{
+  "name": "@lingualab/teacher",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo \"not yet\"",
+    "dev": "echo \"not yet\"",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  }
+}
