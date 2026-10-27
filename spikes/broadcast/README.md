@@ -71,16 +71,19 @@ voice and 1080p video shared one WiFi link:
 | Concealed samples       | none audible     | 0.0%                                    |
 | Codec and bitrate       | Opus             | Opus, 48 kHz, about 48 kbit/s           |
 | Voice quality           | every word clear | clear                                   |
-| Echo                    | cancelled        | none heard                              |
+| Echo                    | cancelled        | none heard — but nothing could echo     |
 | Broadcast alongside it  | 1080p, 15 fps    | 1920x1080 at 14 fps                     |
 
 **NFR-04 passes on the numbers.** 126 ms is the receiver's estimate; capture and Opus encode on the
 teacher PC are in none of those statistics, so true mouth-to-ear is roughly 150-170 ms. Still
 inside the budget, with about a quarter of it to spare.
 
-Two things are still owed, and both belong to Gate 1: real **headsets** (this ran on the laptop's
-own microphone, and NFR-04 says "in headsets"), and the **wired lab network**. One listener is also
-not 30 subscribers on one uplink. Full write-up in `docs/docs/spike-results.md`.
+Three things are still owed. **Echo was not actually tested**: the spike is one-way, so the
+teacher app plays nothing for the echo canceller to cancel and the student publishes no
+microphone — "none heard" was the only possible outcome. Echo needs two-way audio, which arrives
+with LAB-09 in Phase 2. Then Gate 1 owes real **headsets** (this ran on the laptop's own
+microphone, and NFR-04 says "in headsets") and the **wired lab network**. One listener is also not
+30 subscribers on one uplink. Full write-up in `docs/docs/spike-results.md`.
 
 Earlier, on one laptop with Chromium's synthetic microphone (`SPIKE_FAKE_MIC=1`, below), the same
 path measured 138 ms at best and settled at 250-310 ms — worse than the real pair, because that

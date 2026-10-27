@@ -106,7 +106,7 @@ link, which is how a real class works.
 | Concealed samples       | none audible     | 0.0%                                    |
 | Codec and bitrate       | Opus             | Opus, 48 kHz, about 48 kbit/s           |
 | Voice quality           | every word clear | clear                                   |
-| Echo                    | cancelled        | none heard                              |
+| Echo                    | cancelled        | none heard — but nothing could echo     |
 | Broadcast alongside it  | 1080p, 15 fps    | 1920x1080 at 14 fps                     |
 
 126 ms is the receiver's estimate. Capture and Opus encode on the teacher PC appear in none of
@@ -119,9 +119,15 @@ of a single run, but it is worth watching when 10 PCs are subscribed.
 
 ### What is still owed
 
-- **Headsets.** NFR-04 says "in headsets", and this ran on the laptop's own microphone. Echo
-  cancellation had something real to work on and no echo was heard, which is the result that
-  matters — but a headset microphone sits closer to the mouth and behaves differently.
+- **A real echo test. This run could not provide one.** The spike is one-way: the teacher app
+  plays no audio at all, so the echo canceller had nothing to cancel, and the student app
+  publishes no microphone. "No echo heard" was the only possible outcome and says nothing about
+  whether echo cancellation works. Echo appears when audio goes both ways and a microphone hears
+  its own loudspeaker — LAB-09 Intercom and Group Talk. That test cannot happen before Phase 2,
+  and NFR-04's "echo cancelled" stays unproven until it does.
+- **Headsets.** NFR-04 says "in headsets", and this ran on the laptop's own microphone. A headset
+  microphone sits closer to the mouth and behaves differently — and headsets are also the main
+  defence against echo, which is why the hardware list has one on every seat.
 - **The wired lab network**, as with the broadcast half.
 - **More than one listener.** One student is not 30 subscribers on one uplink.
 
@@ -151,7 +157,7 @@ to about 48 kbit/s because real speech is harder to code than a 440 Hz tone.
   back from `getSettings()` afterwards rather than assumed. Windows or a driver can refuse any of
   them, and NFR-04 fails quietly if it does.
 - **`red: true`** (redundant audio) and **`dtx: true`** (silence costs no bitrate), both LiveKit
-  defaults for a mono track. RED is most of the gap between the 24 kbit/s preset and the 37-41
+  defaults for a mono track. RED is most of the gap between the 24 kbit/s preset and the 48
   kbit/s measured on the wire, and it is worth it: one lost packet stops being a gap in a word.
 - **Publish once, then mute and unmute.** Re-publishing renegotiates the connection every time the
   teacher stops talking.

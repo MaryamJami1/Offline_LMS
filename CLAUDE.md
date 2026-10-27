@@ -78,7 +78,7 @@ pnpm dev             # server + admin + apps in dev mode
 - [ ] GitHub repository, milestones per phase, one issue per requirement ID, pull request template — repository and `.github/pull_request_template.md` exist; milestones and issues still to create (needs `gh auth login`)
 - [x] `infra/docker-compose.yml` with PostgreSQL 16, LiveKit, Caddy; `/api/health` endpoint, test first — `apps/server/test/health.spec.ts`, 4 Supertest tests (server, database, LiveKit, disk)
 - [x] Spike (in `spikes/`): teacher Electron app captures the screen (desktopCapturer) and publishes to LiveKit; student Electron app shows it full-screen — `spikes/broadcast`, published and received at 1920x1080 @ 15 fps
-- [x] Spike (in `spikes/`): teacher microphone heard clearly in a student headset — 2 PCs over WiFi: voice clear, no echo, 126 ms against the 200 ms budget (net 5 + buffer 80 + playout 42), 0.0% loss, Opus 48 kHz at about 48 kbit/s, with the broadcast running alongside. Laptop microphone, not a headset
+- [x] Spike (in `spikes/`): teacher microphone heard clearly in a student headset — 2 PCs over WiFi: voice clear, 126 ms against the 200 ms budget (net 5 + buffer 80 + playout 42), 0.0% loss, Opus 48 kHz at about 48 kbit/s, with the broadcast running alongside. Laptop microphone, not a headset; echo stays unproven because the spike is one-way and nothing could echo
 - [ ] Spike run on 2 PCs; results written to `docs/docs/spike-results.md` — both halves run on 2 PCs over WiFi and written up (NFR-03 at 204 ms, NFR-04 at 126 ms); left open until real headsets on the wired lab confirm both at Gate 1
 
 Exit criteria: broadcast text readable and voice clear on 2 PCs; CI blocks a pull request with a failing test. Then move to Phase 1 in `docs/09-project-plan.md`.
