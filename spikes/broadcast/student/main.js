@@ -3,6 +3,11 @@ const path = require('node:path');
 const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const { loadConfig, mintToken } = require('../token');
 
+// A kiosk window is never clicked, so Chromium's autoplay rule would silently
+// refuse to play the teacher's voice. The renderer still handles a refusal, but
+// this is what stops it happening.
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 let config;
 
 // Where config.json might live, best guess first. The portable build unpacks
@@ -53,6 +58,10 @@ app.whenReady().then(() => {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // Chromium stops animation frames in a window it thinks nobody can see,
+      // which freezes the level meter. Both windows are on top on their own PC
+      // in the real run, but not when both are tested on one machine.
+      backgroundThrottling: false,
     },
   });
 

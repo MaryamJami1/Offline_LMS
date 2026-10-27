@@ -1,14 +1,23 @@
-# Broadcast spike (Phase 0, task 5)
+# Broadcast and voice spike (Phase 0, tasks 5 and 6)
 
-Throwaway proof of concept: a teacher Electron app captures the whole screen with
-`desktopCapturer`, publishes it to LiveKit, and a student Electron app shows it full-screen on a
-second PC. **This code is not test-first and is never shipped.** It exists only to prove NFR-03
-(1080p, 15 fps, under 500 ms delay) before Phase 1 builds anything on top of LiveKit.
+Throwaway proof of concept for the two things the whole lab rests on:
+
+- **Broadcast (NFR-03)** — a teacher Electron app captures the whole screen with
+  `desktopCapturer`, publishes it to LiveKit, and a student Electron app shows it full-screen on a
+  second PC. 1080p, 15 fps, under 500 ms delay.
+- **Voice (NFR-04)** — a **Talk** button on the teacher app publishes the microphone as Opus with
+  echo cancellation, noise suppression and automatic gain control, and the student app plays it
+  into a headset. Under 200 ms delay, echo cancelled.
+
+**This code is not test-first and is never shipped.** It exists only to retire those two risks
+before Phase 1 builds anything on top of LiveKit.
 
 Deliberately outside the pnpm workspace, so `pnpm test`, `pnpm lint` and `pnpm typecheck` never
 see it. It installs with plain `npm` so the student PC needs nothing but Node.js.
 
-## Status: passed on two PCs
+## Status
+
+### Broadcast (NFR-03) — passed on two PCs
 
 Run on 2026-10-27 with the teacher app and LiveKit 1.13.11 on the laptop and
 `student-spike.exe` on a second PC from a USB drive, both on the same WiFi:
@@ -48,6 +57,35 @@ Two Electron API notes for Phase 1, found by moving the spike from Electron 33 t
 - The legacy `getUserMedia` constraints (`chromeMediaSource: 'desktop'` with a source id from
   `desktopCapturer`) still work in 44, so the apps do not need
   `session.setDisplayMediaRequestHandler` yet.
+
+### Voice (NFR-04) — passed on two PCs
+
+Run on 2026-10-27 with the teacher app and LiveKit on the laptop, talking into its built-in
+microphone, and `student-spike.exe` on the second PC. The screen broadcast ran at the same time, so
+voice and 1080p video shared one WiFi link:
+
+| Check                   | Target           | Measured                                |
+| ----------------------- | ---------------- | --------------------------------------- |
+| Delay, student estimate | under 200 ms     | 126 ms — net 5 + buffer 80 + playout 42 |
+| Packet loss             | none audible     | 0.0%                                    |
+| Concealed samples       | none audible     | 0.0%                                    |
+| Codec and bitrate       | Opus             | Opus, 48 kHz, about 48 kbit/s           |
+| Voice quality           | every word clear | clear                                   |
+| Echo                    | cancelled        | none heard                              |
+| Broadcast alongside it  | 1080p, 15 fps    | 1920x1080 at 14 fps                     |
+
+**NFR-04 passes on the numbers.** 126 ms is the receiver's estimate; capture and Opus encode on the
+teacher PC are in none of those statistics, so true mouth-to-ear is roughly 150-170 ms. Still
+inside the budget, with about a quarter of it to spare.
+
+Two things are still owed, and both belong to Gate 1: real **headsets** (this ran on the laptop's
+own microphone, and NFR-04 says "in headsets"), and the **wired lab network**. One listener is also
+not 30 subscribers on one uplink. Full write-up in `docs/docs/spike-results.md`.
+
+Earlier, on one laptop with Chromium's synthetic microphone (`SPIKE_FAKE_MIC=1`, below), the same
+path measured 138 ms at best and settled at 250-310 ms — worse than the real pair, because that
+machine was encoding 1080p, decoding it again, running the server and generating the audio all at
+once. Its jitter buffer sat at 249 ms against the 80 ms measured across two PCs.
 
 ### Pinned versions
 
@@ -144,15 +182,53 @@ npm install
 npm run teacher
 ```
 
-It starts publishing immediately. The window shows a millisecond clock and a readability ruler
-(20px down to 9px text) — both are what you check on the student screen.
+It starts publishing the screen immediately. The window shows a millisecond clock and a
+readability ruler (20px down to 9px text) — both are what you check on the student screen.
+
+**Press Talk to add your voice.** The first press opens the microphone and publishes it; after that
+the button mutes and unmutes, which is instant because the track stays published. While it is live
+the panel shows:
+
+- the device Windows actually gave you, so you can tell the headset from the laptop's own
+  microphone;
+- `AEC on · NS on · AGC on` — echo cancellation, noise suppression and automatic gain, read back
+  from the track rather than merely asked for. If any of these says `OFF`, NFR-04 is not met and
+  the reason is Windows or the driver, not this code;
+- a level bar: speak and it must move. A flat bar means nothing is reaching LiveKit;
+- the codec, bitrate and uplink half-RTT, once a second.
+
+Windows asks for microphone permission the first time. If it was refused, the panel says so and
+points at Settings → Privacy & security → Microphone.
+
+#### Testing voice on one PC
+
+Two apps sharing one PC means the student's speakers feed straight back into the teacher's
+microphone. Set `SPIKE_FAKE_MIC=1` and Chromium substitutes a synthetic microphone, so the path can
+be exercised without a headset and without howling:
+
+```powershell
+$env:SPIKE_FAKE_MIC = '1'; npm run teacher
+```
+
+`SPIKE_FAKE_MIC` sticks to the PowerShell window it was set in, so the next `npm run teacher` in
+that same window is still on the fake microphone — and the teacher panel will say
+`device: Fake Default Audio Input` while the student hears a test tone instead of your voice.
+Clear it before a real run:
+
+```powershell
+Remove-Item Env:SPIKE_FAKE_MIC
+```
+
+This mode is for checking that the plumbing works. It measures nothing you can trust, and it cannot
+say anything at all about echo cancellation: see the status section above.
 
 ---
 
 ## On the student PC (your second PC)
 
 The student PC runs no LiveKit and no server. Use the portable .exe so it needs no Node.js and no
-pnpm either.
+pnpm either. **Plug the USB headset in before starting it**, so Windows has already made it the
+default playback device.
 
 ### Build the portable .exe (on this PC, once)
 
@@ -210,6 +286,10 @@ choose **More info → Run anyway**. (Phase 5 builds signed installers; see
 The window goes full-screen black, then shows the teacher's screen. **Esc quits** (the real
 student app is a locked kiosk; the spike stays escapable on purpose).
 
+Bottom-right, under the resolution and frame rate, is the voice readout: the measured delay against
+the 200 ms budget, how that delay splits between network, jitter buffer and playout, the packet
+loss, and a level bar that must move whenever the teacher talks.
+
 ### Or run it from source instead
 
 If the student PC already has Node.js, the .exe is optional — copy this folder over (without
@@ -220,8 +300,9 @@ npm install
 npm run student
 ```
 
-Bottom-right shows the received resolution and fps; bottom-left shows this PC's own clock — read
-the numbers off the screen, which is all you need for the checks below.
+Bottom-right shows the received resolution and fps, then the voice delay and level; bottom-left
+shows this PC's own clock — read the numbers off the screen, which is all you need for the checks
+below.
 
 Started from a terminal instead, the same line is also printed once a second:
 
@@ -243,26 +324,35 @@ screen. If it fails to start, it writes `student-spike-error.log` next to itself
 | Resolution    | `receiving …` line, or bottom-right HUD                                                    | 1920x1080         |
 | Frame rate    | `receiving …` line, or bottom-right HUD                                                    | ~15 fps           |
 | Delay         | Photograph both screens at once; subtract the broadcast clock from the student's own clock | under 500 ms      |
+| Voice clear   | Teacher talks into the headset mic; student listens on a headset                           | every word clear  |
+| No echo       | Teacher keeps talking while the student headset is on, right next to the student mic       | no echo at all    |
+| Voice delay   | Read `voice … ms` in the student HUD, and say "now" while watching the other screen        | under 200 ms      |
 
 The delay check works because the teacher broadcasts its whole screen, so the student sees the
 teacher's clock inside the video while its own clock runs in the corner. One phone photo of the two
 monitors gives both numbers.
 
-**Measure on the wired network too.** The 204 ms above is a WiFi number: it proves the pipeline
-and clears the budget, but NFR-03's 500 ms assumes the gigabit switch, so the lab figure is still
-outstanding until Gate 1.
+**Run it again on the wired network, with headsets.** Both figures above — 204 ms of video delay
+and 126 ms of voice delay — are WiFi numbers taken on the laptop's own microphone. They clear both
+budgets and prove the pipeline, but NFR-03 and NFR-04 assume the gigabit switch and a headset, so
+the lab figures are still outstanding until Gate 1.
 
 ## Troubleshooting
 
-| Symptom                                  | Cause                                                                               |
-| ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| `livekit-client not found`               | `npm install` was not run in `spikes/broadcast`                                     |
-| App exits instantly, no window at all    | npm blocked Electron's postinstall, so there is no binary — see below               |
-| .exe shows an error box and quits        | No `config.json` beside it. `student-spike-error.log` lists the paths it tried      |
-| Student joins but the screen stays black | UDP 50000-50200 blocked, or `LAN_IP` in `.env` is `127.0.0.1`                       |
-| `could not establish signal connection`  | Wrong `livekitWsUrl`, or TCP 7880 blocked by the firewall                           |
-| `invalid token` / `permission denied`    | `apiSecret` differs between the two PCs                                             |
-| Blurry text but smooth motion            | Encoder ignored the `text` content hint — the NFR-03 risk this spike exists to find |
+| Symptom                                  | Cause                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `livekit-client not found`               | `npm install` was not run in `spikes/broadcast`                                        |
+| App exits instantly, no window at all    | npm blocked Electron's postinstall, so there is no binary — see below                  |
+| .exe shows an error box and quits        | No `config.json` beside it. `student-spike-error.log` lists the paths it tried         |
+| Student joins but the screen stays black | UDP 50000-50200 blocked, or `LAN_IP` in `.env` is `127.0.0.1`                          |
+| `could not establish signal connection`  | Wrong `livekitWsUrl`, or TCP 7880 blocked by the firewall                              |
+| `invalid token` / `permission denied`    | `apiSecret` differs between the two PCs                                                |
+| Blurry text but smooth motion            | Encoder ignored the `text` content hint — the NFR-03 risk this spike exists to find    |
+| Talk says the microphone was blocked     | Windows privacy setting. Settings → Privacy & security → Microphone                    |
+| Teacher level bar flat while talking     | Wrong capture device — check the device name in the panel, then Windows sound settings |
+| Teacher bar moves, student bar does not  | Audio is not arriving: same causes as a black screen, UDP 50000-50200 or the token     |
+| Both bars move but the headset is silent | Wrong playback device on the student PC, or the headset volume                         |
+| Student says "Press any key"             | Chromium refused to play sound; press a key once. This should not happen               |
 
 ### If Electron has no binary
 
@@ -324,6 +414,60 @@ which is a fast operation on an open connection, so the screen appears in under 
 on demand would put the whole ~2 s of ICE and DTLS setup in front of the teacher every time.
 
 This is recorded under the Broadcast task in Phase 2 of `docs/docs/09-project-plan.md`.
+
+## Finding: an occluded teacher window wrecks the voice delay
+
+Measured on one laptop, so treat the numbers as a direction rather than a result — but the
+direction is clear and it has a consequence for Phase 2.
+
+With Electron's default `backgroundThrottling`, the teacher window was covered by the student's
+full-screen window and Chromium throttled it. Nothing broke: no packet loss, no concealed samples,
+round trip still about 1 ms. But the publisher emitted its audio in bursts, the student's jitter
+buffer grew to absorb them, and the measured delay went to **0.5-1.4 s**, draining only slowly
+because a continuous tone gives the decoder no silence to shrink the buffer in.
+
+Setting `backgroundThrottling: false` on both windows, with nothing else changed, brought the same
+machine back to **138-357 ms**.
+
+**Phase 2 (LAB-09) must set `backgroundThrottling: false` on the teacher console and the student
+app.** This is not an edge case: during Whole Talk the teacher is demonstrating something in
+another application, so the console window is behind it almost by definition.
+
+## Finding: the delay lives in the jitter buffer, not the network
+
+The student HUD breaks its estimate into three parts, and they are not close to equal. On one
+overloaded laptop:
+
+```
+voice 292 ms  (budget 200 ms)
+net 1 + buffer 249 + playout 42 ms · loss 0.0% · gaps 0.0%
+```
+
+and across the real pair of PCs:
+
+```
+voice 126 ms  (budget 200 ms)
+net 5 + buffer 80 + playout 42 ms · loss 0.0% · gaps 0.0%
+```
+
+- **net** — half the round trip to the LiveKit server, consistently 1-9 ms on this LAN.
+- **buffer** — how long a sample waited in the jitter buffer. Everything else is noise beside it.
+- **playout** — buffer to speaker, a steady ~40 ms.
+
+So the lever for NFR-04 is the jitter buffer, and the jitter buffer is sized by how evenly packets
+arrive. Anything that makes the publisher stutter costs far more than the network ever will.
+
+Two caveats on the number itself. Capture and Opus encode on the teacher PC appear in none of these
+stats, so true mouth-to-ear is roughly 20-40 ms higher than what is shown. And `net` is only the
+student's half of the trip; the teacher window shows its own half, which was 1-9 ms here.
+
+Everything that changed between those two runs is the buffer: 249 ms down to 80 ms, with net and
+playout barely moving.
+
+If the wired Gate 1 run comes in over 200 ms with real headsets, the first thing to try is
+`receiver.jitterBufferTarget`, which caps how far the buffer may grow, at the cost of dropouts when
+the network is rough. The spike deliberately does not set it: its job is to measure what WebRTC
+does by default.
 
 ## Throwing it away
 

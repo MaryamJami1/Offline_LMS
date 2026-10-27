@@ -7,7 +7,7 @@ spike code itself lives in `spikes/` and is throwaway: it is not test-first, it 
 | Spike            | Requirement | Status                 |
 | ---------------- | ----------- | ---------------------- |
 | Screen broadcast | NFR-03      | Passed on 2 PCs (WiFi) |
-| Teacher voice    | NFR-04      | Not run yet            |
+| Teacher voice    | NFR-04      | Passed on 2 PCs (WiFi) |
 
 ## Screen broadcast — NFR-03
 
@@ -89,6 +89,114 @@ secure context — Caddy's local certificate authority is not involved in broadc
 ## Teacher voice — NFR-04
 
 **Target:** teacher and student voice in headsets, under 200 ms delay, echo cancelled.
+**Result: passed on 2 PCs**, at 126 ms against a 200 ms budget, with the screen broadcast running
+at the same time. Measured over WiFi and on the laptop's built-in microphone rather than a headset,
+so the headset-and-wired confirmation is still owed at Gate 1.
 
-Not run yet. It is the second Phase 0 spike; Phase 0 does not exit until teacher voice is clear in a
-student headset on 2 PCs.
+### The 2-PC run (2026-10-27)
+
+Teacher app and LiveKit on the laptop, talking into its built-in microphone; `student-spike.exe` on
+the second PC. The broadcast ran throughout, so this is voice and 1080p video sharing one WiFi
+link, which is how a real class works.
+
+| Check                   | Target           | Measured                                |
+| ----------------------- | ---------------- | --------------------------------------- |
+| Delay, student estimate | under 200 ms     | 126 ms — net 5 + buffer 80 + playout 42 |
+| Packet loss             | none audible     | 0.0%                                    |
+| Concealed samples       | none audible     | 0.0%                                    |
+| Codec and bitrate       | Opus             | Opus, 48 kHz, about 48 kbit/s           |
+| Voice quality           | every word clear | clear                                   |
+| Echo                    | cancelled        | none heard                              |
+| Broadcast alongside it  | 1080p, 15 fps    | 1920x1080 at 14 fps                     |
+
+126 ms is the receiver's estimate. Capture and Opus encode on the teacher PC appear in none of
+those statistics, so true mouth-to-ear is roughly 20-40 ms higher — call it 150-170 ms. Still
+inside the budget, but the real margin is about a quarter of it, not half, and that is the figure
+to carry into Gate 1.
+
+The broadcast read 14 fps instead of 15 with voice sharing the link. One frame is within the noise
+of a single run, but it is worth watching when 10 PCs are subscribed.
+
+### What is still owed
+
+- **Headsets.** NFR-04 says "in headsets", and this ran on the laptop's own microphone. Echo
+  cancellation had something real to work on and no echo was heard, which is the result that
+  matters — but a headset microphone sits closer to the mouth and behaves differently.
+- **The wired lab network**, as with the broadcast half.
+- **More than one listener.** One student is not 30 subscribers on one uplink.
+
+### What one PC had shown first
+
+Before the 2-PC run, with LiveKit, the teacher app and the student app all on the same laptop and
+the microphone replaced by Chromium's synthetic one:
+
+| Check                           | Measured                                                   |
+| ------------------------------- | ---------------------------------------------------------- |
+| Codec                           | `audio/opus`, 48 kHz clock, mono capture                   |
+| Processing                      | AEC on, NS on, AGC on — read back, not merely requested    |
+| Bitrate on the wire             | 37-41 kbit/s                                               |
+| Uplink half-RTT (teacher)       | 1-9 ms                                                     |
+| Packet loss / concealed samples | 0.0% / 0.0%                                                |
+| Delay, student estimate         | 138 ms at best, settling at 250-310 ms                     |
+| Mute and unmute                 | Talk toggles; the student reads "teacher microphone muted" |
+
+Two PCs did better than one, which is the expected direction: the single machine was encoding
+1080p, decoding it again, running the server and generating the audio all at once, and its jitter
+buffer sat at 249 ms against the 80 ms measured across the real pair. The bitrate rose from 37-41
+to about 48 kbit/s because real speech is harder to code than a 440 Hz tone.
+
+### Settings to carry into Phase 2
+
+- **Opus, mono, `echoCancellation`, `noiseSuppression` and `autoGainControl` all on**, and read
+  back from `getSettings()` afterwards rather than assumed. Windows or a driver can refuse any of
+  them, and NFR-04 fails quietly if it does.
+- **`red: true`** (redundant audio) and **`dtx: true`** (silence costs no bitrate), both LiveKit
+  defaults for a mono track. RED is most of the gap between the 24 kbit/s preset and the 37-41
+  kbit/s measured on the wire, and it is worth it: one lost packet stops being a gap in a word.
+- **Publish once, then mute and unmute.** Re-publishing renegotiates the connection every time the
+  teacher stops talking.
+
+### Finding: an occluded teacher window wrecks the voice delay
+
+With Electron's default `backgroundThrottling`, the teacher window sat behind the student's
+full-screen window and Chromium throttled it. Nothing failed: no packet loss, no concealed samples,
+round trip still about 1 ms. But the publisher emitted audio in bursts, the receiver's jitter buffer
+grew to absorb them, and the delay went to **0.5-1.4 s** — draining only slowly, because a
+continuous tone gives the decoder no silence to shrink the buffer in.
+
+`backgroundThrottling: false` on both windows, nothing else changed, brought the same machine back
+to **138-357 ms**.
+
+**Phase 2 (LAB-09) must set `backgroundThrottling: false` on the teacher console and the student
+app.** This is not an edge case: during Whole Talk the teacher is demonstrating something in another
+application, so the console window is behind it almost by definition.
+
+One laptop and a small sample, so this is a direction, not a measurement — but it costs nothing to
+act on, and the failure it prevents is silent.
+
+### Finding: the delay lives in the jitter buffer
+
+The student app splits its estimate into three parts, and they are nowhere near equal. On one
+overloaded laptop:
+
+```
+voice 292 ms  (budget 200 ms)
+net 1 + buffer 249 + playout 42 ms · loss 0.0% · gaps 0.0%
+```
+
+and across the real pair of PCs:
+
+```
+voice 126 ms  (budget 200 ms)
+net 5 + buffer 80 + playout 42 ms · loss 0.0% · gaps 0.0%
+```
+
+The network part never exceeded 9 ms and playout is a steady ~42 ms in both. Everything that
+changed — 249 ms down to 80 ms — is the jitter buffer. The lever for NFR-04 is therefore how
+evenly packets arrive, not how fast the network is, and the way to make it worse is to let the
+publishing window be throttled (above). Capture and Opus encode on the teacher PC appear in none
+of these stats, so true mouth-to-ear is roughly 20-40 ms above the figure shown.
+
+If the wired Gate 1 run ever comes in over 200 ms, the next thing to try is
+`receiver.jitterBufferTarget`, which caps how far the buffer may grow, at the cost of dropouts when
+the network is rough. The spike deliberately leaves it unset: its job is to measure the default.
