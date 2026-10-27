@@ -1,0 +1,10 @@
+# Hand-maintained markdown: tables are written with single-space padding on
+# purpose and Prettier re-pads every column on save, which buries the real
+# change in a diff full of whitespace. Content here is reviewed by eye.
+CLAUDE.md
+
+# Generated or vendored
+apps/server/src/generated/
+spikes/broadcast/bin/
+spikes/broadcast/dist/
+pnpm-lock.yaml
