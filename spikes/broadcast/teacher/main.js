@@ -40,8 +40,8 @@ app.whenReady().then(() => {
 
   // The spike is run from a terminal on two PCs with no devtools open, so
   // renderer logs are echoed to stdout.
-  win.webContents.on('console-message', (_event, _level, message) => {
-    console.log(`[renderer] ${message}`);
+  win.webContents.on('console-message', (details) => {
+    console.log(`[renderer] ${details.message}`);
   });
 
   win.loadFile(path.join(__dirname, 'index.html'));

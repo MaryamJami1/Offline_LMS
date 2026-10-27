@@ -10,16 +10,25 @@ see it. It installs with plain `npm` so the student PC needs nothing but Node.js
 
 ## Status: verified on one PC
 
-Confirmed working on the dev machine (teacher and student side by side, LiveKit 1.13.11):
+Confirmed working on the dev machine (teacher and student side by side, LiveKit 1.13.11,
+Electron 44.9.3):
 
 ```
 [teacher] published screen: 1920x1080 @ 15 fps, contentHint="text"
-[student] subscribed to video from "teacher" (TR_VS2PdYZRTer3Au, video/VP8)
+[student] subscribed to video from "teacher" (TR_VSzg67ZjkeLkBE, video/VP8)
 [student] receiving 1920x1080  15 fps
 ```
 
 LiveKit negotiated `connectionType: "udp"` on a port inside the 50000-50200 range. Still to do: run
 it across two PCs and measure the delay.
+
+Two Electron API notes for Phase 1, found by moving the spike from Electron 33 to 44:
+
+- `webContents.on('console-message')` takes a single details object now, not
+  `(event, level, message)`. The old signature silently logs `undefined`.
+- The legacy `getUserMedia` constraints (`chromeMediaSource: 'desktop'` with a source id from
+  `desktopCapturer`) still work in 44, so the apps do not need
+  `session.setDisplayMediaRequestHandler` yet.
 
 ### Pinned versions
 
@@ -28,7 +37,7 @@ it across two PCs and measure the delay.
 | LiveKit server       | 1.13.11 |
 | `livekit-client`     | 2.23.0  |
 | `livekit-server-sdk` | 2.19.2  |
-| `electron`           | 33.4.11 |
+| `electron`           | 44.9.3  |
 
 Exact versions, no `^` ranges, so the spike and `infra/docker-compose.yml` cannot drift apart. See
 the pinned-versions table in `docs/docs/02-architecture.md`.
@@ -183,10 +192,29 @@ monitors gives both numbers.
 | Symptom                                  | Cause                                                                               |
 | ---------------------------------------- | ----------------------------------------------------------------------------------- |
 | `livekit-client not found`               | `npm install` was not run in `spikes/broadcast`                                     |
+| App exits instantly, no window at all    | npm blocked Electron's postinstall, so there is no binary — see below               |
 | Student joins but the screen stays black | UDP 50000-50200 blocked, or `LAN_IP` in `.env` is `127.0.0.1`                       |
 | `could not establish signal connection`  | Wrong `livekitWsUrl`, or TCP 7880 blocked by the firewall                           |
 | `invalid token` / `permission denied`    | `apiSecret` differs between the two PCs                                             |
 | Blurry text but smooth motion            | Encoder ignored the `text` content hint — the NFR-03 risk this spike exists to find |
+
+### If Electron has no binary
+
+Recent npm versions refuse to run a dependency's install scripts until they are approved, and
+Electron downloads its binary in `postinstall`. `package.json` carries the approval:
+
+```json
+"allowScripts": { "electron@44.9.3": true }
+```
+
+The key includes the version, so it must be changed whenever Electron is bumped. If `npm install`
+warns `1 package has install scripts not yet covered by allowScripts`, there is no
+`node_modules/electron/dist/electron.exe` and both apps exit at once. Fix it with:
+
+```sh
+npm approve-scripts electron
+npm install
+```
 
 Two messages are expected and harmless:
 
@@ -217,9 +245,19 @@ connect is roughly the same or slightly better now, with one attempt instead of 
 This is **one-time setup cost when a broadcast starts, not frame latency**, so it does not count
 against NFR-03 (under 500 ms delay) or NFR-05 (commands under 1 s, which travel over Socket.IO).
 The likely cause is ICE candidate gathering across the 200-port range on a single WiFi machine that
-is also running the server, both apps and the encoder. Re-measure on the two wired PCs; if a
-broadcast still takes ~2 s to appear, decide then whether to narrow the UDP range or pre-warm the
-student connection at login.
+is also running the server, both apps and the encoder.
+
+### What Phase 2 should do about it
+
+The spike pays this cost because each app joins the room at launch. The real apps must not pay it
+when the teacher presses Broadcast.
+
+**In Phase 2 (LAB-04), the student apps join the session's LiveKit room at Start class and stay
+connected for the whole session.** Broadcast then only has to subscribe to the teacher's track,
+which is a fast operation on an open connection, so the screen appears in under 1 s. Joining a room
+on demand would put the whole ~2 s of ICE and DTLS setup in front of the teacher every time.
+
+This is recorded under the Broadcast task in Phase 2 of `docs/docs/09-project-plan.md`.
 
 ## Throwing it away
 

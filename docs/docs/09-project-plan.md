@@ -6,16 +6,16 @@ About 17 weeks for one full-time developer, in six phases with two test gates. T
 
 ![Roadmap: six phases, two gates, 17 weeks](diagrams/roadmap.png)
 
-| Phase | Weeks | Focus |
-| --- | --- | --- |
-| 0. Setup | 1 | Repo, test tools and CI; Docker with PostgreSQL, LiveKit and Caddy; 2-PC broadcast and voice spike |
-| 1. Foundation | 2–4 | Login, roles and permissions; people, classes, labs, PC approval; student login at any PC; kiosk app shell |
-| 2. Lab core + lesson editor | 5–9 | Seat grid, Start/End class, Broadcast, Screen Demo, Whole Talk, Lock, White Board, lesson editor |
-| Gate 1 | end of week 9 | 10-PC lab test passes (smooth broadcast, clear voice) |
-| 3. Lab advanced | 10–12 | Monitor, Intercom, Group Talk, hand raise, Demo (lesson and student), live Quiz |
-| 4. Modules | 13–15 | Assignments; four module exercises; recorder; auto-marking; grading inbox; progress; video and PDF viewer |
-| 5. Launch | 16–17 | Reports, backups and restore, installers, 60-seat load test, acceptance test, training |
-| Gate 2 | end of week 17 | 60-seat load test and the institute's sign-off → version 1.0 |
+| Phase                       | Weeks          | Focus                                                                                                      |
+| --------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------- |
+| 0. Setup                    | 1              | Repo, test tools and CI; Docker with PostgreSQL, LiveKit and Caddy; 2-PC broadcast and voice spike         |
+| 1. Foundation               | 2–4            | Login, roles and permissions; people, classes, labs, PC approval; student login at any PC; kiosk app shell |
+| 2. Lab core + lesson editor | 5–9            | Seat grid, Start/End class, Broadcast, Screen Demo, Whole Talk, Lock, White Board, lesson editor           |
+| Gate 1                      | end of week 9  | 10-PC lab test passes (smooth broadcast, clear voice)                                                      |
+| 3. Lab advanced             | 10–12          | Monitor, Intercom, Group Talk, hand raise, Demo (lesson and student), live Quiz                            |
+| 4. Modules                  | 13–15          | Assignments; four module exercises; recorder; auto-marking; grading inbox; progress; video and PDF viewer  |
+| 5. Launch                   | 16–17          | Reports, backups and restore, installers, 60-seat load test, acceptance test, training                     |
+| Gate 2                      | end of week 17 | 60-seat load test and the institute's sign-off → version 1.0                                               |
 
 The hardest part, live screen and voice, is proven in week 1, so problems show up before most of the work is done. With two developers (one on the lab, one on the modules) the plan shrinks to about 10–11 weeks.
 
@@ -64,6 +64,10 @@ Every task below is done test-first: write the failing test (named after the req
 - [ ] Teacher console: seat grid, selection, status bar (LAB-01, LAB-02, LAB-16)
 - [ ] Start and End class with attendance (LAB-03)
 - [ ] Broadcast PC and Screen Demo (LAB-04, LAB-05)
+  - Student apps join the session's LiveKit room at **Start class** and stay connected for the
+    whole session. Broadcast then only has to subscribe to the teacher's track, so it starts in
+    under 1 s. Joining a room on demand costs about 2 s in ICE and DTLS setup — measured in the
+    Phase 0 broadcast spike — which is too slow to do when the teacher presses Broadcast.
 - [ ] Whole Talk (part of LAB-09)
 - [ ] Lock, unlock, message, launch activity (LAB-13)
 - [ ] White Board (LAB-06)
@@ -111,6 +115,7 @@ Every task below is done test-first: write the failing test (named after the req
 - [ ] Reports with PDF and Excel export (ADM-06)
 - [ ] Backups, USB copy, restore, and the first restore drill (ADM-08)
 - [ ] Settings including branding (name, logo, main colour), audit log, app updates from the server (ADM-07, ADM-09, ADM-10)
+- [ ] Move to the latest supported Electron major before building the installers
 - [ ] Windows installers, the offline server bundle, and a dry run of the installation guide
 - [ ] 60-seat load test (Gate 2)
 - [ ] User acceptance test with the institute; fix every issue found
@@ -122,19 +127,19 @@ Every task below is done test-first: write the failing test (named after the req
 
 ## Risks and mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-| --- | --- | --- | --- |
-| Screen broadcast lags on older lab PCs | Medium | High | Spike in week 1; test 10 PCs at Gate 1; fall back to 720p or 10 fps for text-only screens |
-| Voice echo or delay | Medium | High | Headsets only; WebRTC echo cancellation on; test at Gate 1 |
-| Windows 10 and 11 behave differently (screen capture, kiosk, firewall) | Medium | Medium | CI builds on Windows; test bench has one PC of each version |
-| Students bypass the student app | Medium | Medium | Kiosk mode, admin PIN, standard Windows accounts, auto-start |
-| Server failure stops the lab | Low | High | UPS, nightly backups, restore drill each term, spare PC ready |
-| Writing tests first feels slow at the start | High | Low | It pays back in fewer bugs later; keep unit tests fast (under 30 s); test helpers in `packages/test-utils` from week 1 |
-| One developer is a single point of failure | Medium | High | Clear documentation (this set), small pull requests, weekly demos, everything in GitHub |
-| Scope grows during the build | High | Medium | New requests go to a backlog with a priority; only Must items enter version 1 without re-planning |
-| Teachers find the lesson editor hard | Medium | Medium | Editor ships in Phase 2 so teachers try it early; fix their feedback before Phase 4 |
-| Antivirus or firewall blocks the apps | Medium | Medium | Signed installers; firewall rules added by the installer; ports listed in 07-installation.md |
-| Large lesson videos fill the disk or slow the network | Medium | Medium | Convert every upload to 720p; limit uploads to 1 GB; disk-space warning on the admin dashboard |
+| Risk                                                                   | Likelihood | Impact | Mitigation                                                                                                             |
+| ---------------------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Screen broadcast lags on older lab PCs                                 | Medium     | High   | Spike in week 1; test 10 PCs at Gate 1; fall back to 720p or 10 fps for text-only screens                              |
+| Voice echo or delay                                                    | Medium     | High   | Headsets only; WebRTC echo cancellation on; test at Gate 1                                                             |
+| Windows 10 and 11 behave differently (screen capture, kiosk, firewall) | Medium     | Medium | CI builds on Windows; test bench has one PC of each version                                                            |
+| Students bypass the student app                                        | Medium     | Medium | Kiosk mode, admin PIN, standard Windows accounts, auto-start                                                           |
+| Server failure stops the lab                                           | Low        | High   | UPS, nightly backups, restore drill each term, spare PC ready                                                          |
+| Writing tests first feels slow at the start                            | High       | Low    | It pays back in fewer bugs later; keep unit tests fast (under 30 s); test helpers in `packages/test-utils` from week 1 |
+| One developer is a single point of failure                             | Medium     | High   | Clear documentation (this set), small pull requests, weekly demos, everything in GitHub                                |
+| Scope grows during the build                                           | High       | Medium | New requests go to a backlog with a priority; only Must items enter version 1 without re-planning                      |
+| Teachers find the lesson editor hard                                   | Medium     | Medium | Editor ships in Phase 2 so teachers try it early; fix their feedback before Phase 4                                    |
+| Antivirus or firewall blocks the apps                                  | Medium     | Medium | Signed installers; firewall rules added by the installer; ports listed in 07-installation.md                           |
+| Large lesson videos fill the disk or slow the network                  | Medium     | Medium | Convert every upload to 720p; limit uploads to 1 GB; disk-space warning on the admin dashboard                         |
 
 ## Working method
 

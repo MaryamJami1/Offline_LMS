@@ -46,17 +46,23 @@ Teacher PC (Electron console) ──┐                 ┌── Admin (any bro
 | Lesson video and PDF    | ffmpeg on the server; HTML5 video player and pdf.js in the student app | Uploaded videos are converted to 720p H.264 MP4 so every lab PC can play them; PDFs open inside the app, offline, with download and print turned off |
 | Branding                | Theme tokens loaded from the server's settings                         | Software name, logo and main colour can change later without a new build                                                                             |
 
-**Pinned LiveKit versions.** The three pieces are kept at exact versions, never ranges, because a
-server older than the client makes the client try the current `/rtc/v1` signalling path, take a 404
-and fall back to the legacy `/rtc` path:
+**Pinned versions.** These are kept at exact versions, never `^` ranges:
 
-| Piece                | Version    | Where it is pinned                     |
-| -------------------- | ---------- | -------------------------------------- |
-| LiveKit server       | `v1.13.11` | `infra/docker-compose.yml` (image tag) |
-| `livekit-client`     | `2.23.0`   | each app's `package.json`              |
-| `livekit-server-sdk` | `2.19.2`   | the server's `package.json`            |
+| Piece                | Version    | Where it is pinned                      |
+| -------------------- | ---------- | --------------------------------------- |
+| LiveKit server       | `v1.13.11` | `infra/docker-compose.yml` (image tag)  |
+| `livekit-client`     | `2.23.0`   | each app's `package.json`               |
+| `livekit-server-sdk` | `2.19.2`   | the server's `package.json`             |
+| `electron`           | `44.9.3`   | `apps/teacher`, `apps/student` packages |
 
-Upgrade them together, and re-check the broadcast after any bump.
+Upgrade the three LiveKit pieces together, and re-check the broadcast after any bump: a server
+older than the client makes the client try the current `/rtc/v1` signalling path, take a 404 and
+fall back to the legacy `/rtc` path.
+
+**Electron support window.** Electron keeps only the latest three majors on security fixes, so a
+major that is current during the build can fall out of support before launch — Electron 33, used in
+the Phase 0 spike, went end of life in April 2025. Electron 44 is supported until March 2027.
+Phase 5 therefore has a task to move to the latest supported major before the installers are built.
 
 ## Key flows
 
