@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Broadcast spike — student</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000000;
+        overflow: hidden;
+        font-family: Consolas, 'Courier New', monospace;
+      }
+      video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000000;
+      }
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 32px;
+        color: #e8eefc;
+        font-size: 20px;
+        white-space: pre-wrap;
+      }
+      #overlay.hidden {
+        display: none;
+      }
+      #overlay.error {
+        color: #ffd9de;
+      }
+      #hud {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.65);
+        color: #5eead4;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      #local-clock {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.65);
+        color: #fbbf24;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body>
+    <video id="screen" autoplay playsinline muted></video>
+    <div id="overlay">Connecting…</div>
+    <div id="hud">waiting</div>
+    <div id="local-clock">--:--:--.---</div>
+
+    <script src="../node_modules/livekit-client/dist/livekit-client.umd.js"></script>
+    <script>
+      const videoEl = document.getElementById('screen');
+      const overlayEl = document.getElementById('overlay');
+      const hudEl = document.getElementById('hud');
+      const localClockEl = document.getElementById('local-clock');
+
+      function setOverlay(text, isError = false) {
+        if (text === null) {
+          overlayEl.classList.add('hidden');
+          return;
+        }
+        overlayEl.classList.remove('hidden');
+        overlayEl.classList.toggle('error', isError);
+        overlayEl.textContent = text;
+      }
+
+      const pad = (n, width = 2) => String(n).padStart(width, '0');
+
+      function tickClock() {
+        const now = new Date();
+        localClockEl.textContent =
+          `this PC  ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}` +
+          `.${pad(now.getMilliseconds(), 3)}`;
+        requestAnimationFrame(tickClock);
+      }
+      tickClock();
+
+      // Resolution and fps straight from the video element, so the numbers do
+      // not depend on any LiveKit stats API.
+      let lastFrames = 0;
+      let lastAt = performance.now();
+      setInterval(() => {
+        if (!videoEl.videoWidth) return;
+        const quality = videoEl.getVideoPlaybackQuality?.();
+        const now = performance.now();
+        let fps = '—';
+        if (quality) {
+          const delta = quality.totalVideoFrames - lastFrames;
+          fps = Math.round((delta * 1000) / (now - lastAt));
+          lastFrames = quality.totalVideoFrames;
+        }
+        lastAt = now;
+        const line = `${videoEl.videoWidth}x${videoEl.videoHeight}  ${fps} fps`;
+        hudEl.textContent = line;
+        console.log(`receiving ${line}`);
+      }, 1000);
+
+      async function start() {
+        if (typeof LivekitClient === 'undefined') {
+          setOverlay('livekit-client not found. Run "npm install" in spikes/broadcast first.', true);
+          return;
+        }
+
+        const { url, room: roomName, token } = await window.spike.getSession();
+        const room = new LivekitClient.Room({ adaptiveStream: false, dynacast: false });
+
+        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          if (track.kind !== 'video') return;
+          track.attach(videoEl);
+          setOverlay(null);
+          console.log(
+            `subscribed to ${track.kind} from "${participant.identity}" ` +
+              `(${publication.trackSid}, ${publication.mimeType ?? 'codec unknown'})`,
+          );
+        });
+
+        room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track) => {
+          if (track.kind !== 'video') return;
+          track.detach(videoEl);
+          setOverlay('Broadcast stopped.\nEsc to quit.');
+        });
+
+        room.on(LivekitClient.RoomEvent.Disconnected, () => {
+          setOverlay('Disconnected from LiveKit.\nEsc to quit.', true);
+        });
+
+        setOverlay(`Connecting to ${url} …`);
+        await room.connect(url, token);
+        setOverlay(`Joined room "${roomName}".\nWaiting for the teacher to publish…\nEsc to quit.`);
+      }
+
+      start().catch((err) => {
+        setOverlay(`Failed: ${err.message}\nEsc to quit.`, true);
+        console.error(err);
+      });
+    </script>
+  </body>
+</html>

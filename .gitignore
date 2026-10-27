@@ -15,6 +15,12 @@ apps/server/src/generated/
 infra/pgdata/
 infra/livekit-data/
 
+# Spike config holds a dev LiveKit secret and a machine-specific LAN IP
+spikes/broadcast/config.json
+
+# Downloaded LiveKit server binary — fetched per the spike README, never committed
+spikes/broadcast/bin/
+
 # Electron
 apps/teacher/out/
 apps/student/out/

@@ -24,27 +24,39 @@ Teacher PC (Electron console) ──┐                 ┌── Admin (any bro
 
 ## Technology stack
 
-| Layer | Choice | Why |
-| --- | --- | --- |
-| Language | TypeScript (strict mode) everywhere | One language, shared types between server and apps |
-| Monorepo | pnpm workspaces + Turborepo | One repository; builds and tests run only where code changed |
-| Server framework | NestJS on Node.js 22 LTS | Clear modules, guards for roles, built-in testing support |
-| Database | PostgreSQL 16 with Prisma ORM | Reliable relational data; typed queries; migrations |
-| Live lab channel | Socket.IO (NestJS gateway) | Instant commands and status for 60 seats; rooms per lab and per session |
-| Screen and voice | LiveKit server (self-hosted SFU) + livekit-client | Teacher uploads once, server forwards to every seat; runs offline |
-| Teacher console | Electron + React + Vite + Tailwind + shadcn/ui | Silent screen capture (desktopCapturer), native window |
-| Student app | Electron + React (same UI kit) | Kiosk mode, input lock, auto-start, microphone recording |
-| Admin panel | React + Vite web app, served by the server | Opens in any browser; nothing to install |
-| White board | Excalidraw (MIT licence) | Strokes travel as small data messages, not video |
-| State and data fetching | TanStack Query + Zustand | Server data cached; small local state stores |
-| Validation | Zod schemas in a shared package | The same rules check data on the server and in the apps |
-| Reports | pdfmake (PDF), SheetJS (Excel), Recharts (charts) | Printable and exportable reports |
-| Fonts | IBM Plex via @fontsource, bundled | Work offline |
-| Tests | Vitest, Testing Library, Supertest, Playwright, socket.io-client | Supports test-driven development at every level (see 08-testing.md) |
-| Packaging | Docker Compose (server); electron-builder NSIS installers (apps) | One command to start the server; one-click install on lab PCs |
-| Reverse proxy | Caddy | HTTPS on the lab network with a local certificate |
-| Lesson video and PDF | ffmpeg on the server; HTML5 video player and pdf.js in the student app | Uploaded videos are converted to 720p H.264 MP4 so every lab PC can play them; PDFs open inside the app, offline, with download and print turned off |
-| Branding | Theme tokens loaded from the server's settings | Software name, logo and main colour can change later without a new build |
+| Layer                   | Choice                                                                 | Why                                                                                                                                                  |
+| ----------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Language                | TypeScript (strict mode) everywhere                                    | One language, shared types between server and apps                                                                                                   |
+| Monorepo                | pnpm workspaces + Turborepo                                            | One repository; builds and tests run only where code changed                                                                                         |
+| Server framework        | NestJS on Node.js 22 LTS                                               | Clear modules, guards for roles, built-in testing support                                                                                            |
+| Database                | PostgreSQL 16 with Prisma ORM                                          | Reliable relational data; typed queries; migrations                                                                                                  |
+| Live lab channel        | Socket.IO (NestJS gateway)                                             | Instant commands and status for 60 seats; rooms per lab and per session                                                                              |
+| Screen and voice        | LiveKit server (self-hosted SFU) + livekit-client                      | Teacher uploads once, server forwards to every seat; runs offline                                                                                    |
+| Teacher console         | Electron + React + Vite + Tailwind + shadcn/ui                         | Silent screen capture (desktopCapturer), native window                                                                                               |
+| Student app             | Electron + React (same UI kit)                                         | Kiosk mode, input lock, auto-start, microphone recording                                                                                             |
+| Admin panel             | React + Vite web app, served by the server                             | Opens in any browser; nothing to install                                                                                                             |
+| White board             | Excalidraw (MIT licence)                                               | Strokes travel as small data messages, not video                                                                                                     |
+| State and data fetching | TanStack Query + Zustand                                               | Server data cached; small local state stores                                                                                                         |
+| Validation              | Zod schemas in a shared package                                        | The same rules check data on the server and in the apps                                                                                              |
+| Reports                 | pdfmake (PDF), SheetJS (Excel), Recharts (charts)                      | Printable and exportable reports                                                                                                                     |
+| Fonts                   | IBM Plex via @fontsource, bundled                                      | Work offline                                                                                                                                         |
+| Tests                   | Vitest, Testing Library, Supertest, Playwright, socket.io-client       | Supports test-driven development at every level (see 08-testing.md)                                                                                  |
+| Packaging               | Docker Compose (server); electron-builder NSIS installers (apps)       | One command to start the server; one-click install on lab PCs                                                                                        |
+| Reverse proxy           | Caddy                                                                  | HTTPS on the lab network with a local certificate                                                                                                    |
+| Lesson video and PDF    | ffmpeg on the server; HTML5 video player and pdf.js in the student app | Uploaded videos are converted to 720p H.264 MP4 so every lab PC can play them; PDFs open inside the app, offline, with download and print turned off |
+| Branding                | Theme tokens loaded from the server's settings                         | Software name, logo and main colour can change later without a new build                                                                             |
+
+**Pinned LiveKit versions.** The three pieces are kept at exact versions, never ranges, because a
+server older than the client makes the client try the current `/rtc/v1` signalling path, take a 404
+and fall back to the legacy `/rtc` path:
+
+| Piece                | Version    | Where it is pinned                     |
+| -------------------- | ---------- | -------------------------------------- |
+| LiveKit server       | `v1.13.11` | `infra/docker-compose.yml` (image tag) |
+| `livekit-client`     | `2.23.0`   | each app's `package.json`              |
+| `livekit-server-sdk` | `2.19.2`   | the server's `package.json`            |
+
+Upgrade them together, and re-check the broadcast after any bump.
 
 ## Key flows
 
@@ -98,6 +110,8 @@ lingualab/
 │  └─ test-utils/    fake lab, seeded database, socket and LiveKit test helpers
 ├─ e2e/              Playwright end-to-end tests across the apps
 ├─ infra/            docker-compose.yml, Caddyfile, livekit.yaml, backup scripts
+├─ spikes/           Phase 0 throwaway experiments
+├─ notes/            demo notes, gate checklists, test reports
 └─ docs/             this documentation
 ```
 
@@ -115,23 +129,23 @@ lingualab/
 
 The server has a fixed address, for example `192.168.10.2`. Lab PCs find it from the address set at install time, with mDNS (`lingualab.local`) as a fallback.
 
-| Port | Protocol | Service | Open to |
-| --- | --- | --- | --- |
-| 443 | TCP (HTTPS, WSS) | Caddy: admin panel, REST API, Socket.IO, LiveKit signalling | All lab PCs |
-| 7881 | TCP | LiveKit media fallback when UDP is blocked | All lab PCs |
-| 50000–50200 | UDP | LiveKit media (screen and voice) | All lab PCs |
-| 5353 | UDP | mDNS discovery | All lab PCs |
-| 5432 | TCP | PostgreSQL | Server only (not exposed) |
+| Port        | Protocol         | Service                                                     | Open to                   |
+| ----------- | ---------------- | ----------------------------------------------------------- | ------------------------- |
+| 443         | TCP (HTTPS, WSS) | Caddy: admin panel, REST API, Socket.IO, LiveKit signalling | All lab PCs               |
+| 7881        | TCP              | LiveKit media fallback when UDP is blocked                  | All lab PCs               |
+| 50000–50200 | UDP              | LiveKit media (screen and voice)                            | All lab PCs               |
+| 5353        | UDP              | mDNS discovery                                              | All lab PCs               |
+| 5432        | TCP              | PostgreSQL                                                  | Server only (not exposed) |
 
 **Bandwidth for a 60-seat class on a gigabit switch**
 
-| Traffic | Estimate |
-| --- | --- |
-| Broadcast PC, 1080p at 15 fps, about 1.5 Mbps per seat | 90 Mbps |
-| Monitor thumbnails, 320 px JPEG every 3 s | 3 Mbps |
-| Voice, about 64 kbps per active stream | Under 5 Mbps |
-| Lesson audio and files | Short bursts, served from the local disk |
-| Lesson video played to all 60 seats in Demo, 720p at about 2 Mbps each | 120 Mbps |
+| Traffic                                                                | Estimate                                 |
+| ---------------------------------------------------------------------- | ---------------------------------------- |
+| Broadcast PC, 1080p at 15 fps, about 1.5 Mbps per seat                 | 90 Mbps                                  |
+| Monitor thumbnails, 320 px JPEG every 3 s                              | 3 Mbps                                   |
+| Voice, about 64 kbps per active stream                                 | Under 5 Mbps                             |
+| Lesson audio and files                                                 | Short bursts, served from the local disk |
+| Lesson video played to all 60 seats in Demo, 720p at about 2 Mbps each | 120 Mbps                                 |
 
 The busiest case uses under 20% of a gigabit link.
 

@@ -1,0 +1,19 @@
+{
+  "name": "lingualab-spike-broadcast",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Throwaway Phase 0 spike: teacher screen -> LiveKit -> student fullscreen. Not shipped.",
+  "scripts": {
+    "teacher": "electron teacher/main.js",
+    "student": "electron student/main.js",
+    "token:teacher": "node gen-token.js teacher",
+    "token:student": "node gen-token.js student"
+  },
+  "dependencies": {
+    "livekit-client": "2.23.0",
+    "livekit-server-sdk": "2.19.2"
+  },
+  "devDependencies": {
+    "electron": "33.4.11"
+  }
+}

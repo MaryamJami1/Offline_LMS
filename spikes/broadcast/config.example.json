@@ -1,0 +1,6 @@
+{
+  "livekitWsUrl": "ws://192.168.10.2:7880",
+  "roomName": "spike-broadcast",
+  "apiKey": "devkey",
+  "apiSecret": "spike-only-secret-at-least-32-characters-long"
+}

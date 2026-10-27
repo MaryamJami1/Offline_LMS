@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Broadcast spike — teacher</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #0f172a;
+        color: #e8eefc;
+        font-family: Consolas, 'Courier New', monospace;
+      }
+      h1 {
+        font-size: 15px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8ea4cc;
+        margin: 0 0 20px;
+      }
+      #clock {
+        font-size: 76px;
+        font-weight: 700;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        color: #5eead4;
+      }
+      #clock-label,
+      #ruler-label {
+        font-size: 12px;
+        color: #8ea4cc;
+        margin: 8px 0 24px;
+      }
+      #status {
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #1c2743;
+        font-size: 14px;
+        margin-bottom: 20px;
+        white-space: pre-wrap;
+      }
+      #status.error {
+        background: #4c1d24;
+        color: #ffd9de;
+      }
+      .ruler {
+        background: #ffffff;
+        color: #000000;
+        padding: 14px 16px;
+        border-radius: 8px;
+        font-family: Georgia, 'Times New Roman', serif;
+      }
+      .ruler p {
+        margin: 0 0 8px;
+      }
+      .r20 {
+        font-size: 20px;
+      }
+      .r14 {
+        font-size: 14px;
+      }
+      .r11 {
+        font-size: 11px;
+      }
+      .r9 {
+        font-size: 9px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Broadcast spike — teacher (publishing)</h1>
+
+    <div id="clock">--:--:--.---</div>
+    <div id="clock-label">
+      Compare this clock with the one on the student PC to read the broadcast delay (NFR-03: under
+      500 ms).
+    </div>
+
+    <div id="status">Starting…</div>
+
+    <div id="ruler-label">
+      Readability ruler — every line below must be legible on the student screen (NFR-03).
+    </div>
+    <div class="ruler">
+      <p class="r20">20px — The quick brown fox jumps over the lazy dog. 0123456789</p>
+      <p class="r14">14px — The quick brown fox jumps over the lazy dog. 0123456789</p>
+      <p class="r11">11px — The quick brown fox jumps over the lazy dog. 0123456789</p>
+      <p class="r9">9px — The quick brown fox jumps over the lazy dog. 0123456789</p>
+    </div>
+
+    <script src="../node_modules/livekit-client/dist/livekit-client.umd.js"></script>
+    <script>
+      const statusEl = document.getElementById('status');
+      const clockEl = document.getElementById('clock');
+
+      function setStatus(text, isError = false) {
+        statusEl.textContent = text;
+        statusEl.classList.toggle('error', isError);
+      }
+
+      function tickClock() {
+        const now = new Date();
+        const pad = (n, width = 2) => String(n).padStart(width, '0');
+        clockEl.textContent =
+          `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}` +
+          `.${pad(now.getMilliseconds(), 3)}`;
+        requestAnimationFrame(tickClock);
+      }
+      tickClock();
+
+      async function start() {
+        if (typeof LivekitClient === 'undefined') {
+          setStatus('livekit-client not found. Run "npm install" in spikes/broadcast first.', true);
+          return;
+        }
+
+        const { url, room: roomName, token } = await window.spike.getSession();
+        const sourceId = await window.spike.getScreenSourceId();
+
+        // Electron's desktop capture path: no HTTPS and no picker dialog.
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: sourceId,
+              maxWidth: 1920,
+              maxHeight: 1080,
+              maxFrameRate: 15,
+            },
+          },
+        });
+
+        const [track] = stream.getVideoTracks();
+        // Tells the encoder to protect sharp edges instead of motion smoothness.
+        track.contentHint = 'text';
+
+        setStatus(`Connecting to ${url} …`);
+        const room = new LivekitClient.Room({ adaptiveStream: false, dynacast: false });
+        await room.connect(url, token);
+
+        await room.localParticipant.publishTrack(track, {
+          name: 'screen',
+          source: LivekitClient.Track.Source.ScreenShare,
+          videoCodec: 'vp8',
+          videoEncoding: { maxBitrate: 3_000_000, maxFramerate: 15 },
+          simulcast: false,
+          degradationPreference: 'maintain-resolution',
+        });
+
+        const settings = track.getSettings();
+        console.log(
+          `published screen: ${settings.width}x${settings.height} @ ` +
+            `${Math.round(settings.frameRate ?? 0)} fps, contentHint="${track.contentHint}"`,
+        );
+        setStatus(
+          `Publishing to room "${roomName}" on ${url}\n` +
+            `Capturing ${settings.width}x${settings.height} @ ${Math.round(settings.frameRate ?? 0)} fps, ` +
+            'VP8, content hint "text".\n' +
+            'Now start the student app on the second PC.',
+        );
+
+        room.on(LivekitClient.RoomEvent.ParticipantConnected, (p) => {
+          setStatus(`${statusEl.textContent}\nStudent joined: ${p.identity}`);
+        });
+        room.on(LivekitClient.RoomEvent.Disconnected, () => {
+          setStatus('Disconnected from LiveKit.', true);
+        });
+      }
+
+      start().catch((err) => {
+        setStatus(`Failed: ${err.message}`, true);
+        console.error(err);
+      });
+    </script>
+  </body>
+</html>

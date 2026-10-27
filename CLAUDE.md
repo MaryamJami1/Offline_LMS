@@ -8,19 +8,19 @@ Owner: Maryam Jamil. She often writes in Roman Urdu; reply in the language she w
 
 Read the relevant document before working on a feature. If code and docs disagree, ask; do not guess.
 
-| Need | File |
-| --- | --- |
-| Scope, decisions, glossary | `docs/docs/00-overview.md` |
-| What to build (requirement IDs ADM, LAB, STU, MOD, NFR) | `docs/docs/01-requirements.md` |
-| Stack, repo layout, flows, ports | `docs/docs/02-architecture.md` |
-| Tables and columns | `docs/docs/03-database.md` |
-| REST endpoints, Socket.IO events, LiveKit rooms | `docs/docs/04-api-and-events.md` |
-| Colours, fonts, screens (IDs T-xx, S-xx, A-xx) | `docs/docs/05-screens-and-ux.md` + `prototype/screenshots/` |
-| Permissions, auth, device trust, backups | `docs/docs/06-security-and-data.md` |
-| Server and app installation | `docs/docs/07-installation.md` |
-| TDD method, test IDs, load test | `docs/docs/08-testing.md` |
-| Phases, tasks, exit criteria | `docs/docs/09-project-plan.md` |
-| How users use it | `docs/docs/10-user-guides.md` |
+| Need                                                    | File                                                        |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| Scope, decisions, glossary                              | `docs/docs/00-overview.md`                                  |
+| What to build (requirement IDs ADM, LAB, STU, MOD, NFR) | `docs/docs/01-requirements.md`                              |
+| Stack, repo layout, flows, ports                        | `docs/docs/02-architecture.md`                              |
+| Tables and columns                                      | `docs/docs/03-database.md`                                  |
+| REST endpoints, Socket.IO events, LiveKit rooms         | `docs/docs/04-api-and-events.md`                            |
+| Colours, fonts, screens (IDs T-xx, S-xx, A-xx)          | `docs/docs/05-screens-and-ux.md` + `prototype/screenshots/` |
+| Permissions, auth, device trust, backups                | `docs/docs/06-security-and-data.md`                         |
+| Server and app installation                             | `docs/docs/07-installation.md`                              |
+| TDD method, test IDs, load test                         | `docs/docs/08-testing.md`                                   |
+| Phases, tasks, exit criteria                            | `docs/docs/09-project-plan.md`                              |
+| How users use it                                        | `docs/docs/10-user-guides.md`                               |
 
 The prototype's `.dc.html` files in `prototype/source/` hold the exact styles, sample data and screen behaviour. They are a design reference, not code to ship; rebuild the screens in React with the shared UI kit.
 
@@ -31,6 +31,7 @@ The prototype's `.dc.html` files in `prototype/source/` hold the exact styles, s
    - Green: write the simplest code that passes.
    - Refactor: clean up with all tests green.
    - Never write feature code without a failing test that needs it. Never delete or weaken a test to make it pass.
+   - Only exception: throwaway proof-of-concept code in `spikes/` (Phase 0). It is never imported by `apps/` or `packages/` and never shipped; when the feature is built for real, it is rebuilt test-first.
 2. **Name tests after requirement IDs:** `lab-04.broadcast.spec.ts`, `adm-11.reset-password.spec.ts`. Start from the test cases listed in `docs/docs/08-testing.md`.
 3. **Run the tests** that cover your change before saying a task is done, and the full suite before a commit. Report real results; never claim tests pass without running them.
 4. **Offline only:** no CDNs, no external fonts, no calls to the internet at runtime. Fonts come from @fontsource; every dependency is installed locally.
@@ -53,6 +54,8 @@ packages/ui     design tokens + shared components
 packages/test-utils  fake lab (60 seats), seeded DB, socket/LiveKit helpers
 e2e/            Playwright (browser + Electron)
 infra/          docker-compose.yml, Caddyfile, livekit.yaml, backup scripts
+spikes/         Phase 0 throwaway experiments
+notes/          demo notes, gate checklists, test reports
 docs/docs/          this documentation
 ```
 
