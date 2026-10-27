@@ -8,10 +8,25 @@ second PC. **This code is not test-first and is never shipped.** It exists only 
 Deliberately outside the pnpm workspace, so `pnpm test`, `pnpm lint` and `pnpm typecheck` never
 see it. It installs with plain `npm` so the student PC needs nothing but Node.js.
 
-## Status: verified on one PC
+## Status: passed on two PCs
 
-Confirmed working on the dev machine (teacher and student side by side, LiveKit 1.13.11,
-Electron 44.9.3):
+Run on 2026-10-27 with the teacher app and LiveKit 1.13.11 on the laptop and
+`student-spike.exe` on a second PC from a USB drive, both on the same WiFi:
+
+| Check          | Target            | Measured                     |
+| -------------- | ----------------- | ---------------------------- |
+| Delay, run 1   | under 500 ms      | 179 ms                       |
+| Delay, run 2   | under 500 ms      | 229 ms                       |
+| Delay, average | under 500 ms      | about 204 ms                 |
+| Resolution     | 1920x1080         | 1920x1080                    |
+| Frame rate     | about 15 fps      | 15 fps                       |
+| Text readable  | 11px line legible | 14px readable, 11px readable |
+
+**NFR-03 passes**, at about 40% of the 500 ms budget. This was over WiFi, which reads
+pessimistically — the wired lab switch should be the same or better, but that still has to be
+confirmed: re-measure at Gate 1. Full write-up in `docs/docs/spike-results.md`.
+
+Earlier, on the dev machine alone (teacher and student side by side):
 
 ```
 [teacher] published screen: 1920x1080 @ 15 fps, contentHint="text"
@@ -25,8 +40,6 @@ The portable `student-spike.exe` was tested the same way, run from a folder hold
 and `config.json`: it read that config, joined the room (`connectTime 135 ms`, reported by the
 server as Electron 44.9.3) and rendered the teacher's screen. So the bundled `livekit-client`
 loads correctly from inside the asar archive too.
-
-Still to do: run it across two PCs and measure the delay.
 
 Two Electron API notes for Phase 1, found by moving the spike from Electron 33 to 44:
 
@@ -235,8 +248,9 @@ The delay check works because the teacher broadcasts its whole screen, so the st
 teacher's clock inside the video while its own clock runs in the corner. One phone photo of the two
 monitors gives both numbers.
 
-**Measure on the wired network.** A WiFi run proves the pipeline but reads pessimistically; NFR-03's
-500 ms assumes the gigabit switch.
+**Measure on the wired network too.** The 204 ms above is a WiFi number: it proves the pipeline
+and clears the budget, but NFR-03's 500 ms assumes the gigabit switch, so the lab figure is still
+outstanding until Gate 1.
 
 ## Troubleshooting
 
