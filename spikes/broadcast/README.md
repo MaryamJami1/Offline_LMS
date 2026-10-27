@@ -19,8 +19,14 @@ Electron 44.9.3):
 [student] receiving 1920x1080  15 fps
 ```
 
-LiveKit negotiated `connectionType: "udp"` on a port inside the 50000-50200 range. Still to do: run
-it across two PCs and measure the delay.
+LiveKit negotiated `connectionType: "udp"` on a port inside the 50000-50200 range.
+
+The portable `student-spike.exe` was tested the same way, run from a folder holding only the .exe
+and `config.json`: it read that config, joined the room (`connectTime 135 ms`, reported by the
+server as Electron 44.9.3) and rendered the teacher's screen. So the bundled `livekit-client`
+loads correctly from inside the asar archive too.
+
+Still to do: run it across two PCs and measure the delay.
 
 Two Electron API notes for Phase 1, found by moving the spike from Electron 33 to 44:
 
@@ -132,42 +138,87 @@ It starts publishing immediately. The window shows a millisecond clock and a rea
 
 ## On the student PC (your second PC)
 
-The student PC runs no LiveKit and no server. It only needs Node.js and this folder.
+The student PC runs no LiveKit and no server. Use the portable .exe so it needs no Node.js and no
+pnpm either.
 
-1. **Copy the folder over.** USB stick, shared folder, or `git clone` the repo and `cd` into
-   `spikes/broadcast`. Do not copy `node_modules` or `bin`.
+### Build the portable .exe (on this PC, once)
 
-2. **Create `config.json`.** Either copy the one from the server PC, or
-   `cp config.example.json config.json` and set the same values:
+```sh
+npm install
+npm run build:student
+```
 
-   ```json
-   {
-     "livekitWsUrl": "ws://192.168.10.101:7880",
-     "roomName": "spike-broadcast",
-     "apiKey": "devkey",
-     "apiSecret": "<same secret as the server PC>"
-   }
-   ```
+The first build downloads NSIS, so give it a few minutes; later builds are quick. The result is a
+single file:
 
-   `livekitWsUrl` points at the **server PC's** LAN IP. `apiSecret` must match the server exactly,
-   or LiveKit rejects the token.
+```
+dist/student-spike.exe
+```
 
-3. **Install and run:**
+### Put two files on the USB drive
 
-   ```sh
-   npm install
-   npm run student
-   ```
+```
+USB:\
+├─ student-spike.exe
+└─ config.json
+```
+
+`config.json` must sit **next to the .exe**, not inside it. Copy the one from this PC, or start
+from `config.example.json`:
+
+```json
+{
+  "livekitWsUrl": "ws://192.168.10.101:7880",
+  "roomName": "spike-broadcast",
+  "apiKey": "devkey",
+  "apiSecret": "<same secret as the server PC>"
+}
+```
+
+`livekitWsUrl` points at the **server PC's** LAN IP. `apiSecret` must match the server exactly, or
+LiveKit rejects the token. Because the config is a plain file beside the .exe, you can change the
+address on the student PC in Notepad without rebuilding anything.
+
+The portable .exe unpacks itself into a temp folder before running, so its own `__dirname` is _not_
+the USB drive. It finds the config through `PORTABLE_EXECUTABLE_DIR`, which electron-builder sets
+to the folder the .exe was launched from — verified to work even when the working directory is
+somewhere else entirely. If no config is found it writes `student-spike-error.log` beside the .exe
+listing every path it tried, because a double-clicked app has no terminal to print to.
+
+### Run it
+
+Double-click `student-spike.exe`. It can run straight from the USB drive or from a folder copied
+off it — either way it reads the `config.json` sitting beside it.
+
+The .exe is unsigned, so Windows SmartScreen shows "Windows protected your PC" the first time:
+choose **More info → Run anyway**. (Phase 5 builds signed installers; see
+`docs/docs/07-installation.md`.)
 
 The window goes full-screen black, then shows the teacher's screen. **Esc quits** (the real
 student app is a locked kiosk; the spike stays escapable on purpose).
 
-Bottom-right shows the received resolution and fps; bottom-left shows this PC's own clock. The same
-numbers are printed in the terminal once a second, so you can read them without devtools:
+### Or run it from source instead
+
+If the student PC already has Node.js, the .exe is optional — copy this folder over (without
+`node_modules`, `bin` or `dist`), create `config.json` as above, then:
+
+```sh
+npm install
+npm run student
+```
+
+Bottom-right shows the received resolution and fps; bottom-left shows this PC's own clock — read
+the numbers off the screen, which is all you need for the checks below.
+
+Started from a terminal instead, the same line is also printed once a second:
 
 ```
 receiving 1920x1080  15 fps
 ```
+
+The portable .exe prints nothing to a terminal, even when started from one: its launcher unpacks
+the app and hands off, so redirecting its output captures an empty file. Read the HUD off the
+screen. If it fails to start, it writes `student-spike-error.log` next to itself instead.
 
 ---
 
@@ -193,6 +244,7 @@ monitors gives both numbers.
 | ---------------------------------------- | ----------------------------------------------------------------------------------- |
 | `livekit-client not found`               | `npm install` was not run in `spikes/broadcast`                                     |
 | App exits instantly, no window at all    | npm blocked Electron's postinstall, so there is no binary — see below               |
+| .exe shows an error box and quits        | No `config.json` beside it. `student-spike-error.log` lists the paths it tried      |
 | Student joins but the screen stays black | UDP 50000-50200 blocked, or `LAN_IP` in `.env` is `127.0.0.1`                       |
 | `could not establish signal connection`  | Wrong `livekitWsUrl`, or TCP 7880 blocked by the firewall                           |
 | `invalid token` / `permission denied`    | `apiSecret` differs between the two PCs                                             |

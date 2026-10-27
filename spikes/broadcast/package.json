@@ -3,20 +3,57 @@
   "version": "0.0.0",
   "private": true,
   "description": "Throwaway Phase 0 spike: teacher screen -> LiveKit -> student fullscreen. Not shipped.",
+  "main": "student/main.js",
   "scripts": {
     "teacher": "electron teacher/main.js",
     "student": "electron student/main.js",
     "token:teacher": "node gen-token.js teacher",
-    "token:student": "node gen-token.js student"
+    "token:student": "node gen-token.js student",
+    "build:student": "electron-builder --win portable"
   },
   "dependencies": {
     "livekit-client": "2.23.0",
     "livekit-server-sdk": "2.19.2"
   },
   "devDependencies": {
-    "electron": "44.9.3"
+    "electron": "44.9.3",
+    "electron-builder": "26.18.0"
   },
   "allowScripts": {
     "electron@44.9.3": true
+  },
+  "build": {
+    "appId": "com.lingualab.spike.student",
+    "productName": "student-spike",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!teacher/**",
+      "!bin/**",
+      "!dist/**",
+      "!gen-token.js",
+      "!run-livekit.ps1",
+      "!livekit.yaml",
+      "!README.md",
+      "!config.json",
+      "!config.example.json",
+      "!.env",
+      "!.env.example"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "student-spike.exe"
+    }
   }
 }

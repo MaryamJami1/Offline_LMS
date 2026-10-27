@@ -21,6 +21,9 @@ spikes/broadcast/config.json
 # Downloaded LiveKit server binary — fetched per the spike README, never committed
 spikes/broadcast/bin/
 
+# Packaged portable student spike (~100 MB)
+spikes/broadcast/dist/
+
 # Electron
 apps/teacher/out/
 apps/student/out/
