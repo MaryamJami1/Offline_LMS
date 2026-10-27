@@ -222,6 +222,8 @@ Phase 0, task 6: voice spike (same spikes/ folder, same throwaway rules).
 Add a "Talk" button to the spike teacher app that publishes the microphone (Opus, with echo
 cancellation, noise suppression and auto gain on), and make the student app play it. If LiveKit
 stats allow it, show the measured delay on screen. Keep it minimal.
+When the voice part works, rebuild the portable student exe so I can test it on the second PC
+the same way as the broadcast.
 ```
 
 ### P0-7. Run the spike on two PCs

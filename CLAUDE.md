@@ -31,7 +31,8 @@ The prototype's `.dc.html` files in `prototype/source/` hold the exact styles, s
    - Green: write the simplest code that passes.
    - Refactor: clean up with all tests green.
    - Never write feature code without a failing test that needs it. Never delete or weaken a test to make it pass.
-2. **Name tests after requirement IDs:** `lab-04.broadcast.spec.ts`, `adm-11.reset-password.spec.ts`. Start from the test cases listed in `docs/docs/08-testing.md`.
+   - Only exception: throwaway proof-of-concept code in `spikes/` (Phase 0). It is never imported by `apps/` or `packages/` and never shipped; when the feature is built for real, it is rebuilt test-first.
+2. **Name tests after requirement IDs:** `lab-04.broadcast.spec.ts`, `adm-11.reset-password.spec.ts`. Start from the test cases listed in `docs/08-testing.md`.
 3. **Run the tests** that cover your change before saying a task is done, and the full suite before a commit. Report real results; never claim tests pass without running them.
 4. **Offline only:** no CDNs, no external fonts, no calls to the internet at runtime. Fonts come from @fontsource; every dependency is installed locally.
 5. **Security on the server:** every endpoint and socket event checks role and ownership on the server (see the permissions table in `docs/docs/06-security-and-data.md`). Students only ever see their own data. Teachers only act on their own classes.
@@ -39,7 +40,7 @@ The prototype's `.dc.html` files in `prototype/source/` hold the exact styles, s
 7. **Strict TypeScript,** no `any`, ESLint + Prettier clean.
 8. **Branding is data:** never hard-code the product name, logo or primary colour in UI code; read them from settings (default "LinguaLab").
 9. **No fixed seats:** nothing about a student may depend on a particular PC; the link is `device_logins`.
-10. **Docs stay true:** if a change alters behaviour, update the matching file in `docs/docs/` in the same commit.
+10. **Docs stay true:** if a change alters behaviour, update the matching file in `docs/` in the same commit.
 
 ## Target repository layout
 
@@ -53,7 +54,9 @@ packages/ui     design tokens + shared components
 packages/test-utils  fake lab (60 seats), seeded DB, socket/LiveKit helpers
 e2e/            Playwright (browser + Electron)
 infra/          docker-compose.yml, Caddyfile, livekit.yaml, backup scripts
-docs/docs/          this documentation
+spikes/         Phase 0 throwaway experiments (not shipped, not test-first)
+notes/          demo notes, gate checklists and reports
+docs/           this documentation
 ```
 
 ## Commands (create these in Phase 0)
@@ -70,17 +73,19 @@ pnpm dev             # server + admin + apps in dev mode
 
 ## Current phase: Phase 0 — Setup and risk check (week 1)
 
-- [ ] Monorepo: pnpm workspaces, Turborepo, strict TypeScript, ESLint, Prettier
-- [ ] Test tools: Vitest, Testing Library, Supertest, Playwright, Husky + lint-staged; GitHub Actions running every test on each pull request
-- [ ] `infra/docker-compose.yml` with PostgreSQL 16, LiveKit, Caddy; `/api/health` endpoint, test first
-- [ ] Spike: teacher Electron app captures the screen (desktopCapturer) and publishes to LiveKit; student Electron app shows it full-screen on 2 PCs
-- [ ] Spike: teacher microphone heard clearly in a student headset
+- [x] Monorepo: pnpm workspaces, Turborepo, strict TypeScript, ESLint, Prettier — 8 packages; `pnpm lint` and `pnpm typecheck` green across all 8
+- [x] Test tools: Vitest, Testing Library, Supertest, Playwright, Husky + lint-staged; GitHub Actions running every test on each pull request — `pnpm test` green, 9 tests; `.github/workflows/ci.yml` runs lint, typecheck and test on every pull request to `main`
+- [ ] GitHub repository, milestones per phase, one issue per requirement ID, pull request template — repository and `.github/pull_request_template.md` exist; milestones and issues still to create (needs `gh auth login`)
+- [x] `infra/docker-compose.yml` with PostgreSQL 16, LiveKit, Caddy; `/api/health` endpoint, test first — `apps/server/test/health.spec.ts`, 4 Supertest tests (server, database, LiveKit, disk)
+- [x] Spike (in `spikes/`): teacher Electron app captures the screen (desktopCapturer) and publishes to LiveKit; student Electron app shows it full-screen — `spikes/broadcast`, published and received at 1920x1080 @ 15 fps
+- [ ] Spike (in `spikes/`): teacher microphone heard clearly in a student headset
+- [ ] Spike run on 2 PCs; results written to `docs/docs/spike-results.md` — broadcast half done (179/229 ms over WiFi, NFR-03 passes); voice half still to run
 
-Exit criteria: broadcast text readable and voice clear on 2 PCs; CI blocks a pull request with a failing test. Then move to Phase 1 in `docs/docs/09-project-plan.md`.
+Exit criteria: broadcast text readable and voice clear on 2 PCs; CI blocks a pull request with a failing test. Then move to Phase 1 in `docs/09-project-plan.md`.
 
 ## Working method
 
 - One GitHub issue per requirement ID; branch `feat/<ID>-short-name`; Conventional Commits (`feat(LAB-04): …`, `test(LAB-04): …`).
 - Small pull requests; `main` always releasable; merge only with green CI.
 - Before starting a task, restate which requirement IDs and test IDs it covers.
-- Ask before adding a dependency that is not in `docs/docs/02-architecture.md`.
+- Ask before adding a dependency that is not in `docs/docs//02-architecture.md`.

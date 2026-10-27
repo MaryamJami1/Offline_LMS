@@ -8,12 +8,21 @@ dist/
 .env.local
 .env.*.local
 
-# Prisma
-apps/server/prisma/generated/
+# Prisma generated client
+apps/server/src/generated/
 
 # Docker volumes
 infra/pgdata/
 infra/livekit-data/
+
+# Spike config holds a dev LiveKit secret and a machine-specific LAN IP
+spikes/broadcast/config.json
+
+# Downloaded LiveKit server binary — fetched per the spike README, never committed
+spikes/broadcast/bin/
+
+# Packaged portable student spike (~100 MB)
+spikes/broadcast/dist/
 
 # Electron
 apps/teacher/out/
@@ -31,8 +40,9 @@ Desktop.ini
 .vscode/settings.json
 .idea/
 
-# Test coverage
+# Test results and coverage
 coverage/
+e2e/test-results/
 
 # Logs
 *.log
