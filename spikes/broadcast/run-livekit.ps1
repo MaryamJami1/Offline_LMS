@@ -39,7 +39,7 @@ if ($lanIp -eq '127.0.0.1' -or $lanIp -eq 'localhost') {
 $env:LIVEKIT_KEYS = "$($settings['LIVEKIT_API_KEY']): $($settings['LIVEKIT_API_SECRET'])"
 
 Write-Host ""
-Write-Host "  LiveKit 1.7.2  ->  ws://${lanIp}:7880" -ForegroundColor Cyan
+Write-Host "  LiveKit 1.13.11 ->  ws://${lanIp}:7880" -ForegroundColor Cyan
 Write-Host "  Put this in config.json on BOTH PCs as livekitWsUrl." -ForegroundColor DarkGray
 Write-Host "  Allow it on Private networks if Windows Firewall asks. Ctrl+C to stop." -ForegroundColor DarkGray
 Write-Host ""

@@ -8,24 +8,6 @@ jobs:
   check:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: lingualab
-          POSTGRES_PASSWORD: lingualab
-          POSTGRES_DB: lingualab_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U lingualab"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      DATABASE_URL: postgresql://lingualab:lingualab@localhost:5432/lingualab_test
-
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +26,28 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+      # The API and integration tests run against the real PostgreSQL, LiveKit
+      # and Caddy from infra/docker-compose.yml, not against stubs, so the whole
+      # stack comes up here exactly as it does on the lab server.
+      - name: Start the server stack
+        run: |
+          LAN_IP=$(hostname -I | awk '{print $1}')
+          echo "Runner LAN address: $LAN_IP"
+          cat > infra/.env <<EOF
+          LAN_IP=$LAN_IP
+          POSTGRES_USER=lingualab
+          POSTGRES_PASSWORD=lingualab
+          POSTGRES_DB=lingualab
+          DATABASE_URL=postgresql://lingualab:lingualab@localhost:5432/lingualab
+          LIVEKIT_API_KEY=devkey
+          LIVEKIT_API_SECRET=ci-only-secret-at-least-32-characters-long
+          EOF
+          docker compose -f infra/docker-compose.yml up -d --wait --wait-timeout 180
+          docker compose -f infra/docker-compose.yml ps
+
       - name: Unit and integration tests
+        env:
+          DATABASE_URL: postgresql://lingualab:lingualab@localhost:5432/lingualab
         run: pnpm test
 
       - name: Install Playwright browsers
@@ -52,3 +55,11 @@ jobs:
 
       - name: End-to-end tests
         run: pnpm test:e2e
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -f infra/docker-compose.yml logs --no-color --tail 200
+
+      - name: Stop the server stack
+        if: always()
+        run: docker compose -f infra/docker-compose.yml down -v

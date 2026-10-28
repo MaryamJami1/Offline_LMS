@@ -1,19 +1,29 @@
+{
+	# Lab PCs reach the server by its IP address, and TLS forbids an IP literal
+	# in the SNI field, so those connections arrive with no server name at all.
+	# Without this, Caddy has no certificate to offer them and the handshake
+	# fails. See NFR-13 (HTTPS on the lab network).
+	default_sni {$LAN_IP}
+}
+
+# Upstreams are Docker Compose service names, resolved on the compose network.
+# "localhost" here would mean this proxy container itself.
 {$LAN_IP}:443 {
 	tls internal
 
 	handle /api/* {
-		reverse_proxy localhost:3000
+		reverse_proxy server:3000
 	}
 
 	handle /lab/* {
-		reverse_proxy localhost:3000
+		reverse_proxy server:3000
 	}
 
 	handle /livekit/* {
-		reverse_proxy localhost:7880
+		reverse_proxy livekit:7880
 	}
 
 	handle {
-		reverse_proxy localhost:3000
+		reverse_proxy server:3000
 	}
 }

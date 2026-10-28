@@ -45,12 +45,54 @@
         position: absolute;
         right: 12px;
         bottom: 12px;
-        padding: 6px 10px;
+        width: 420px;
+        padding: 8px 10px;
         border-radius: 6px;
         background: rgba(0, 0, 0, 0.65);
         color: #5eead4;
         font-size: 13px;
         font-variant-numeric: tabular-nums;
+        display: grid;
+        gap: 5px;
+      }
+      #hud-voice {
+        color: #5eead4;
+      }
+      #hud-voice.over {
+        color: #fca5a5;
+      }
+      #hud-voice-detail,
+      #hud-voice-codec {
+        color: #8ea4cc;
+        font-size: 12px;
+      }
+      .meter {
+        height: 10px;
+        border-radius: 5px;
+        background: #1c2743;
+        overflow: hidden;
+      }
+      .meter > div {
+        height: 100%;
+        width: 0%;
+        background: #5eead4;
+      }
+      .meter > div.hot {
+        background: #f87171;
+      }
+      #audio-prompt {
+        position: absolute;
+        left: 50%;
+        top: 24px;
+        transform: translateX(-50%);
+        padding: 10px 16px;
+        border-radius: 6px;
+        background: #4c1d24;
+        color: #ffd9de;
+        font-size: 16px;
+      }
+      #audio-prompt.hidden {
+        display: none;
       }
       #local-clock {
         position: absolute;
@@ -67,16 +109,34 @@
   </head>
   <body>
     <video id="screen" autoplay playsinline muted></video>
+    <audio id="voice" autoplay></audio>
     <div id="overlay">Connecting…</div>
-    <div id="hud">waiting</div>
+    <div id="audio-prompt" class="hidden">Press any key to let this PC play sound</div>
+    <div id="hud">
+      <div id="hud-video">waiting</div>
+      <div id="hud-voice">voice: waiting</div>
+      <div class="meter"><div id="voice-bar"></div></div>
+      <div id="hud-voice-detail">&nbsp;</div>
+      <div id="hud-voice-codec">&nbsp;</div>
+    </div>
     <div id="local-clock">--:--:--.---</div>
 
     <script src="../node_modules/livekit-client/dist/livekit-client.umd.js"></script>
+    <script src="../audio-meter.js"></script>
     <script>
       const videoEl = document.getElementById('screen');
+      const audioEl = document.getElementById('voice');
       const overlayEl = document.getElementById('overlay');
-      const hudEl = document.getElementById('hud');
+      const promptEl = document.getElementById('audio-prompt');
+      const hudVideoEl = document.getElementById('hud-video');
+      const hudVoiceEl = document.getElementById('hud-voice');
+      const hudVoiceDetailEl = document.getElementById('hud-voice-detail');
+      const hudVoiceCodecEl = document.getElementById('hud-voice-codec');
+      const voiceBarEl = document.getElementById('voice-bar');
       const localClockEl = document.getElementById('local-clock');
+
+      // NFR-04: teacher and student voice in headsets, under 200 ms delay.
+      const VOICE_DELAY_BUDGET_MS = 200;
 
       function setOverlay(text, isError = false) {
         if (text === null) {
@@ -86,6 +146,21 @@
         overlayEl.classList.remove('hidden');
         overlayEl.classList.toggle('error', isError);
         overlayEl.textContent = text;
+      }
+
+      // Set once the video element has actually painted a frame, so the
+      // "waiting" message cannot be put back over a running broadcast.
+      let videoShown = false;
+
+      // requestVideoFrameCallback fires on the next decoded frame; 'playing' is
+      // the fallback. Waiting for a frame rather than for TrackSubscribed keeps
+      // the message up while a subscribed track is still a black screen.
+      function onFirstFrame(done) {
+        if (videoEl.requestVideoFrameCallback) {
+          videoEl.requestVideoFrameCallback(() => done());
+          return;
+        }
+        videoEl.addEventListener('playing', () => done(), { once: true });
       }
 
       const pad = (n, width = 2) => String(n).padStart(width, '0');
@@ -115,13 +190,118 @@
         }
         lastAt = now;
         const line = `${videoEl.videoWidth}x${videoEl.videoHeight}  ${fps} fps`;
-        hudEl.textContent = line;
+        hudVideoEl.textContent = line;
         console.log(`receiving ${line}`);
       }, 1000);
 
+      // --- Voice (NFR-04) -------------------------------------------------
+
+      let voiceMuted = false;
+      let prevInbound = null;
+      let prevPlayout = null;
+      let bufferMs = null;
+      let playoutMs = null;
+
+      function describeCodec(report, inbound) {
+        for (const stat of report.values()) {
+          if (stat.type === 'codec' && stat.id === inbound.codecId) {
+            return `${stat.mimeType} ${stat.clockRate} Hz`;
+          }
+        }
+        return '';
+      }
+
+      // Mouth-to-ear delay cannot be read from one number, so it is added up
+      // from the three parts the receiver can see:
+      //
+      //   net     half the round trip to the LiveKit server. The teacher's own
+      //           half is shown on the teacher window; on a LAN both are ~1 ms.
+      //   buffer  average time a sample waited in the jitter buffer. This is
+      //           where nearly all of the delay sits, and it grows with jitter.
+      //   playout average time from leaving the buffer to reaching the speaker.
+      //
+      // Capture and Opus encode on the teacher PC are not in any of these, so
+      // the true figure is roughly 20-40 ms higher than what is shown.
+      async function pollVoiceStats(track) {
+        const report = await track.getRTCStatsReport();
+        if (!report) return;
+
+        let inbound;
+        let playout;
+        let pair;
+        let remoteOutbound;
+        report.forEach((stat) => {
+          if (stat.type === 'inbound-rtp' && stat.kind === 'audio') inbound = stat;
+          else if (stat.type === 'media-playout' && stat.kind === 'audio') playout = stat;
+          else if (stat.type === 'remote-outbound-rtp' && stat.kind === 'audio') {
+            remoteOutbound = stat;
+          } else if (stat.type === 'candidate-pair' && stat.nominated) pair = stat;
+        });
+        if (!inbound) return;
+
+        const roundTrip = pair?.currentRoundTripTime ?? remoteOutbound?.roundTripTime;
+        const netMs = typeof roundTrip === 'number' ? (roundTrip * 1000) / 2 : null;
+
+        // Averaged over the last second only: the raw counters are totals for
+        // the whole call, which would smear a spike away.
+        if (prevInbound) {
+          const emitted = inbound.jitterBufferEmittedCount - prevInbound.jitterBufferEmittedCount;
+          if (emitted > 0) {
+            const waited = inbound.jitterBufferDelay - prevInbound.jitterBufferDelay;
+            bufferMs = (waited / emitted) * 1000;
+          }
+        }
+        if (playout && prevPlayout) {
+          const samples = playout.totalSamplesCount - prevPlayout.totalSamplesCount;
+          if (samples > 0) {
+            const waited = playout.totalPlayoutDelay - prevPlayout.totalPlayoutDelay;
+            playoutMs = (waited / samples) * 1000;
+          }
+        }
+
+        let lossText = '';
+        let gapsText = '';
+        if (prevInbound) {
+          const received = inbound.packetsReceived - prevInbound.packetsReceived;
+          const lost = inbound.packetsLost - prevInbound.packetsLost;
+          if (received + lost > 0) {
+            lossText = `loss ${((lost / (received + lost)) * 100).toFixed(1)}%`;
+          }
+          // Samples the decoder had to invent because nothing arrived: this is
+          // what "the voice broke up" sounds like, measured.
+          const samples = inbound.totalSamplesReceived - prevInbound.totalSamplesReceived;
+          const concealed = inbound.concealedSamples - prevInbound.concealedSamples;
+          if (samples > 0) gapsText = `gaps ${((concealed / samples) * 100).toFixed(1)}%`;
+        }
+
+        prevInbound = inbound;
+        prevPlayout = playout;
+
+        const total = (netMs ?? 0) + (bufferMs ?? 0) + (playoutMs ?? 0);
+        const ms = (value) => (value === null ? '?' : Math.round(value));
+        const headline = voiceMuted
+          ? 'voice: teacher microphone muted'
+          : `voice ${Math.round(total)} ms  (budget ${VOICE_DELAY_BUDGET_MS} ms)`;
+
+        hudVoiceEl.textContent = headline;
+        hudVoiceEl.classList.toggle('over', !voiceMuted && total > VOICE_DELAY_BUDGET_MS);
+        hudVoiceDetailEl.textContent = [
+          `net ${ms(netMs)} + buffer ${ms(bufferMs)} + playout ${ms(playoutMs)} ms`,
+          lossText,
+          gapsText,
+        ]
+          .filter(Boolean)
+          .join(' · ');
+        hudVoiceCodecEl.textContent = describeCodec(report, inbound);
+        console.log(`${headline} | ${hudVoiceDetailEl.textContent}`);
+      }
+
       async function start() {
         if (typeof LivekitClient === 'undefined') {
-          setOverlay('livekit-client not found. Run "npm install" in spikes/broadcast first.', true);
+          setOverlay(
+            'livekit-client not found. Run "npm install" in spikes/broadcast first.',
+            true,
+          );
           return;
         }
 
@@ -129,19 +309,61 @@
         const room = new LivekitClient.Room({ adaptiveStream: false, dynacast: false });
 
         room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-          if (track.kind !== 'video') return;
-          track.attach(videoEl);
-          setOverlay(null);
           console.log(
             `subscribed to ${track.kind} from "${participant.identity}" ` +
               `(${publication.trackSid}, ${publication.mimeType ?? 'codec unknown'})`,
           );
+
+          if (track.kind === 'audio') {
+            track.attach(audioEl);
+            voiceMuted = publication.isMuted;
+            hudVoiceEl.textContent = 'voice: measuring…';
+            window.createLevelMeter(audioEl.srcObject, voiceBarEl, null);
+            setInterval(() => {
+              pollVoiceStats(track).catch((err) => console.error(err));
+            }, 1000);
+            return;
+          }
+
+          track.attach(videoEl);
+          // Not cleared here: LiveKit can deliver an already-published track
+          // while room.connect() is still running, and the "Joined room..."
+          // line at the end of start() would then paint itself back over the
+          // video that just arrived.
+          onFirstFrame(() => {
+            videoShown = true;
+            setOverlay(null);
+          });
         });
 
         room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track) => {
-          if (track.kind !== 'video') return;
+          if (track.kind === 'audio') {
+            track.detach(audioEl);
+            hudVoiceEl.textContent = 'voice: stopped';
+            return;
+          }
           track.detach(videoEl);
+          videoShown = false;
           setOverlay('Broadcast stopped.\nEsc to quit.');
+        });
+
+        // The teacher's Talk button mutes and unmutes rather than unpublishing,
+        // so silence here is a muted microphone, not a broken connection.
+        room.on(LivekitClient.RoomEvent.TrackMuted, (publication) => {
+          if (publication.kind === 'audio') voiceMuted = true;
+        });
+        room.on(LivekitClient.RoomEvent.TrackUnmuted, (publication) => {
+          if (publication.kind === 'audio') voiceMuted = false;
+        });
+
+        // Chromium refuses to play sound before the window has been interacted
+        // with. student/main.js turns that off, so this should never fire —
+        // but silence with no explanation is the worst possible failure here.
+        room.on(LivekitClient.RoomEvent.AudioPlaybackStatusChanged, () => {
+          promptEl.classList.toggle('hidden', room.canPlaybackAudio);
+        });
+        document.addEventListener('keydown', () => {
+          if (!room.canPlaybackAudio) room.startAudio().catch((err) => console.error(err));
         });
 
         room.on(LivekitClient.RoomEvent.Disconnected, () => {
@@ -150,7 +372,11 @@
 
         setOverlay(`Connecting to ${url} …`);
         await room.connect(url, token);
-        setOverlay(`Joined room "${roomName}".\nWaiting for the teacher to publish…\nEsc to quit.`);
+        if (!videoShown) {
+          setOverlay(
+            `Joined room "${roomName}".\nWaiting for the teacher to publish…\nEsc to quit.`,
+          );
+        }
       }
 
       start().catch((err) => {

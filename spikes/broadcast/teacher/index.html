@@ -9,7 +9,7 @@
       }
       body {
         margin: 0;
-        padding: 24px;
+        padding: 20px 24px;
         background: #0f172a;
         color: #e8eefc;
         font-family: Consolas, 'Courier New', monospace;
@@ -19,7 +19,7 @@
         letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #8ea4cc;
-        margin: 0 0 20px;
+        margin: 0 0 16px;
       }
       #clock {
         font-size: 76px;
@@ -32,19 +32,78 @@
       #ruler-label {
         font-size: 12px;
         color: #8ea4cc;
-        margin: 8px 0 24px;
+        margin: 8px 0 16px;
       }
       #status {
         padding: 12px 14px;
         border-radius: 8px;
         background: #1c2743;
         font-size: 14px;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         white-space: pre-wrap;
       }
       #status.error {
         background: #4c1d24;
         color: #ffd9de;
+      }
+      #voice {
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #1c2743;
+        margin-bottom: 16px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px 14px;
+        align-items: center;
+      }
+      #talk {
+        grid-row: span 2;
+        width: 150px;
+        padding: 16px 0;
+        border: 0;
+        border-radius: 8px;
+        background: #2f4372;
+        color: #e8eefc;
+        font: inherit;
+        font-size: 17px;
+        cursor: pointer;
+      }
+      #talk:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      #talk.live {
+        background: #14b8a6;
+        color: #042f2a;
+        font-weight: 700;
+      }
+      #voice-state {
+        font-size: 15px;
+      }
+      #voice-state.error {
+        color: #ffd9de;
+      }
+      .meter {
+        height: 12px;
+        border-radius: 6px;
+        background: #0f172a;
+        overflow: hidden;
+      }
+      .meter > div {
+        height: 100%;
+        width: 0%;
+        background: #5eead4;
+      }
+      .meter > div.hot {
+        background: #f87171;
+      }
+      #mic-level,
+      #mic-setup,
+      #mic-stats {
+        grid-column: 2;
+        font-size: 12px;
+        color: #8ea4cc;
+        white-space: pre-wrap;
       }
       .ruler {
         background: #ffffff;
@@ -81,6 +140,17 @@
 
     <div id="status">Starting…</div>
 
+    <div id="voice">
+      <button id="talk" type="button" disabled>Talk</button>
+      <div id="voice-state">Microphone off</div>
+      <div class="meter"><div id="mic-bar"></div></div>
+      <div id="mic-level">silent</div>
+      <div id="mic-setup">
+        Press Talk to publish the microphone (NFR-04: under 200 ms, echo cancelled).
+      </div>
+      <div id="mic-stats">—</div>
+    </div>
+
     <div id="ruler-label">
       Readability ruler — every line below must be legible on the student screen (NFR-03).
     </div>
@@ -92,13 +162,28 @@
     </div>
 
     <script src="../node_modules/livekit-client/dist/livekit-client.umd.js"></script>
+    <script src="../audio-meter.js"></script>
     <script>
       const statusEl = document.getElementById('status');
       const clockEl = document.getElementById('clock');
+      const talkBtn = document.getElementById('talk');
+      const voiceStateEl = document.getElementById('voice-state');
+      const micBarEl = document.getElementById('mic-bar');
+      const micLevelEl = document.getElementById('mic-level');
+      const micSetupEl = document.getElementById('mic-setup');
+      const micStatsEl = document.getElementById('mic-stats');
+
+      let room = null;
+      let micTrack = null;
 
       function setStatus(text, isError = false) {
         statusEl.textContent = text;
         statusEl.classList.toggle('error', isError);
+      }
+
+      function setVoiceState(text, isError = false) {
+        voiceStateEl.textContent = text;
+        voiceStateEl.classList.toggle('error', isError);
       }
 
       function tickClock() {
@@ -139,7 +224,7 @@
         track.contentHint = 'text';
 
         setStatus(`Connecting to ${url} …`);
-        const room = new LivekitClient.Room({ adaptiveStream: false, dynacast: false });
+        room = new LivekitClient.Room({ adaptiveStream: false, dynacast: false });
         await room.connect(url, token);
 
         await room.localParticipant.publishTrack(track, {
@@ -169,7 +254,130 @@
         room.on(LivekitClient.RoomEvent.Disconnected, () => {
           setStatus('Disconnected from LiveKit.', true);
         });
+
+        talkBtn.disabled = false;
       }
+
+      // --- Voice (NFR-04) -------------------------------------------------
+
+      function paintTalkButton() {
+        const live = micTrack !== null && !micTrack.isMuted;
+        talkBtn.textContent = live ? 'Stop talking' : 'Talk';
+        talkBtn.classList.toggle('live', live);
+        if (live) setVoiceState('Microphone live — the class can hear you');
+        else setVoiceState(micTrack ? 'Microphone muted' : 'Microphone off');
+      }
+
+      async function publishMicrophone() {
+        setVoiceState('Opening the microphone…');
+
+        // The three NFR-04 processing flags. Asked for by name so that the
+        // getSettings() readout below reports what Chromium actually applied
+        // rather than what we hoped for.
+        const track = await LivekitClient.createLocalAudioTrack({
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        });
+
+        await room.localParticipant.publishTrack(track, {
+          name: 'microphone',
+          source: LivekitClient.Track.Source.Microphone,
+          // Opus is the only audio codec WebRTC negotiates here, so the preset
+          // only picks its bitrate: speech is mono 24 kbit/s. If consonants
+          // sound dull in the headset this is the knob to turn — 32000 is
+          // still nothing on a LAN.
+          audioPreset: LivekitClient.AudioPresets.speech,
+          dtx: true, // silence costs almost no bitrate
+          red: true, // resend the previous frame, so one lost packet is not a gap
+        });
+        micTrack = track;
+
+        const settings = track.mediaStreamTrack.getSettings();
+        const onOff = (value) => (value ? 'on' : 'OFF');
+        const line =
+          `device: ${track.mediaStreamTrack.label || 'unknown'}\n` +
+          `AEC ${onOff(settings.echoCancellation)} · NS ${onOff(settings.noiseSuppression)} · ` +
+          `AGC ${onOff(settings.autoGainControl)} · ` +
+          `${settings.sampleRate ?? '?'} Hz · ${settings.channelCount ?? '?'} ch`;
+        micSetupEl.textContent = line;
+        console.log(`published microphone: ${line.replace('\n', ' | ')}`);
+
+        window.createLevelMeter(new MediaStream([track.mediaStreamTrack]), micBarEl, micLevelEl);
+        setInterval(pollMicStats, 1000);
+      }
+
+      let prevOutbound = null;
+
+      // Teacher-side half of the voice delay: how long a packet takes to reach
+      // the LiveKit server. The student app measures its own half and adds the
+      // jitter buffer, which is where nearly all of the delay actually sits.
+      async function pollMicStats() {
+        const report = await micTrack.getRTCStatsReport();
+        if (!report) return;
+
+        let outbound;
+        let remoteInbound;
+        const codecs = new Map();
+        report.forEach((stat) => {
+          if (stat.type === 'outbound-rtp' && stat.kind === 'audio') outbound = stat;
+          else if (stat.type === 'remote-inbound-rtp' && stat.kind === 'audio')
+            remoteInbound = stat;
+          else if (stat.type === 'codec') codecs.set(stat.id, stat);
+        });
+        if (!outbound) return;
+
+        const parts = [];
+        const codec = codecs.get(outbound.codecId);
+        if (codec) parts.push(`${codec.mimeType} ${codec.clockRate} Hz`);
+
+        if (prevOutbound) {
+          const seconds = (outbound.timestamp - prevOutbound.timestamp) / 1000;
+          const bits = (outbound.bytesSent - prevOutbound.bytesSent) * 8;
+          if (seconds > 0) parts.push(`${Math.round(bits / seconds / 1000)} kbit/s`);
+        }
+        prevOutbound = outbound;
+
+        if (typeof remoteInbound?.roundTripTime === 'number') {
+          parts.push(`uplink half-RTT ${Math.round((remoteInbound.roundTripTime * 1000) / 2)} ms`);
+        }
+        if (typeof remoteInbound?.packetsLost === 'number') {
+          parts.push(`${remoteInbound.packetsLost} lost`);
+        }
+
+        micStatsEl.textContent = parts.join(' · ');
+      }
+
+      function micErrorMessage(err) {
+        if (err.name === 'NotAllowedError') {
+          return (
+            'Windows blocked the microphone. Settings → Privacy & security → Microphone → ' +
+            'let desktop apps use the microphone, then press Talk again.'
+          );
+        }
+        if (err.name === 'NotFoundError') {
+          return 'No microphone found. Plug the headset in, then press Talk again.';
+        }
+        return `Microphone failed: ${err.message}`;
+      }
+
+      talkBtn.addEventListener('click', async () => {
+        talkBtn.disabled = true;
+        try {
+          // Published once, then muted and unmuted: re-publishing would
+          // renegotiate the connection every time the teacher stops talking.
+          if (micTrack === null) await publishMicrophone();
+          else if (micTrack.isMuted) await micTrack.unmute();
+          else await micTrack.mute();
+          paintTalkButton();
+        } catch (err) {
+          setVoiceState(micErrorMessage(err), true);
+          console.error(err);
+        } finally {
+          talkBtn.disabled = false;
+        }
+      });
 
       start().catch((err) => {
         setStatus(`Failed: ${err.message}`, true);
