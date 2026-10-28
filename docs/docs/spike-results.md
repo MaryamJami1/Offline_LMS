@@ -4,10 +4,11 @@ What the week-1 risk spikes proved, and the settings Phase 1 and Phase 2 should 
 spike code itself lives in `spikes/` and is throwaway: it is not test-first, it is never imported by
 `apps/` or `packages/`, and the features are rebuilt properly, test-first, when their phase arrives.
 
-| Spike            | Requirement | Status                 |
-| ---------------- | ----------- | ---------------------- |
-| Screen broadcast | NFR-03      | Passed on 2 PCs (WiFi) |
-| Teacher voice    | NFR-04      | Passed on 2 PCs (WiFi) |
+| Spike            | Requirement    | Status                           |
+| ---------------- | -------------- | -------------------------------- |
+| Screen broadcast | NFR-03         | Passed on 2 PCs (WiFi)           |
+| Teacher voice    | NFR-04         | Passed on 2 PCs (WiFi)           |
+| Server stack     | NFR-12, NFR-13 | Passed in Docker, 4 faults fixed |
 
 ## Screen broadcast — NFR-03
 
@@ -206,3 +207,106 @@ of these stats, so true mouth-to-ear is roughly 20-40 ms above the figure shown.
 If the wired Gate 1 run ever comes in over 200 ms, the next thing to try is
 `receiver.jitterBufferTarget`, which caps how far the buffer may grow, at the cost of dropouts when
 the network is rough. The spike deliberately leaves it unset: its job is to measure the default.
+
+## The server stack in Docker — NFR-12 (2026-10-28)
+
+Phase 0 task 4 was ticked before Docker Desktop worked on the dev laptop, so `infra/docker-compose.yml`
+had never actually been started. Re-checked here on Docker Desktop 29.9.2 (WSL 2 backend, 3.78 GB
+of the laptop's 8 GB). All three services now start and answer:
+
+| Service    | Image                             | Checked                                             |
+| ---------- | --------------------------------- | --------------------------------------------------- |
+| PostgreSQL | `postgres:16`                     | `SELECT` answered; reports PostgreSQL 16.15         |
+| LiveKit    | `livekit/livekit-server:v1.13.11` | HTTP 200 on 7880; `nodeIP` is the LAN address       |
+| Caddy      | `caddy:2`                         | 80 redirects to 443; TLS 1.3 from its own authority |
+
+`docker compose up -d` takes about 19 s from cold and the three containers together sit at about
+91 MB, so the 8 GB laptop is not the constraint.
+
+### What the old `/api/health` test actually proved: nothing about the database
+
+`apps/server/test/health.spec.ts` used no mocks — it booted the real `AppModule` with the real
+Prisma client. But its assertion was `expect(['ok', 'error']).toContain(res.body.database)`, which
+is true either way. With no database and no LiveKit running, all four tests passed while the
+endpoint was reporting `database: "error"` and `livekit: "error"`. The test described the shape of
+the response, not the health of anything.
+
+It is kept as that shape test. Three new files hold the parts that can fail:
+
+| File                                             | Proves                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `apps/server/test/nfr-12.compose-config.spec.ts` | The compose file and its two config files resolve correctly |
+| `apps/server/test/nfr-12.infra-stack.spec.ts`    | The three services run, and `/api/health` reports `ok`      |
+| `apps/server/src/health/health.service.spec.ts`  | `ok` and `error` are told apart, and neither throws         |
+
+CI now brings the whole stack up with `docker compose up -d --wait` before `pnpm test`, so these
+run against real services on every pull request instead of against nothing.
+
+### Four faults the first real start found
+
+1. **No `infra/.env`, and compose did not care.** `POSTGRES_USER`, `POSTGRES_PASSWORD` and
+   `POSTGRES_DB` resolved to blank strings with only a warning. Every required variable is now
+   written `${VAR:?set VAR in infra/.env}`, so compose refuses to start rather than bring up a
+   database with no password.
+2. **`infra/livekit.yaml` held `${LAN_IP}` and `${LIVEKIT_API_KEY}`.** `livekit-server` does not
+   expand `${VAR}` inside its config file — the spike's own `run-livekit.ps1` had already worked
+   around this, but `infra/` had not. The keys now arrive as the `LIVEKIT_KEYS` environment
+   variable and the address as `--node-ip`, both filled in by compose.
+3. **Caddy proxied to itself.** `reverse_proxy localhost:7880` and `localhost:3000` mean the Caddy
+   container, not the LiveKit container or the API. They are now the compose service names
+   `livekit:7880` and `server:3000` (the `server` service arrives in Phase 1; until then `/api/*`
+   returns 502, which is correct).
+4. **No certificate for a client arriving by IP — NFR-13.** This one would have broken the whole
+   lab. TLS forbids an IP literal in the SNI field, so a lab PC opening `https://192.168.10.2`
+   sends no server name at all, and Caddy had nothing to offer it: the handshake failed with
+   `tlsv1 alert internal error`. Port 80 worked, which is what hides it. Fixed with a global
+   `default_sni {$LAN_IP}` in the Caddyfile. The handshake now completes with
+
+   ```
+   protocol : TLSv1.3
+   issuer   : Caddy Local Authority - ECC Intermediate
+   SAN      : IP Address:192.168.10.101
+   ```
+
+   Three tests cover it, named after NFR-13 rather than NFR-12.
+
+### The broadcast spike against the Docker LiveKit
+
+The standalone `livekit-server.exe` was stopped and `spikes/broadcast` pointed at the container
+instead — no spike code or config changed, because `infra/.env` deliberately carries the same key
+and secret as `spikes/broadcast/config.json`. Both apps reported the container's own node ID
+(`ND_kAfQX5BpDsGj`), so this was the Docker server and not the binary:
+
+```
+[teacher] connected to Livekit Server version: 1.13.11, protocol: 18, nodeId: ND_kAfQX5BpDsGj
+[teacher] published screen: 1920x1080 @ 15 fps, contentHint="text"
+[student] subscribed to video from "teacher" (TR_VSu7B8HgE3nvY4, video/VP8)
+[student] receiving 1920x1080  15 fps
+```
+
+Media went over UDP through the published range, not the TCP fallback, which is the thing worth
+knowing about running LiveKit in Docker:
+
+```
+connectionType: "udp"
+teacher selected: udp4 host 192.168.10.101:50193
+student selected: udp4 host 192.168.10.101:50069
+```
+
+Two observations for Gate 1, neither a blocker:
+
+- **Docker rewrites the client's source address.** LiveKit saw the teacher's remote candidate as
+  `udp prflx 172.18.0.1:43143` — the Docker bridge gateway, not the client's own IP. Media is
+  unaffected, but anything that wants to identify a lab PC by its address will see one address for
+  all 60 seats. Per-seat identity must come from the device key (STU-01, `device_logins`), never
+  from the socket address.
+- **The teacher's first connect took 7602 ms**, against 1984–2761 ms on the standalone binary; the
+  student, connecting a minute later, took 2137 ms. One cold sample is not a measurement, so this
+  is only a note: both numbers are one-time setup cost when joining a room, not frame latency, and
+  Phase 2 already keeps the student apps joined for the whole session so the teacher never pays it
+  (see the 2-second finding above). Worth timing properly on the wired network at Gate 1.
+
+Both figures above were taken with both apps on the one laptop, so they say nothing new about
+NFR-03 or NFR-04 — the 2-PC numbers earlier in this document still stand as the result. What this
+run proves is narrower and was the question: the pipeline works unchanged when LiveKit is the
+Docker container from `infra/`.

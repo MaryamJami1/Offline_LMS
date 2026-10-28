@@ -7,7 +7,7 @@
     "build": "echo \"not yet\"",
     "dev": "echo \"not yet\"",
     "test": "vitest run",
-    "lint": "eslint src/",
+    "lint": "eslint src/ test/",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate"

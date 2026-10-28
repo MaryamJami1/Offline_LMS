@@ -113,6 +113,23 @@ they come back in Phase 1 when the real apps talk to the NestJS server.
 
 ## On the server PC (also the teacher PC)
 
+### 0. Or skip steps 1 and 2 and use the Docker stack
+
+Since 2026-10-28 `infra/docker-compose.yml` runs the same LiveKit 1.13.11, so the standalone binary
+is optional:
+
+```sh
+cp infra/.env.example infra/.env     # set LAN_IP; keep the key and secret below
+docker compose -f infra/docker-compose.yml up -d
+```
+
+Set `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` in `infra/.env` to the same pair as `config.json`
+here, and the spike needs no change at all: it already points at `ws://<LAN_IP>:7880`. Confirmed
+working this way — media still negotiates UDP inside the 50000-50200 range, and both apps report
+the container's node ID. See the NFR-12 section of `docs/docs/spike-results.md`.
+
+The rest of this section is the standalone binary, which needs no Docker.
+
 ### 1. Get the LiveKit server
 
 Version **1.13.11**, matching the `livekit/livekit-server:v1.13.11` image pinned in

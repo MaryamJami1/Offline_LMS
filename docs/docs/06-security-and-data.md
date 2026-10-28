@@ -6,23 +6,23 @@ Three roles, a server-side check on every request, and nightly backups keep stud
 
 Yes = allowed; Own = only their own classes (teacher) or own data (student); No = refused by the server with 403.
 
-| Action | Admin | Teacher | Student |
-| --- | --- | --- | --- |
-| Create, edit, deactivate users; set first passwords | Yes | No | No |
-| Reset a student's password | Yes | Own classes | No |
-| Import students | Yes | No | No |
-| Manage courses, batches, classes, enrolments | Yes | No | No |
-| Make groups | Yes | Own | No |
-| Manage labs, seats, approve PCs | Yes | No | No |
-| Start and end a class; use lab controls | No | Own | No |
-| Create and edit lessons | Yes | Yes (own drafts; shared once published) | No |
-| Publish lessons; assign work | Yes | Own classes | No |
-| See lessons | Yes | Yes | Assigned only |
-| Submit answers and recordings | No | No | Own |
-| Mark work, give feedback | No | Own classes | No |
-| See marks and progress | All | Own classes | Own |
-| Reports and exports | All | Own classes | No |
-| Settings (including branding), backups, restore, audit log | Yes | No | No |
+| Action                                                     | Admin | Teacher                                 | Student       |
+| ---------------------------------------------------------- | ----- | --------------------------------------- | ------------- |
+| Create, edit, deactivate users; set first passwords        | Yes   | No                                      | No            |
+| Reset a student's password                                 | Yes   | Own classes                             | No            |
+| Import students                                            | Yes   | No                                      | No            |
+| Manage courses, batches, classes, enrolments               | Yes   | No                                      | No            |
+| Make groups                                                | Yes   | Own                                     | No            |
+| Manage labs, seats, approve PCs                            | Yes   | No                                      | No            |
+| Start and end a class; use lab controls                    | No    | Own                                     | No            |
+| Create and edit lessons                                    | Yes   | Yes (own drafts; shared once published) | No            |
+| Publish lessons; assign work                               | Yes   | Own classes                             | No            |
+| See lessons                                                | Yes   | Yes                                     | Assigned only |
+| Submit answers and recordings                              | No    | No                                      | Own           |
+| Mark work, give feedback                                   | No    | Own classes                             | No            |
+| See marks and progress                                     | All   | Own classes                             | Own           |
+| Reports and exports                                        | All   | Own classes                             | No            |
+| Settings (including branding), backups, restore, audit log | Yes   | No                                      | No            |
 
 Each row is enforced by a NestJS guard and covered by an access test that tries the action as every role (test-driven: the refusal tests are written first).
 
@@ -49,6 +49,8 @@ Each row is enforced by a NestJS guard and covered by an access test that tries 
 
 **Transport:** everything runs over HTTPS and WSS through Caddy with a local certificate authority. The installer adds the root certificate to each lab PC, which is also what lets the apps use the microphone and screen capture.
 
+Lab PCs reach the server by its IP address, and TLS forbids an IP literal in the SNI field, so those connections arrive carrying no server name. Caddy therefore needs `default_sni` set to the server's address in `infra/Caddyfile`, or it has no certificate to offer and every handshake fails; plain HTTP on port 80 still answers with a redirect, which is what makes the fault easy to miss. Tested in `apps/server/test/nfr-12.infra-stack.spec.ts`.
+
 **Student app lock-down:** starts with Windows, runs in kiosk mode, blocks Alt+F4 and Task Manager while a teacher control is running, and needs the admin PIN to exit. Students use standard (non-admin) Windows accounts.
 
 ## Data protection, privacy and audit
@@ -64,11 +66,11 @@ Each row is enforced by a NestJS guard and covered by an access test that tries 
 
 ## Backup and restore policy
 
-| What | When | Where | Kept |
-| --- | --- | --- | --- |
-| Automatic backup: database dump (`pg_dump`) + changed files in `/data` | Every night at 23:00 (changeable in Settings) | Second disk in the server | 14 days |
-| Manual backup | Any time from the admin panel ("Back up now") | Second disk | Until deleted |
-| USB copy of the latest backup | Weekly, by the admin ("Copy latest to USB") | External USB drive kept away from the lab | 8 weeks (admin rotates drives) |
+| What                                                                   | When                                          | Where                                     | Kept                           |
+| ---------------------------------------------------------------------- | --------------------------------------------- | ----------------------------------------- | ------------------------------ |
+| Automatic backup: database dump (`pg_dump`) + changed files in `/data` | Every night at 23:00 (changeable in Settings) | Second disk in the server                 | 14 days                        |
+| Manual backup                                                          | Any time from the admin panel ("Back up now") | Second disk                               | Until deleted                  |
+| USB copy of the latest backup                                          | Weekly, by the admin ("Copy latest to USB")   | External USB drive kept away from the lab | 8 weeks (admin rotates drives) |
 
 - Each backup is checked after it is written (file size and a test read of the dump). A failed backup shows on the admin dashboard.
 - **Restore** is done from the admin panel: choose a backup, type the admin password again, and the server restores the database and files, then restarts. It takes under 1 hour for a typical year of data.

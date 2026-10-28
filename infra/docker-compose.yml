@@ -3,9 +3,9 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in infra/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in infra/.env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
@@ -19,17 +19,31 @@ services:
   livekit:
     image: livekit/livekit-server:v1.13.11
     restart: unless-stopped
+    environment:
+      # livekit-server does not expand ${VAR} inside its config file, so the keys
+      # arrive through the environment and the LAN address through --node-ip.
+      LIVEKIT_KEYS: '${LIVEKIT_API_KEY:?set LIVEKIT_API_KEY in infra/.env}: ${LIVEKIT_API_SECRET:?set LIVEKIT_API_SECRET in infra/.env}'
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml:ro
     ports:
       - '7880:7880'
       - '7881:7881'
       - '50000-50200:50000-50200/udp'
-    command: --config /etc/livekit.yaml
+    # --node-ip is the address LiveKit advertises to the lab PCs as its WebRTC
+    # candidate, so it must be the server's LAN address, never 127.0.0.1.
+    command: --config /etc/livekit.yaml --node-ip ${LAN_IP:?set LAN_IP in infra/.env}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:7880']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   caddy:
     image: caddy:2
     restart: unless-stopped
+    environment:
+      # The Caddyfile site block reads this as {$LAN_IP}.
+      LAN_IP: ${LAN_IP:?set LAN_IP in infra/.env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
