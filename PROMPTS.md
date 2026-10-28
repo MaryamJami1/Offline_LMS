@@ -1,6 +1,6 @@
 # LinguaLab: Claude Code prompt playbook
 
-Every prompt you need to build LinguaLab with Claude Code, from Phase 0 to version 1.0. Every prompt matches a task in `docs/09-project-plan.md`, and the requirement and test IDs come from `docs/01-requirements.md` and `docs/08-testing.md`.
+Every prompt you need to build LinguaLab with Claude Code, from Phase 0 to version 1.0. Every prompt matches a task in `docs/docs/09-project-plan.md`, and the requirement and test IDs come from `docs/docs/01-requirements.md` and `docs/docs/08-testing.md`.
 
 ## How to use this file
 
@@ -42,7 +42,7 @@ Until Phase 0 task 2 is done, `pnpm test` does not exist yet; Claude will say so
 ### U2. Any task that is not in this file
 
 ```text
-Next task: <what to build>. It covers <requirement IDs> and tests <test IDs from docs/08-testing.md>.
+Next task: <what to build>. It covers <requirement IDs> and tests <test IDs from docs/docs/08-testing.md>.
 1. Read the docs that matter for it (the "Source of truth" table in CLAUDE.md) and tell me the plan:
    files to create or change, the tests you will write first, and anything unclear. Wait for my OK.
 2. Then follow the TDD loop in CLAUDE.md: write the failing tests, run them and show me they fail,
@@ -71,12 +71,12 @@ covered. If anything was skipped, mocked, or left as a TODO, say so plainly.
 ### U5. End of a phase
 
 ```text
-I think Phase <N> is finished. Check it against docs/09-project-plan.md:
+I think Phase <N> is finished. Check it against docs/docs/09-project-plan.md:
 - every task in the Phase <N> checklist, one by one, with the test files that prove it;
 - the exit criteria: run everything that can run here (full suite, coverage, e2e) and show real results;
 - for anything that needs real PCs, give me a step-by-step manual checklist.
 List what is missing. If nothing is missing, replace the "Current phase" section of CLAUDE.md with
-Phase <N+1>, copying its tasks and exit criteria from docs/09-project-plan.md, and commit.
+Phase <N+1>, copying its tasks and exit criteria from docs/docs/09-project-plan.md, and commit.
 ```
 
 ### U6. Fix a bug
@@ -102,7 +102,7 @@ components (no hard-coded colours, branding from settings). Show me the before a
 The institute asked for a change: <describe it>.
 Don't write code yet. Tell me which requirement IDs, screens, tables, endpoints and tests it touches,
 whether it is Must, Should or Could, and how it changes the timeline. When I agree, update
-docs/01-requirements.md and the other docs first and commit that; then build it test-first like any
+docs/docs/01-requirements.md and the other docs first and commit that; then build it test-first like any
 other task.
 ```
 
@@ -148,7 +148,7 @@ them, and why the tests are written the way they are. Use one small example.
 
 ```text
 Phase 0, task 1: monorepo.
-Read CLAUDE.md and docs/02-architecture.md (stack, repository layout, coding standards).
+Read CLAUDE.md and docs/docs/02-architecture.md (stack, repository layout, coding standards).
 Create the pnpm workspace with Turborepo, strict TypeScript (one shared base tsconfig), ESLint and
 Prettier, and an empty package for every folder in the "Target repository layout" in CLAUDE.md.
 Add root scripts for the commands listed in CLAUDE.md (any that cannot work yet print "not yet").
@@ -160,7 +160,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 0, task 2: test tools and CI.
-Read docs/08-testing.md (test levels, coverage targets, continuous integration).
+Read docs/docs/08-testing.md (test levels, coverage targets, continuous integration).
 Set up Vitest in every package, with coverage thresholds of 80% lines and 70% branches for
 apps/server and packages/shared; Testing Library for the React packages; Supertest for the server;
 Playwright in e2e/. Add Husky and lint-staged to run lint and related tests before each commit.
@@ -178,10 +178,10 @@ Phase 0, task 3: GitHub project.
 I created an empty private repository: <https://github.com/maryamjami1/lingualab>. Connect this
 folder to it and push main.
 Then, with the gh CLI: create one milestone per phase (Phase 0 to Phase 5, from
-docs/09-project-plan.md); one issue per requirement ID in docs/01-requirements.md (title like
+docs/docs/09-project-plan.md); one issue per requirement ID in docs/docs/01-requirements.md (title like
 "LAB-04 Broadcast PC"), labelled must, should or could, in the milestone of the phase that builds it,
-with its test IDs from docs/08-testing.md in the description. Add a pull request template with the
-questions from "Working method" in docs/09-project-plan.md.
+with its test IDs from docs/docs/08-testing.md in the description. Add a pull request template with the
+questions from "Working method" in docs/docs/09-project-plan.md.
 Show me the list of issues before creating them.
 ```
 
@@ -189,12 +189,12 @@ Show me the list of issues before creating them.
 
 ```text
 Phase 0, task 4: infrastructure and the first real endpoint.
-Read docs/02-architecture.md (ports) and docs/07-installation.md.
+Read docs/docs/02-architecture.md (ports) and docs/docs/07-installation.md.
 Create infra/docker-compose.yml with PostgreSQL 16, LiveKit and Caddy, plus infra/livekit.yaml and
 infra/Caddyfile. LiveKit must advertise my laptop's LAN IP, not the container's IP, so that other PCs
 can connect; keep that IP and all secrets in a .env file (add .env.example, never commit .env).
 Then, test-first, create the NestJS app in apps/server with GET /api/health reporting server,
-database, LiveKit and disk status (docs/04-api-and-events.md). Write the Supertest test first and
+database, LiveKit and disk status (docs/docs/04-api-and-events.md). Write the Supertest test first and
 show me it failing.
 Tell me the plan before writing files.
 ```
@@ -207,11 +207,11 @@ not test-first and is never shipped (see the spikes rule in CLAUDE.md).
 Goal: prove that screen sharing works over our LAN before we build anything on top of it.
 Build the smallest possible pair of Electron apps:
 - teacher: captures the whole screen with desktopCapturer and publishes it to a LiveKit room
-  (content hint "text", 1080p, 15 fps; see NFR-03 and "Media settings" in docs/04-api-and-events.md);
+  (content hint "text", 1080p, 15 fps; see NFR-03 and "Media settings" in docs/docs/04-api-and-events.md);
 - student: joins the room and shows the screen full-screen.
 A tiny script can create LiveKit tokens with the LiveKit server SDK. The LiveKit address comes from a
 config file, so the student app can run on another PC. If screen capture needs HTTPS, use Caddy's
-local certificate authority as described under "Transport" in docs/06-security-and-data.md.
+local certificate authority as described under "Transport" in docs/docs/06-security-and-data.md.
 Tell me the plan, including how I will run the student side on my second PC.
 ```
 
@@ -233,7 +233,7 @@ Phase 0, task 7: run the spike on two PCs.
 My laptop runs Docker and the teacher spike; its LAN IP is <laptop IP>. My second Windows PC is on the
 same switch with IP <second PC IP>.
 Give me exact steps: build or copy the student spike to the second PC, set the server address, open
-the Windows firewall ports from the ports table in docs/02-architecture.md, and what to check.
+the Windows firewall ports from the ports table in docs/docs/02-architecture.md, and what to check.
 Then help me read the results: text readability, frame rate, delay, voice clarity, echo.
 Write the results, what we learned and any settings to change into docs/spike-results.md.
 ```
@@ -248,11 +248,11 @@ Record a short video of the two PCs working (a Phase 0 deliverable), then paste 
 
 ```text
 Phase 1, task 1: database foundation.
-Read docs/03-database.md (People, Organisation, and Lab and sessions) and the glossary in
-docs/00-overview.md.
+Read docs/docs/03-database.md (People, Organisation, and Lab and sessions) and the glossary in
+docs/docs/00-overview.md.
 Create the Prisma schema and migrations for those tables, and a seed script with 1 admin, 2 teachers,
 2 classes, 30 students, Lab 1 with a 30-seat map like the prototype, and default settings (software
-name "LinguaLab"). Write tests first for every rule (unique student IDs, seat codes unique per lab,
+name "Lab"). Write tests first for every rule (unique student IDs, seat codes unique per lab,
 at most one active login per student).
 Tell me the plan before writing files.
 ```
@@ -261,8 +261,8 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 2: authentication. Covers NFR-13; test T-SEC-01.
-Read "Auth and users" in docs/04-api-and-events.md and "Authentication, sessions and device trust"
-in docs/06-security-and-data.md.
+Read "Auth and users" in docs/docs/04-api-and-events.md and "Authentication, sessions and device trust"
+in docs/docs/06-security-and-data.md.
 Test-first: POST /auth/login, /auth/refresh, /auth/logout, /auth/change-password and GET /me;
 Argon2id hashing; access JWT of 15 minutes; refresh tokens stored hashed; staff refresh tokens last
 7 days; five wrong passwords lock the account for 10 minutes (T-SEC-01). Passwords and tokens must
@@ -274,7 +274,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 3: role guards and the permissions test. Test T-ACL-01.
-Read "Roles and permissions" in docs/06-security-and-data.md.
+Read "Roles and permissions" in docs/docs/06-security-and-data.md.
 Build the role guard and the ownership checks (teachers only act on their own classes; students only
 see their own data). Write a data-driven test that tries every row of the permissions table as admin,
 teacher (own class), teacher (other class) and student, expecting 200 or 403. Rows for endpoints that
@@ -286,7 +286,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 4: users. Covers ADM-01 and ADM-02; test T-ADM-02.
-Read "Auth and users" in docs/04-api-and-events.md.
+Read "Auth and users" in docs/docs/04-api-and-events.md.
 Test-first: create, edit and deactivate teachers and students; the admin sets each new account's
 first-login password, and the user must change it at first login. POST /users/import accepts Excel
 or CSV (name, class, phone), creates valid rows, reports bad rows with line numbers, and never creates
@@ -301,7 +301,7 @@ Phase 1, task 5: password reset. Covers ADM-11; test T-ADM-11.
 Test-first: POST /users/:id/reset-password works for an admin on anyone, and for a teacher only on
 students in that teacher's own classes; a teacher resetting a student of another class, or any staff
 account, gets 403. Every reset writes an audit log entry (create the audit_logs table from the System
-section of docs/03-database.md if it is not there yet). Add the matching rows to the T-ACL-01 test.
+section of docs/docs/03-database.md if it is not there yet). Add the matching rows to the T-ACL-01 test.
 Tell me the plan before writing files.
 ```
 
@@ -309,8 +309,8 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 6: organisation. Covers ADM-03.
-Read "Organisation" in docs/03-database.md and "Classes and groups" in
-docs/04-api-and-events.md.
+Read "Organisation" in docs/docs/03-database.md and "Classes and groups" in
+docs/docs/04-api-and-events.md.
 Test-first: courses, batches, classes, assigning teachers and students to classes, GET
 /classes/:id/students, and groups (pair, random, manual). Teachers can list only their own classes.
 Tell me the plan before writing files.
@@ -320,8 +320,8 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 7: labs and devices. Covers ADM-04.
-Read "Lab and sessions" in docs/03-database.md and "Device trust (lab PCs)" in
-docs/06-security-and-data.md.
+Read "Lab and sessions" in docs/docs/03-database.md and "Device trust (lab PCs)" in
+docs/docs/06-security-and-data.md.
 Test-first: create one or more labs with seat maps (rows, seats per row, pairs); POST
 /devices/register from an unknown PC creates a pending device; the admin approves it and binds it to
 a seat (PATCH /devices/:id); the server issues a device key; GET /devices shows status and app version.
@@ -343,13 +343,13 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 9: packages/ui.
-Read docs/05-screens-and-ux.md (colour tokens, type, components) and look at the styles in
+Read docs/docs/05-screens-and-ux.md (colour tokens, type, components) and look at the styles in
 prototype/source/*.dc.html.
-Build the design tokens and the shared components listed in docs/05-screens-and-ux.md
+Build the design tokens and the shared components listed in docs/docs/05-screens-and-ux.md
 (Button, Seat tile, Control button, Tab rail, Card, Badge, Progress bar, Level meter, Toast, Modal,
 Table, Option button, Form fields) on shadcn/ui with Tailwind, with IBM Plex from @fontsource
 (no internet fonts). Add a BrandingProvider that reads the software name, logo and main colour from
-GET /settings and falls back to "LinguaLab" defaults (rule 8 in CLAUDE.md). Component tests first,
+GET /settings and falls back to "Lab" defaults (rule 8 in CLAUDE.md). Component tests first,
 including keyboard use and 4.5:1 contrast (NFR-11).
 Tell me the plan before writing files.
 ```
@@ -358,7 +358,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 10: admin panel. Screens A-01, A-02, A-03, A-04 and A-07.
-Read the admin screens in docs/05-screens-and-ux.md and compare with prototype/screenshots/22, 23
+Read the admin screens in docs/docs/05-screens-and-ux.md and compare with prototype/screenshots/22, 23
 and 26 (A-03 and A-04 have no screenshot; follow prototype/source/Admin.dc.html).
 Build apps/admin (React + Vite) with login, the dashboard, students (with today's seat, add, import,
 reset password), teachers, classes, and lab and seats (lab picker, seat map, PC details, approve new
@@ -373,7 +373,7 @@ Then paste **U7** for each screen.
 
 ```text
 Phase 1, task 11: student app shell. Covers STU-06 and STU-07; tests T-STU-06 and T-STU-07; screen S-01.
-Read "Student app lock-down" and "Device trust (lab PCs)" in docs/06-security-and-data.md.
+Read "Student app lock-down" and "Device trust (lab PCs)" in docs/docs/06-security-and-data.md.
 Build apps/student in Electron + React: starts with Windows, runs in kiosk mode, and cannot be closed
 without the admin PIN (T-STU-06, Electron e2e); first start registers the PC and waits for approval,
 then stores the device key in the Windows Credential Manager; the S-01 login screen shows this PC and
@@ -392,7 +392,7 @@ Phase 1 exit check: paste **U5** with N = 1. It includes 30 test accounts loggin
 
 ```text
 Phase 2, task 1: Socket.IO gateway. Covers LAB-01 and NFR-08; test T-LAB-01.
-Read "Real-time lab events (Socket.IO)" in docs/04-api-and-events.md.
+Read "Real-time lab events (Socket.IO)" in docs/docs/04-api-and-events.md.
 First build the fake lab in packages/test-utils: N simulated seats with socket.io-client that log in,
 join and react to events, because every real-time test will use it.
 Then, test-first: the gateway authenticates with the access token (plus the device key for seats);
@@ -408,7 +408,7 @@ Tell me the plan before writing files.
 ```text
 Phase 2, task 2: teacher console. Covers LAB-01, LAB-02 and LAB-16; tests T-LAB-02 and T-LAB-16;
 screens T-01 and T-02.
-Read the teacher screens in docs/05-screens-and-ux.md and compare with prototype/screenshots/02 and 03.
+Read the teacher screens in docs/docs/05-screens-and-ux.md and compare with prototype/screenshots/02 and 03.
 Build apps/teacher in Electron + React: teacher login (T-01); the seat grid in room order with each
 seat's state (offline, free, logged-in student, hand raised, activity); selecting one seat, several,
 a group or all, where nothing selected means every logged-in student (T-LAB-02, unit); the eight
@@ -446,7 +446,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 2, task 5: Whole Talk (part of LAB-09).
-Read "Media rooms (LiveKit)" in docs/04-api-and-events.md.
+Read "Media rooms (LiveKit)" in docs/docs/04-api-and-events.md.
 Test-first: wholetalk.start sends lab:voice.join to the target seats only, for the room
 s-<sessionId>-talk; the teacher's token can publish the microphone and the students' tokens can only
 subscribe (canSpeak false); Stop sends lab:voice.leave. Show a talk level meter on the console (T-03).
@@ -461,7 +461,7 @@ Phase 2, task 6: lab commands. Covers LAB-13; test T-LAB-13.
 Test-first: lock, unlock, message and activity.launch reach the target seats; "Lock all" reaches 60
 fake seats in under 1 s (T-LAB-13, performance test with the fake lab). On the student app, the lock
 screen shows the optional message and blocks Alt+F4 while a control is running (see "Student app
-lock-down" in docs/06-security-and-data.md); activity.launch opens the given lesson.
+lock-down" in docs/docs/06-security-and-data.md); activity.launch opens the given lesson.
 Tell me the plan before writing files.
 ```
 
@@ -473,7 +473,7 @@ Compare with prototype/screenshots/07.
 Test-first: whiteboard.start opens the board on the targets; strokes from the teacher
 (lab:whiteboard.stroke) are drawn live on the student screens; Clear clears every board; "Save to
 lesson" stores the board as an image on a lesson. Use Excalidraw on the teacher side as in
-docs/02-architecture.md.
+docs/docs/02-architecture.md.
 Tell me the plan before writing files.
 ```
 
@@ -491,7 +491,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 2, task 9: lesson editor. Covers MOD-05 and ADM-05 (lessons); test T-MOD-05; screens A-05 and A-06.
-Read "Content" in docs/03-database.md and "Lessons and quizzes" in docs/04-api-and-events.md;
+Read "Content" in docs/docs/03-database.md and "Lessons and quizzes" in docs/docs/04-api-and-events.md;
 compare with prototype/screenshots/24 and 25.
 Test-first: the content list with module tabs; the editor with module, title, class, instructions,
 text, five question types (multiple choice, true/false, fill in the blank, recording, free writing),
@@ -505,7 +505,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 2, task 10: lesson files. Covers MOD-05 and MOD-10 (server side); test T-MOD-10a.
-Read "File storage, indexes and retention" in docs/03-database.md.
+Read "File storage, indexes and retention" in docs/docs/03-database.md.
 Test-first: POST /lessons/:id/media accepts MP3, MP4 and PDF up to 1 GB and refuses anything else; a
 video is converted in the background with ffmpeg to 720p H.264, the original is removed, and the
 editor shows "processing" until it is ready; GET /media/:id streams with range requests (T-MOD-10a,
@@ -537,7 +537,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 2, task 13: prepare Gate 1.
-Read "Load test for a full class" in docs/08-testing.md.
+Read "Load test for a full class" in docs/docs/08-testing.md.
 Make unsigned Windows test builds of the teacher and student apps that read the server address from
 a config file, and a script that records server CPU, memory, network and LiveKit statistics during
 the test. Write notes/gate-1-checklist.md: the setup steps for 10 PCs, the parts of the 20-minute
@@ -675,8 +675,8 @@ Tell me the plan before writing files.
 
 ```text
 Phase 4, task 3: attempts and submissions.
-Read "Work and results" in docs/03-database.md and "Assignments, work and marking" in
-docs/04-api-and-events.md.
+Read "Work and results" in docs/docs/03-database.md and "Assignments, work and marking" in
+docs/docs/04-api-and-events.md.
 Test-first: POST /assignments/:id/submissions starts an attempt; PATCH /submissions/:id auto-saves
 answers every 10 s; POST /submissions/:id/submit scores the auto-marked questions at once with the
 marking engine and sends recordings and essays to the grading inbox.
@@ -802,7 +802,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 5, task 2: backups. Covers ADM-08 and NFR-09; test T-ADM-08; screen A-09.
-Read "Backup and restore policy" in docs/06-security-and-data.md.
+Read "Backup and restore policy" in docs/docs/06-security-and-data.md.
 Test-first: "Back up now" and the automatic nightly backup (database and files) at the time set in
 Settings, keeping 14 days; copy to USB; restore needs the admin password again; a backup restores into
 an empty database and the data matches the original (T-ADM-08, integration). Write
@@ -853,19 +853,19 @@ remove them. Show me the search results and the test run.
 ### P5-7. Installers and the offline server bundle
 
 ```text
-Phase 5, task 7: installers. Read docs/07-installation.md.
+Phase 5, task 7: installers. Read docs/docs/07-installation.md.
 Build Windows installers with electron-builder (NSIS) for the teacher and student apps: they ask for
 the server address, add the local root certificate, add the firewall rules and set up auto-start.
 Build the offline server bundle lingualab-server-<version>.zip with the Docker images saved inside
 (images.tar), so no internet is needed at the institute. Then give me a dry-run checklist of the
-installation guide on a spare PC, and update docs/07-installation.md wherever reality differs.
+installation guide on a spare PC, and update docs/docs/07-installation.md wherever reality differs.
 Tell me the plan before writing files.
 ```
 
 ### P5-8. 60-seat load test (Gate 2)
 
 ```text
-Phase 5, task 8: load test. Read "Load test for a full class" in docs/08-testing.md.
+Phase 5, task 8: load test. Read "Load test for a full class" in docs/docs/08-testing.md.
 Build e2e/load/fake-lab.ts: simulated seats that log in, join Socket.IO and LiveKit with headless
 Chromium, subscribe to the broadcast and send thumbnails, running on two spare laptops until there are
 60 seats with the real PCs. Add the server statistics recorder, and write notes/gate-2-report.md with
@@ -885,7 +885,7 @@ Then fix them one at a time, each test-first as in prompt U6, starting with the 
 ### P5-10. Training material
 
 ```text
-Phase 5, task 10: training. Turn docs/10-user-guides.md into print-ready PDFs (teacher guide and admin
+Phase 5, task 10: training. Turn docs/docs/10-user-guides.md into print-ready PDFs (teacher guide and admin
 guide) with screenshots taken from the real apps (not the prototype), plus a one-page teacher cheat
 sheet of the eight controls. Save them in docs/print/.
 ```
