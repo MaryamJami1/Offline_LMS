@@ -71,17 +71,36 @@ docker compose -f infra/docker-compose.yml up -d   # PostgreSQL, LiveKit, Caddy
 pnpm dev             # server + admin + apps in dev mode
 ```
 
-## Current phase: Phase 0 — Setup and risk check (week 1)
+## Current phase: Phase 1 — Foundation (weeks 2–4)
 
-- [x] Monorepo: pnpm workspaces, Turborepo, strict TypeScript, ESLint, Prettier — 8 packages; `pnpm lint` and `pnpm typecheck` green across all 8
-- [x] Test tools: Vitest, Testing Library, Supertest, Playwright, Husky + lint-staged; GitHub Actions running every test on each pull request — `pnpm test` green, 9 tests; `.github/workflows/ci.yml` runs lint, typecheck and test on every pull request to `main`
-- [ ] GitHub repository, milestones per phase, one issue per requirement ID, pull request template — repository and `.github/pull_request_template.md` exist; milestones and issues still to create (needs `gh auth login`)
-- [x] `infra/docker-compose.yml` with PostgreSQL 16, LiveKit, Caddy; `/api/health` endpoint, test first — re-checked on real Docker 2026-10-28: all three services start and answer, and `/api/health` reports `database: ok` and `livekit: ok` against them. The first real start found four faults, now fixed with tests: blank Postgres password accepted, `${VAR}` in `livekit.yaml` that LiveKit never expands, Caddy proxying to itself, and no TLS certificate for a client arriving by IP (NFR-13). 24 server tests; see `docs/docs/spike-results.md`
-- [x] Spike (in `spikes/`): teacher Electron app captures the screen (desktopCapturer) and publishes to LiveKit; student Electron app shows it full-screen — `spikes/broadcast`, published and received at 1920x1080 @ 15 fps
-- [x] Spike (in `spikes/`): teacher microphone heard clearly in a student headset — 2 PCs over WiFi: voice clear, 126 ms against the 200 ms budget (net 5 + buffer 80 + playout 42), 0.0% loss, Opus 48 kHz at about 48 kbit/s, with the broadcast running alongside. Laptop microphone, not a headset; echo stays unproven because the spike is one-way and nothing could echo
-- [x] Spike run on 2 PCs; results written to `docs/docs/spike-results.md` — both halves run on 2 PCs over WiFi and written up (NFR-03 at 204 ms, NFR-04 at 126 ms); the wired-network, headset and echo re-check is Gate 1 work, already in `docs/docs/09-project-plan.md`
+**Goal:** the admin can set up people, classes and the lab, and students can log in at any PC.
 
-Exit criteria: broadcast text readable and voice clear on 2 PCs; CI blocks a pull request with a failing test. Then move to Phase 1 in `docs/09-project-plan.md`.
+- [ ] Prisma schema and migrations for People, Organisation and Lab tables; seed data
+- [ ] Login, refresh, logout, change password, account lockout (T-SEC-01)
+- [ ] Role guards and the full permissions test (T-ACL-01)
+- [ ] Users: create, edit, deactivate, first passwords, Excel import (ADM-01, ADM-02); teachers reset passwords for their own students (ADM-11)
+- [ ] Courses, batches, classes, enrolments and groups (ADM-03)
+- [ ] Labs (one or more), seat maps, PC registration and approval, device keys (ADM-04)
+- [ ] Student login at any PC with device_logins; one login per student (STU-01)
+- [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype
+- [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
+
+**Deliverables:** admin panel for setup; student app that logs in.
+
+**Exit criteria:** all Phase 1 tests green; server coverage at least 80%; 30 test accounts log in at random seats on 2 PCs.
+
+### Phase 0 closed on 2026-10-28
+
+Both exit criteria met. Broadcast and voice passed on 2 PCs (NFR-03 at 204 ms of 500, NFR-04 at 126 ms of 200) — written up in `docs/docs/spike-results.md`. "CI blocks a pull request with a failing test" was proved by opening one: `main` is now protected, requiring the `check` status with `enforce_admins` on, and a pull request carrying a deliberately failing test was refused with `mergeStateStatus: BLOCKED`, then closed unmerged.
+
+### Still open, carried into Phase 1
+
+- [ ] Confirm the hardware list with the institute — Maryam's, outside the code
+- [ ] Short video of the 2-PC spike — a Phase 0 deliverable, never recorded
+- [ ] GitHub milestones per phase and one issue per requirement ID — `gh` is authenticated now, so this is unblocked
+- [ ] **Server branch coverage is 66.66% against the 70% target** (lines are fine at 88.09%). Coverage is also never run in CI, so the threshold in `apps/server/vitest.config.ts` is unenforced. This blocks the Phase 1 exit criterion, so fix it early. Part of the gap is structural: `platform() === 'win32' ? …` can only ever cover one side per operating system
+- [ ] Testing Library and Playwright are installed but never exercised — no component test and no end-to-end test exists yet. `pnpm test:e2e` passes only because of `--pass-with-no-tests`
+- [ ] Gate 1 (end of week 9) still owes the wired lab network, real headsets, and an echo check, which the one-way spike could not do
 
 ## Working method
 
