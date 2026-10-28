@@ -29,6 +29,8 @@ LinguaLab is built test-first. No feature code is written until a failing test d
 
 **Coverage targets:** server and shared packages at least 80% of lines and 70% of branches; app logic (hooks, stores) at least 70%; every Must requirement has at least one test named after it.
 
+These are enforced, not aspirational: the thresholds live in each package's `vitest.config.ts`, `pnpm test:coverage` fails the build when they are missed, and CI runs it on every pull request. Raise coverage by testing behaviour that matters — the gap that first pushed the server under its branch target was the health check reporting an unreadable disk as `0 bytes free`, indistinguishable from a full one. Tests written only to colour in a line are worse than the missing coverage, because they freeze whatever the code happens to do today.
+
 **Continuous integration (GitHub Actions)** on every pull request: lint, type check, unit and component tests, API and real-time tests against the real stack, Playwright end-to-end tests, and a Windows job that builds and smoke-tests both Electron apps. The stack comes up with `docker compose -f infra/docker-compose.yml up -d --wait` before the tests, so the same compose file the lab server runs is the one CI tests against. A pre-commit hook (Husky + lint-staged) runs the tests related to changed files.
 
 **A test that cannot fail is not a test.** The first `/api/health` test asserted `expect(['ok', 'error']).toContain(res.body.database)` and so passed with no database running at all. Health checks and anything else with a pass and a fail state are asserted on the value that means working, and the failing branch gets its own test; `docs/docs/spike-results.md` has the worked example.

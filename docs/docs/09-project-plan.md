@@ -27,16 +27,16 @@ Every task below is done test-first: write the failing test (named after the req
 
 **Goal:** a test-ready repository, and proof that screen and voice work over the institute's network.
 
-- [ ] Create the GitHub repository: pnpm workspaces, Turborepo, strict TypeScript, ESLint, Prettier
-- [ ] Set up test tools: Vitest, Testing Library, Supertest, Playwright, Husky; GitHub Actions running every test on each pull request
-- [ ] Docker Compose with PostgreSQL, LiveKit and Caddy; `/health` endpoint (test first)
-- [ ] Spike: teacher Electron app captures its screen and publishes to LiveKit; student Electron app shows it full-screen on 2 PCs
-- [ ] Spike: teacher microphone heard clearly in a student headset
+- [x] Create the GitHub repository: pnpm workspaces, Turborepo, strict TypeScript, ESLint, Prettier
+- [x] Set up test tools: Vitest, Testing Library, Supertest, Playwright, Husky; GitHub Actions running every test on each pull request — Testing Library and Playwright are wired up but exercise nothing yet, because there is no component or screen to test before Phase 1
+- [x] Docker Compose with PostgreSQL, LiveKit and Caddy; `/health` endpoint (test first) — four faults found on the first real start, all fixed test-first; see `spike-results.md`
+- [x] Spike: teacher Electron app captures its screen and publishes to LiveKit; student Electron app shows it full-screen on 2 PCs — NFR-03 at 204 ms against a 500 ms budget
+- [x] Spike: teacher microphone heard clearly in a student headset — voice clear on 2 PCs at 126 ms against a 200 ms budget, but on the laptop microphone and the student PC's **speakers, never a headset**. The headset and the echo check move to Gate 1
 - [ ] Confirm the hardware list with the institute
 
-**Deliverables:** repository with green CI; a short video of the 2-PC spike.
+**Deliverables:** repository with green CI; a short video of the 2-PC spike. CI is green; **the video is still outstanding.**
 
-**Exit criteria:** broadcast text readable and voice clear on 2 PCs; CI blocks a pull request with a failing test.
+**Exit criteria:** broadcast text readable and voice clear on 2 PCs; CI blocks a pull request with a failing test. **Both met on 2026-10-28.** The second was proved by opening a pull request with a deliberately failing test and watching `main` refuse it: branch protection requires the `check` status with `enforce_admins` on.
 
 ### Phase 1: Foundation (weeks 2–4)
 

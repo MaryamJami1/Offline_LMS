@@ -50,6 +50,14 @@ jobs:
           DATABASE_URL: postgresql://lingualab:lingualab@localhost:5432/lingualab
         run: pnpm test
 
+      # Runs the server and shared suites again under v8 coverage. The
+      # thresholds live in each package's vitest.config.ts and fail the build,
+      # so the targets in 08-testing.md are enforced rather than aspirational.
+      - name: Coverage thresholds
+        env:
+          DATABASE_URL: postgresql://lingualab:lingualab@localhost:5432/lingualab
+        run: pnpm test:coverage
+
       - name: Install Playwright browsers
         run: pnpm --filter @lingualab/e2e exec playwright install --with-deps chromium
 
