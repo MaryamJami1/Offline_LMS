@@ -68,6 +68,13 @@ Every task below is done test-first: write the failing test (named after the req
     whole session. Broadcast then only has to subscribe to the teacher's track, so it starts in
     under 1 s. Joining a room on demand costs about 2 s in ICE and DTLS setup — measured in the
     Phase 0 broadcast spike — which is too slow to do when the teacher presses Broadcast.
+  - Put LiveKit signalling behind Caddy: the apps connect to `wss://<server>/livekit` on 443, and
+    `infra/Caddyfile` strips the prefix with `handle_path /livekit/*` before forwarding to
+    `livekit:7880`. LiveKit's port 7880 is then never opened to the lab, and signalling shares the
+    TLS the rest of the API uses. The Caddyfile still uses `handle`, which does not strip the
+    prefix, so `/livekit/*` returns a 404 until this is done — found during the Phase 0 Docker
+    re-check. Contract in 04-api-and-events.md (Media rooms) and 06-security-and-data.md
+    (Transport); test it first, through Caddy, not against port 7880.
 - [ ] Whole Talk (part of LAB-09)
 - [ ] Lock, unlock, message, launch activity (LAB-13)
 - [ ] White Board (LAB-06)

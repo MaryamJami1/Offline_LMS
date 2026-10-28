@@ -51,6 +51,8 @@ Each row is enforced by a NestJS guard and covered by an access test that tries 
 
 Lab PCs reach the server by its IP address, and TLS forbids an IP literal in the SNI field, so those connections arrive carrying no server name. Caddy therefore needs `default_sni` set to the server's address in `infra/Caddyfile`, or it has no certificate to offer and every handshake fails; plain HTTP on port 80 still answers with a redirect, which is what makes the fault easy to miss. Tested in `apps/server/test/nfr-12.infra-stack.spec.ts`.
 
+**LiveKit signalling is part of that:** the apps reach it at `wss://<server>/livekit` on 443, inside the same TLS as the REST API and Socket.IO, so signalling is encrypted and LiveKit's own port 7880 is never opened to the lab. Caddy strips the prefix (`handle_path /livekit/*`) and forwards to `livekit:7880` on the Docker network. Only the media itself bypasses Caddy, as UDP on 50000–50200. Agreed now and built with LAB-04 in Phase 2; `infra/Caddyfile` still uses `handle`, which does not strip the prefix.
+
 **Student app lock-down:** starts with Windows, runs in kiosk mode, blocks Alt+F4 and Task Manager while a teacher control is running, and needs the admin PIN to exit. Students use standard (non-admin) Windows accounts.
 
 ## Data protection, privacy and audit
