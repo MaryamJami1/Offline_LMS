@@ -4,11 +4,11 @@ What the week-1 risk spikes proved, and the settings Phase 1 and Phase 2 should 
 spike code itself lives in `spikes/` and is throwaway: it is not test-first, it is never imported by
 `apps/` or `packages/`, and the features are rebuilt properly, test-first, when their phase arrives.
 
-| Spike            | Requirement    | Status                           |
-| ---------------- | -------------- | -------------------------------- |
-| Screen broadcast | NFR-03         | Passed on 2 PCs (WiFi)           |
-| Teacher voice    | NFR-04         | Passed on 2 PCs (WiFi)           |
-| Server stack     | NFR-12, NFR-13 | Passed in Docker, 4 faults fixed |
+| Spike            | Requirement    | Status                                        |
+| ---------------- | -------------- | --------------------------------------------- |
+| Screen broadcast | NFR-03         | Passed on 2 PCs (WiFi)                        |
+| Teacher voice    | NFR-04         | Passed on 2 PCs (WiFi), speakers not headsets |
+| Server stack     | NFR-12, NFR-13 | 4 faults fixed; confirmed on 2 PCs            |
 
 ## Screen broadcast — NFR-03
 
@@ -310,3 +310,55 @@ Both figures above were taken with both apps on the one laptop, so they say noth
 NFR-03 or NFR-04 — the 2-PC numbers earlier in this document still stand as the result. What this
 run proves is narrower and was the question: the pipeline works unchanged when LiveKit is the
 Docker container from `infra/`.
+
+### Docker stack confirmed on 2 PCs (2026-10-28)
+
+The run above had both apps on one laptop. Repeated properly afterwards with the teacher app and
+the Docker stack on the laptop and `student-spike.exe` on the second PC: **broadcast and voice were
+both fine on the second PC.** So the two things Phase 0 exists to prove still hold when LiveKit is
+the container from `infra/docker-compose.yml` rather than the standalone binary, which is what this
+re-check was for.
+
+No new timings were taken on this run — it was a yes-or-no confirmation. The measured figures
+remain the 2026-10-27 ones earlier in this document: 204 ms for NFR-03 and 126 ms for NFR-04.
+
+**It ran on the student PC's speakers, not a headset.** That matters twice over:
+
+- NFR-04 says "teacher and student voice in headsets", so the requirement is still not met as
+  written. Thirty PCs playing out loud is not what the lab will do.
+- Echo is still untested, and speakers do not change that. The spike is one-way: the student app
+  publishes no microphone, so even with the teacher's voice playing into the room there was nothing
+  for an echo canceller to act on. Echo needs two-way audio, which arrives with LAB-09 in Phase 2.
+
+**Real headsets, the wired lab network and the echo check all stay with Gate 1.** Nothing in this
+run retires any of them.
+
+### The firewall rule Docker needs on Windows
+
+The first attempt from the second PC could not reach LiveKit at all, and the cause is worth
+recording because it will happen again on the institute's server.
+
+The 2026-10-27 run worked because `livekit-server.exe` triggered a Windows Firewall prompt and was
+allowed — that creates a rule **for that program**. Under Docker the listener is Docker's own
+backend process, so the old rule does not cover it, and this laptop's WiFi is classified `Public`,
+where Windows denies inbound by default. Checked before the run:
+
+```
+NetworkCategory: Public
+inbound allow rules for 7880 / 7881 / 50000-50200: NONE
+```
+
+LiveKit answered on `http://192.168.10.101:7880` from the laptop itself the whole time, so nothing
+looked wrong locally. Fixed with two rules scoped to the local subnet rather than by widening the
+network profile:
+
+```powershell
+New-NetFirewallRule -DisplayName "LinguaLab LiveKit TCP" -Direction Inbound -Action Allow `
+  -Protocol TCP -LocalPort 7880,7881 -Profile Any -RemoteAddress LocalSubnet
+New-NetFirewallRule -DisplayName "LinguaLab LiveKit UDP" -Direction Inbound -Action Allow `
+  -Protocol UDP -LocalPort 50000-50200 -Profile Any -RemoteAddress LocalSubnet
+```
+
+Quickest way to tell the firewall apart from a config mistake: open `http://<server>:7880` in a
+browser **on the student PC**. `OK` means the path is clear; a timeout means the ports are still
+blocked, and the student app will simply hang instead of reporting anything useful.
