@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { statfs } from 'node:fs/promises';
-import { platform } from 'node:os';
+import { readDiskSpace, systemRoot } from './disk.js';
+import type { DiskSpace } from './disk.js';
 
 @Injectable()
 export class HealthService {
@@ -11,7 +11,7 @@ export class HealthService {
     const [database, livekit, disk] = await Promise.all([
       this.checkDatabase(),
       this.checkLiveKit(),
-      this.checkDisk(),
+      readDiskSpace(systemRoot()),
     ]);
 
     return { server: 'ok', database, livekit, disk };
@@ -35,18 +35,6 @@ export class HealthService {
       return 'error';
     }
   }
-
-  private async checkDisk(): Promise<{ free: number; total: number }> {
-    try {
-      const root = platform() === 'win32' ? 'C:\\' : '/';
-      const stats = await statfs(root);
-      const blockSize = Number(stats.bsize);
-      return {
-        free: blockSize * Number(stats.bavail),
-        total: blockSize * Number(stats.blocks),
-      };
-    } catch {
-      return { free: 0, total: 0 };
-    }
-  }
 }
+
+export type { DiskSpace };

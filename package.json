@@ -10,6 +10,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
     "test:watch": "vitest",
     "test:e2e": "pnpm --filter @lingualab/e2e exec playwright test --pass-with-no-tests",
     "lint": "turbo run lint",

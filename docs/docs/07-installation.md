@@ -29,11 +29,30 @@ The release comes as an offline bundle (`lingualab-server-<version>.zip`) with t
 3. Load the Docker images: `docker load -i images.tar`
 4. Copy `.env.example` to `.env` and set the institute name, the server IP, and strong passwords for the database and LiveKit keys. Every variable in it is required: compose refuses to start if one is missing, rather than bringing up a database with a blank password. `LAN_IP` must be the server's real address on the lab network — LiveKit advertises it to the lab PCs as its media address, and Caddy issues its certificate for it.
 5. Start everything: `docker compose up -d` (services: `caddy`, `server`, `postgres`, `livekit`, `backup`).
-6. Create the database and seed data: `docker compose exec server pnpm db:migrate && docker compose exec server pnpm db:seed`
-7. Open `https://192.168.10.2` in a browser, log in as `admin` with the printed first password, and change it.
-8. In Settings, set the branding (software name, logo, main colour), institute name and backup time. Plug in the second disk and check that the first backup runs.
-9. Download the local root certificate from Settings › Security; the lab PC installer includes it.
-10. Check `https://192.168.10.2/api/health`: server, database, LiveKit and disk should all show OK.
+6. **Open the firewall to the lab**, or no lab PC can reach the server. On Ubuntu:
+
+   ```sh
+   sudo ufw allow 443/tcp && sudo ufw allow 7881/tcp && sudo ufw allow 50000:50200/udp
+   ```
+
+   On Windows, in an Administrator PowerShell:
+
+   ```powershell
+   New-NetFirewallRule -DisplayName "Lab HTTPS" -Direction Inbound -Action Allow `
+     -Protocol TCP -LocalPort 443 -Profile Any -RemoteAddress LocalSubnet
+   New-NetFirewallRule -DisplayName "Lab LiveKit TCP" -Direction Inbound -Action Allow `
+     -Protocol TCP -LocalPort 7880,7881 -Profile Any -RemoteAddress LocalSubnet
+   New-NetFirewallRule -DisplayName "Lab LiveKit UDP" -Direction Inbound -Action Allow `
+     -Protocol UDP -LocalPort 50000-50200 -Profile Any -RemoteAddress LocalSubnet
+   ```
+
+   Windows needs this spelled out because running the server in Docker hides the problem: Docker's own process holds the ports, so a firewall rule that allowed `livekit-server.exe` as a program does not cover it, and a network Windows has classified as **Public** denies inbound by default. The server answers perfectly on its own `localhost` throughout, so nothing looks wrong until a lab PC tries to connect and simply hangs. Checked on the dev laptop on 2026-10-28, where exactly this stopped the second PC; written up in `spike-results.md`.
+
+7. Create the database and seed data: `docker compose exec server pnpm db:migrate && docker compose exec server pnpm db:seed`
+8. Open `https://192.168.10.2` in a browser, log in as `admin` with the printed first password, and change it.
+9. In Settings, set the branding (software name, logo, main colour), institute name and backup time. Plug in the second disk and check that the first backup runs.
+10. Download the local root certificate from Settings › Security; the lab PC installer includes it.
+11. Check `https://192.168.10.2/api/health`: server, database, LiveKit and disk should all show OK. From a **lab PC**, not only from the server itself — that is what proves step 6.
 
 **Upgrades:** copy the new bundle, `docker load`, then `docker compose up -d`. Database migrations run automatically, and a backup is taken first.
 

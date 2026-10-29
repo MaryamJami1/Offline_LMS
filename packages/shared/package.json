@@ -11,6 +11,7 @@
   "scripts": {
     "build": "echo \"not yet\"",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   }

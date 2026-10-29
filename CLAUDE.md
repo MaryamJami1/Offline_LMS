@@ -32,13 +32,13 @@ The prototype's `.dc.html` files in `prototype/source/` hold the exact styles, s
    - Refactor: clean up with all tests green.
    - Never write feature code without a failing test that needs it. Never delete or weaken a test to make it pass.
    - Only exception: throwaway proof-of-concept code in `spikes/` (Phase 0). It is never imported by `apps/` or `packages/` and never shipped; when the feature is built for real, it is rebuilt test-first.
-2. **Name tests after requirement IDs:** `lab-04.broadcast.spec.ts`, `adm-11.reset-password.spec.ts`. Start from the test cases listed in `docs/08-testing.md`.
+2. **Name tests after requirement IDs:** `lab-04.broadcast.spec.ts`, `adm-11.reset-password.spec.ts`. Start from the test cases listed in `docs/docs/08-testing.md`.
 3. **Run the tests** that cover your change before saying a task is done, and the full suite before a commit. Report real results; never claim tests pass without running them.
 4. **Offline only:** no CDNs, no external fonts, no calls to the internet at runtime. Fonts come from @fontsource; every dependency is installed locally.
 5. **Security on the server:** every endpoint and socket event checks role and ownership on the server (see the permissions table in `docs/docs/06-security-and-data.md`). Students only ever see their own data. Teachers only act on their own classes.
 6. **Shared contracts:** request and event payloads are Zod schemas in `packages/shared`; Socket.IO event names are constants in `packages/shared/events.ts`.
 7. **Strict TypeScript,** no `any`, ESLint + Prettier clean.
-8. **Branding is data:** never hard-code the product name, logo or primary colour in UI code; read them from settings (default "LinguaLab").
+8. **Branding is data:** never hard-code the product name, logo or primary colour in UI code; read them from settings (default "Lab").
 9. **No fixed seats:** nothing about a student may depend on a particular PC; the link is `device_logins`.
 10. **Docs stay true:** if a change alters behaviour, update the matching file in `docs/` in the same commit.
 
@@ -107,4 +107,4 @@ Both exit criteria met. Broadcast and voice passed on 2 PCs (NFR-03 at 204 ms of
 - One GitHub issue per requirement ID; branch `feat/<ID>-short-name`; Conventional Commits (`feat(LAB-04): …`, `test(LAB-04): …`).
 - Small pull requests; `main` always releasable; merge only with green CI.
 - Before starting a task, restate which requirement IDs and test IDs it covers.
-- Ask before adding a dependency that is not in `docs/docs//02-architecture.md`.
+- Ask before adding a dependency that is not in `docs/docs/02-architecture.md`.
