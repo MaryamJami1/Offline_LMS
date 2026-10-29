@@ -27,7 +27,7 @@ The release comes as an offline bundle (`lingualab-server-<version>.zip`) with t
 1. Install Ubuntu 24.04 LTS (or Windows with Docker Desktop) and give the server a fixed IP, for example `192.168.10.2`.
 2. Copy the bundle to the server and unzip it to `/opt/lingualab`.
 3. Load the Docker images: `docker load -i images.tar`
-4. Copy `.env.example` to `.env` and set the institute name, the server IP, and strong passwords for the database and LiveKit keys. Every variable in it is required: compose refuses to start if one is missing, rather than bringing up a database with a blank password. `LAN_IP` must be the server's real address on the lab network — LiveKit advertises it to the lab PCs as its media address, and Caddy issues its certificate for it.
+4. Copy `.env.example` to `.env` and set the institute name, the server IP, strong passwords for the database and LiveKit keys, and `JWT_SECRET` (at least 32 random characters — the server signs its access tokens with it and refuses to start without it; changing it later logs everybody out). Every variable in it is required: compose refuses to start if one is missing, rather than bringing up a database with a blank password. `LAN_IP` must be the server's real address on the lab network — LiveKit advertises it to the lab PCs as its media address, and Caddy issues its certificate for it.
 5. Start everything: `docker compose up -d` (services: `caddy`, `server`, `postgres`, `livekit`, `backup`).
 6. **Open the firewall to the lab**, or no lab PC can reach the server. On Ubuntu:
 
