@@ -30,6 +30,8 @@ Teacher PC (Electron console) ──┐                 ┌── Admin (any bro
 | Monorepo                | pnpm workspaces + Turborepo                                            | One repository; builds and tests run only where code changed                                                                                         |
 | Server framework        | NestJS on Node.js 22 LTS                                               | Clear modules, guards for roles, built-in testing support                                                                                            |
 | Database                | PostgreSQL 16 with Prisma ORM                                          | Reliable relational data; typed queries; migrations                                                                                                  |
+| Password hashing        | Argon2id via `@node-rs/argon2`                                         | NFR-13 requires Argon2id; the Rust build ships prebuilt binaries, so the lab PCs and CI need no C++ compiler                                         |
+| TypeScript scripts      | `tsx` (development only)                                               | Runs workspace TypeScript such as `prisma/seed.ts` while the apps still have no compiled build                                                       |
 | Live lab channel        | Socket.IO (NestJS gateway)                                             | Instant commands and status for 60 seats; rooms per lab and per session                                                                              |
 | Screen and voice        | LiveKit server (self-hosted SFU) + livekit-client                      | Teacher uploads once, server forwards to every seat; runs offline                                                                                    |
 | Teacher console         | Electron + React + Vite + Tailwind + shadcn/ui                         | Silent screen capture (desktopCapturer), native window                                                                                               |
@@ -54,6 +56,8 @@ Teacher PC (Electron console) ──┐                 ┌── Admin (any bro
 | `livekit-client`     | `2.23.0`   | each app's `package.json`               |
 | `livekit-server-sdk` | `2.19.2`   | the server's `package.json`             |
 | `electron`           | `44.9.3`   | `apps/teacher`, `apps/student` packages |
+| `@node-rs/argon2`    | `2.2.2`    | the server's `package.json`             |
+| `tsx`                | `4.23.15`  | the server's `package.json` (dev only)  |
 
 Upgrade the three LiveKit pieces together, and re-check the broadcast after any bump: a server
 older than the client makes the client try the current `/rtc/v1` signalling path, take a 404 and
