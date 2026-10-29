@@ -160,3 +160,85 @@ describe('NFR-13 POST /api/auth/refresh', () => {
     expect(text).not.toMatch(/argon2/i);
   });
 });
+
+/**
+ * Rotation alone is not enough. If a refresh token is used a second time, one
+ * of two things has happened: it was copied off a lab PC and the thief is
+ * using it, or the app is replaying a token it should have thrown away. Either
+ * way the server can no longer tell which holder is the real one, so it ends
+ * every login of that account and the person logs in again.
+ */
+describe('NFR-13 a refresh token used twice', () => {
+  it('ends the login that replaced it, not only the replayed token', async () => {
+    const first = await loginAs('S-1001');
+    const second = (await refresh(first.refreshToken)).body as { refreshToken: string };
+
+    const replay = await refresh(first.refreshToken);
+    const afterwards = await refresh(second.refreshToken);
+
+    expect(replay.status).toBe(401);
+    expect(afterwards.status).toBe(401);
+    expect((afterwards.body as { error: { code: string } }).error.code).toBe('INVALID_TOKEN');
+  });
+
+  it('ends every other login of that account, not only the chain replayed', async () => {
+    const laptop = await loginAs('sara.iqbal');
+    const desktop = await loginAs('sara.iqbal');
+    await refresh(laptop.refreshToken);
+
+    await refresh(laptop.refreshToken);
+
+    expect((await refresh(desktop.refreshToken)).status).toBe(401);
+    const live = await prisma.refreshToken.findMany({ where: { revokedAt: null } });
+    expect(live).toHaveLength(0);
+  });
+
+  it('leaves every other account logged in', async () => {
+    const teacher = await loginAs('sara.iqbal');
+    const student = await loginAs('S-1001');
+    await refresh(teacher.refreshToken);
+
+    await refresh(teacher.refreshToken);
+
+    expect((await refresh(student.refreshToken)).status).toBe(200);
+  });
+
+  it('says no more than any other dead token would', async () => {
+    const tokens = await loginAs('S-1001');
+    await refresh(tokens.refreshToken);
+
+    const replay = await refresh(tokens.refreshToken);
+
+    expect(replay.status).toBe(401);
+    expect(replay.body).toEqual({
+      error: {
+        code: 'INVALID_TOKEN',
+        message: 'This login has ended. Please log in again.',
+        details: {},
+      },
+    });
+  });
+
+  it('counts a token revoked by logging out as a replay as well', async () => {
+    const tokens = await loginAs('sara.iqbal');
+    const other = await loginAs('sara.iqbal');
+    await request(app.getHttpServer())
+      .post('/api/auth/logout')
+      .set('Authorization', `Bearer ${tokens.accessToken}`)
+      .send({ refreshToken: tokens.refreshToken });
+
+    await refresh(tokens.refreshToken);
+
+    expect((await refresh(other.refreshToken)).status).toBe(401);
+  });
+
+  it('does not treat a token that merely ran out of time as a replay', async () => {
+    const stale = await loginAs('sara.iqbal');
+    context.clock.advanceDays(6);
+    const current = await loginAs('sara.iqbal');
+    context.clock.advanceDays(2);
+
+    expect((await refresh(stale.refreshToken)).status).toBe(401);
+    expect((await refresh(current.refreshToken)).status).toBe(200);
+  });
+});
