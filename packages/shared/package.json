@@ -8,6 +8,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
   "scripts": {
     "build": "echo \"not yet\"",
     "test": "vitest run",
