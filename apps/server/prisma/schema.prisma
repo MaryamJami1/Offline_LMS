@@ -1,3 +1,7 @@
+// Tables, columns and rules follow docs/docs/03-database.md. Model names are
+// PascalCase and columns camelCase in TypeScript; both map to the snake_case
+// names the documentation uses.
+
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -5,4 +9,391 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- People
+
+enum Role {
+  admin
+  teacher
+  student
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+model User {
+  id                 String     @id @default(uuid(7)) @db.Uuid
+  role               Role
+  /// Students log in with their student ID (S-1001); staff with a name.
+  username           String     @unique
+  passwordHash       String     @map("password_hash")
+  fullName           String     @map("full_name")
+  phone              String?
+  status             UserStatus @default(active)
+  mustChangePassword Boolean    @default(true) @map("must_change_password")
+  lastLoginAt        DateTime?  @map("last_login_at") @db.Timestamptz(3)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+  refreshTokens  RefreshToken[]
+  classesTaught  ClassTeacher[]
+  enrollments    Enrollment[]
+  deviceLogins   DeviceLogin[]
+  sessionsTaught ClassSession[]
+  attendance     Attendance[]
+  sessionEvents  SessionEvent[]
+  groupMembers   GroupMember[]
+  settingsSet    Setting[]
+
+  @@map("users")
+}
+
+model StudentProfile {
+  userId        String   @id @map("user_id") @db.Uuid
+  rollNo        String   @map("roll_no")
+  guardianName  String?  @map("guardian_name")
+  guardianPhone String?  @map("guardian_phone")
+  joinedOn      DateTime @map("joined_on") @db.Date
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("student_profiles")
+}
+
+model TeacherProfile {
+  userId    String   @id @map("user_id") @db.Uuid
+  subjects  String[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_profiles")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  /// Set for lab PCs, so a student's tokens can be ended seat by seat.
+  deviceId  String?   @map("device_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ------------------------------------------------------- Lab rooms and PCs
+
+model LabRoom {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  name        String
+  rows        Int
+  seatsPerRow Int      @map("seats_per_row")
+  /// Pairs and gaps in the room layout.
+  layout      Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  seats    Seat[]
+  classes  Class[]
+  sessions ClassSession[]
+
+  @@map("lab_rooms")
+}
+
+model Seat {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  labRoomId String   @map("lab_room_id") @db.Uuid
+  /// Row letter and position as the room reads it: A1 to E6.
+  code      String
+  row       String
+  position  Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  labRoom    LabRoom       @relation(fields: [labRoomId], references: [id], onDelete: Cascade)
+  device     Device?
+  logins     DeviceLogin[]
+  attendance Attendance[]
+
+  @@unique([labRoomId, code])
+  @@map("seats")
+}
+
+model Device {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  /// Bound by the admin at approval; a PC waiting for approval has no seat.
+  seatId        String?   @unique @map("seat_id") @db.Uuid
+  hostname      String
+  mac           String    @unique
+  ip            String?   @db.Inet
+  osVersion     String?   @map("os_version")
+  appVersion    String?   @map("app_version")
+  /// Issued when the admin approves the PC, so it is empty while it waits.
+  deviceKeyHash String?   @map("device_key_hash")
+  approved      Boolean   @default(false)
+  lastSeenAt    DateTime? @map("last_seen_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  seat          Seat?          @relation(fields: [seatId], references: [id], onDelete: SetNull)
+  refreshTokens RefreshToken[]
+  logins        DeviceLogin[]
+
+  @@map("devices")
+}
+
+// ---------------------------------------------------------- Organisation
+
+enum EnrollmentStatus {
+  active
+  left
+}
+
+model Course {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  batches Batch[]
+
+  @@map("courses")
+}
+
+model Batch {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  courseId  String    @map("course_id") @db.Uuid
+  name      String
+  startsOn  DateTime  @map("starts_on") @db.Date
+  endsOn    DateTime? @map("ends_on") @db.Date
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  classes Class[]
+
+  @@index([courseId])
+  @@map("batches")
+}
+
+model Class {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  batchId   String   @map("batch_id") @db.Uuid
+  /// Short code the institute uses on timetables: B-12.
+  code      String   @unique
+  name      String
+  labRoomId String   @map("lab_room_id") @db.Uuid
+  /// Days, start time and length in minutes.
+  schedule  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  batch       Batch          @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  labRoom     LabRoom        @relation(fields: [labRoomId], references: [id], onDelete: Restrict)
+  teachers    ClassTeacher[]
+  enrollments Enrollment[]
+  sessions    ClassSession[]
+  groups      Group[]
+
+  @@index([batchId])
+  @@map("classes")
+}
+
+model ClassTeacher {
+  classId   String   @map("class_id") @db.Uuid
+  teacherId String   @map("teacher_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher User  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([classId, teacherId])
+  @@index([teacherId])
+  @@map("class_teachers")
+}
+
+model Enrollment {
+  classId    String           @map("class_id") @db.Uuid
+  studentId  String           @map("student_id") @db.Uuid
+  status     EnrollmentStatus @default(active)
+  enrolledOn DateTime         @map("enrolled_on") @db.Date
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([classId, studentId])
+  @@index([studentId])
+  @@map("enrollments")
+}
+
+// ------------------------------------------- Sessions, logins and groups
+
+enum LogoutReason {
+  manual
+  class_end
+  idle
+  admin
+}
+
+enum SessionStatus {
+  open
+  closed
+}
+
+enum AttendanceStatus {
+  present
+  late
+  absent
+}
+
+enum GroupKind {
+  pair
+  random
+  manual
+}
+
+/// Who sat where, and when: the only link between a student and a PC.
+model DeviceLogin {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  deviceId     String        @map("device_id") @db.Uuid
+  seatId       String        @map("seat_id") @db.Uuid
+  studentId    String        @map("student_id") @db.Uuid
+  loggedInAt   DateTime      @default(now()) @map("logged_in_at") @db.Timestamptz(3)
+  loggedOutAt  DateTime?     @map("logged_out_at") @db.Timestamptz(3)
+  logoutReason LogoutReason? @map("logout_reason")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  device  Device @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  seat    Seat   @relation(fields: [seatId], references: [id], onDelete: Restrict)
+  student User   @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@index([studentId])
+  @@map("device_logins")
+}
+
+model ClassSession {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  classId   String        @map("class_id") @db.Uuid
+  labRoomId String        @map("lab_room_id") @db.Uuid
+  teacherId String        @map("teacher_id") @db.Uuid
+  startedAt DateTime      @default(now()) @map("started_at") @db.Timestamptz(3)
+  endedAt   DateTime?     @map("ended_at") @db.Timestamptz(3)
+  status    SessionStatus @default(open)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  class      Class          @relation(fields: [classId], references: [id], onDelete: Restrict)
+  labRoom    LabRoom        @relation(fields: [labRoomId], references: [id], onDelete: Restrict)
+  teacher    User           @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  attendance Attendance[]
+  events     SessionEvent[]
+  groups     Group[]
+
+  @@index([classId, startedAt])
+  @@map("class_sessions")
+}
+
+model Attendance {
+  sessionId   String           @map("session_id") @db.Uuid
+  studentId   String           @map("student_id") @db.Uuid
+  status      AttendanceStatus
+  seatId      String?          @map("seat_id") @db.Uuid
+  firstSeenAt DateTime?        @map("first_seen_at") @db.Timestamptz(3)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  session ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  seat    Seat?        @relation(fields: [seatId], references: [id], onDelete: SetNull)
+
+  @@id([sessionId, studentId])
+  @@index([studentId])
+  @@map("attendance")
+}
+
+/// Log of every lab command in a class session.
+model SessionEvent {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  actorId   String   @map("actor_id") @db.Uuid
+  /// broadcast.start, lock, quiz.start and the rest.
+  type      String
+  /// Seat codes the command went to; empty means every logged-in seat.
+  targets   String[] @default([])
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  session ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  actor   User         @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([sessionId, createdAt])
+  @@map("session_events")
+}
+
+model Group {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  classId   String    @map("class_id") @db.Uuid
+  /// Set for groups that last only for one class session.
+  sessionId String?   @map("session_id") @db.Uuid
+  name      String
+  kind      GroupKind
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  class   Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  session ClassSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  members GroupMember[]
+
+  @@index([classId])
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId   String   @map("group_id") @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, studentId])
+  @@index([studentId])
+  @@map("group_members")
+}
+
+// ---------------------------------------------------------------- System
+
+/// Institute settings, including the branding every app reads at start-up.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedBy String   @map("updated_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  updatedByUser User @relation(fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@map("settings")
 }
