@@ -28,6 +28,11 @@ function invalidCredentials(): AppError {
   return new AppError(401, 'INVALID_CREDENTIALS', 'The username or password is wrong');
 }
 
+/** Every dead refresh token answers the same, whatever killed it. */
+function invalidToken(): AppError {
+  return new AppError(401, 'INVALID_TOKEN', 'This login has ended. Please log in again.');
+}
+
 function accountLocked(unlocksAt: Date): AppError {
   return new AppError(
     403,
@@ -107,7 +112,8 @@ export class AuthService {
 
   /**
    * Trades a refresh token for a new pair and retires the one it was given, so
-   * a token that was copied off a lab PC is good at most once (NFR-13).
+   * a token that was copied off a lab PC is good at most once (NFR-13). Using
+   * one twice ends every login of that account.
    */
   async refresh({ refreshToken }: RefreshRequest): Promise<RefreshResponse> {
     const now = this.clock.now();
@@ -115,8 +121,19 @@ export class AuthService {
       where: { tokenHash: this.tokens.hashRefreshToken(refreshToken) },
       include: { user: true },
     });
-    if (stored === null || stored.revokedAt !== null || stored.expiresAt <= now) {
-      throw new AppError(401, 'INVALID_TOKEN', 'This login has ended. Please log in again.');
+    if (stored === null) {
+      throw invalidToken();
+    }
+    // A token offered a second time means the server can no longer tell the
+    // real app from whoever copied the token, because rotation gave each of
+    // them half of the same chain. Both are ended and the person logs in
+    // again. A token that merely ran out of time is not a replay.
+    if (stored.revokedAt !== null) {
+      await this.endEveryLogin(stored.userId, now);
+      throw invalidToken();
+    }
+    if (stored.expiresAt <= now) {
+      throw invalidToken();
     }
     if (stored.user.status === 'inactive') {
       throw new AppError(403, 'ACCOUNT_INACTIVE', 'This account has been deactivated');
@@ -188,10 +205,7 @@ export class AuthService {
     const now = this.clock.now();
 
     const [, updated] = await this.prisma.$transaction([
-      this.prisma.refreshToken.updateMany({
-        where: { userId: user.id, revokedAt: null },
-        data: { revokedAt: now },
-      }),
+      this.endEveryLogin(user.id, now),
       this.prisma.user.update({
         where: { id: user.id },
         data: {
@@ -204,6 +218,18 @@ export class AuthService {
     ]);
 
     return this.issueTokens(updated);
+  }
+
+  /**
+   * Revokes every refresh token the account still has, so every PC it is
+   * logged in at has to log in again. Returned rather than awaited so it can
+   * also go inside a transaction.
+   */
+  private endEveryLogin(userId: string, now: Date) {
+    return this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: now },
+    });
   }
 
   /** Own profile and the seat they are sitting at now, if any. */

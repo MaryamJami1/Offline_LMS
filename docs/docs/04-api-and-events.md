@@ -5,7 +5,7 @@ The apps use a REST API for data, Socket.IO for live lab commands, and LiveKit (
 ## Conventions
 
 - **Base URL:** `https://lingualab.local/api` (or the server's fixed IP). JSON in and out, UTF-8.
-- **Authentication:** `POST /api/auth/login` returns a short-lived access token (15 minutes, JWT) and a refresh token (7 days for staff; 30 minutes, renewed on each use, for students, and ending at logout or End class). Send `Authorization: Bearer <token>` on every call. Lab PCs also send `X-Device-Key`. Every refresh rotates: the token sent in is revoked and a new one comes back, so each refresh token works once.
+- **Authentication:** `POST /api/auth/login` returns a short-lived access token (15 minutes, JWT) and a refresh token (7 days for staff; 30 minutes, renewed on each use, for students, and ending at logout or End class). Send `Authorization: Bearer <token>` on every call. Lab PCs also send `X-Device-Key`. Every refresh rotates: the token sent in is revoked and a new one comes back, so each refresh token works once, and using one twice ends every login of that account.
 - **Roles:** every endpoint below lists who may call it. The server checks the role and ownership on each request; the apps hiding a button is never the only check.
 - **Validation:** request bodies are checked against Zod schemas from `packages/shared`; a failed check returns 400 with the field errors.
 - **Errors:** `{ "error": { "code": "SEAT_EMPTY", "message": "No student is logged in at B4", "details": {} } }`. Statuses: 400 bad input, 401 not logged in, 403 not allowed, 404 not found, 409 conflict, 422 rule broken. `details` never carries a value from the request, so a mistyped password cannot come back in an error; a failed Zod check reports `{ issues: [{ field, message }] }`.
@@ -22,7 +22,7 @@ Who: A = admin, T = teacher (own classes only), S = student (own data only), D =
 | Method     | Path                        | Who                                 | Purpose                                                               |
 | ---------- | --------------------------- | ----------------------------------- | --------------------------------------------------------------------- |
 | POST       | `/auth/login`               | Anyone (+ D for students)           | Log in; returns tokens; records the seat for students                 |
-| POST       | `/auth/refresh`             | Logged in                           | New access token                                                      |
+| POST       | `/auth/refresh`             | Logged in                           | New access token; rotates the refresh token                           |
 | POST       | `/auth/logout`              | Logged in                           | Ends the login; frees the seat                                        |
 | POST       | `/auth/change-password`     | Logged in                           | Change own password                                                   |
 | GET        | `/me`                       | Logged in                           | Own profile, role and current seat                                    |
@@ -33,27 +33,27 @@ Who: A = admin, T = teacher (own classes only), S = student (own data only), D =
 
 **Auth in detail.** Request and response bodies are the schemas in `packages/shared/src/auth.ts`.
 
-| Call                         | Body in                            | Answer                                                                 |
-| ---------------------------- | ---------------------------------- | ---------------------------------------------------------------------- |
-| `POST /auth/login`           | `{ username, password }`           | 200 `{ accessToken, refreshToken, user }`                              |
-| `POST /auth/refresh`         | `{ refreshToken }`                 | 200 `{ accessToken, refreshToken }` — the old refresh token is revoked |
-| `POST /auth/logout`          | `{ refreshToken }`                 | 204, and the seat is freed                                             |
-| `POST /auth/change-password` | `{ currentPassword, newPassword }` | 200 `{ accessToken, refreshToken, user }`, every other login ended     |
-| `GET /me`                    | —                                  | 200 `{ user, seat }`, `seat` null when they are not at a lab PC        |
+| Call                         | Body in                            | Answer                                                                                                                          |
+| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /auth/login`           | `{ username, password }`           | 200 `{ accessToken, refreshToken, user }`                                                                                       |
+| `POST /auth/refresh`         | `{ refreshToken }`                 | 200 `{ accessToken, refreshToken }` — the old refresh token is revoked, and offering one twice ends every login of that account |
+| `POST /auth/logout`          | `{ refreshToken }`                 | 204, and the seat is freed                                                                                                      |
+| `POST /auth/change-password` | `{ currentPassword, newPassword }` | 200 `{ accessToken, refreshToken, user }`, every other login ended                                                              |
+| `GET /me`                    | —                                  | 200 `{ user, seat }`, `seat` null when they are not at a lab PC                                                                 |
 
 Error codes these calls return:
 
-| Code                       | Status | When                                                                           |
-| -------------------------- | ------ | ------------------------------------------------------------------------------ |
-| `VALIDATION_FAILED`        | 400    | The body does not match the schema                                             |
-| `INVALID_CREDENTIALS`      | 401    | Wrong password, or no such username — the same answer for both                 |
-| `UNAUTHENTICATED`          | 401    | No bearer token on a call that needs one                                       |
-| `INVALID_TOKEN`            | 401    | An access or refresh token that is expired, revoked or not ours                |
-| `ACCOUNT_LOCKED`           | 403    | Five wrong passwords; `details.unlocksAt` says when it opens again             |
-| `ACCOUNT_INACTIVE`         | 403    | The account has been deactivated, even if its token is still in date           |
-| `PASSWORD_CHANGE_REQUIRED` | 403    | A first-login account asking for anything but `/me`, change-password or logout |
-| `FORBIDDEN`                | 403    | The refresh token sent to `/auth/logout` belongs to another account            |
-| `INTERNAL_ERROR`           | 500    | Something unexpected; the message is logged, never the request                 |
+| Code                       | Status | When                                                                                                                                                                                  |
+| -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VALIDATION_FAILED`        | 400    | The body does not match the schema                                                                                                                                                    |
+| `INVALID_CREDENTIALS`      | 401    | Wrong password, or no such username — the same answer for both                                                                                                                        |
+| `UNAUTHENTICATED`          | 401    | No bearer token on a call that needs one                                                                                                                                              |
+| `INVALID_TOKEN`            | 401    | An access or refresh token that is expired, revoked or not ours. A refresh token used a second time answers with this and nothing more, after that account's other logins are revoked |
+| `ACCOUNT_LOCKED`           | 403    | Five wrong passwords; `details.unlocksAt` says when it opens again                                                                                                                    |
+| `ACCOUNT_INACTIVE`         | 403    | The account has been deactivated, even if its token is still in date                                                                                                                  |
+| `PASSWORD_CHANGE_REQUIRED` | 403    | A first-login account asking for anything but `/me`, change-password or logout                                                                                                        |
+| `FORBIDDEN`                | 403    | The refresh token sent to `/auth/logout` belongs to another account                                                                                                                   |
+| `INTERNAL_ERROR`           | 500    | Something unexpected; the message is logged, never the request                                                                                                                        |
 
 ### Classes and groups
 
