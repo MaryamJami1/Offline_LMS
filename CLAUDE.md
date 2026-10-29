@@ -32,7 +32,7 @@ The prototype's `.dc.html` files in `prototype/source/` hold the exact styles, s
    - Refactor: clean up with all tests green.
    - Never write feature code without a failing test that needs it. Never delete or weaken a test to make it pass.
    - Only exception: throwaway proof-of-concept code in `spikes/` (Phase 0). It is never imported by `apps/` or `packages/` and never shipped; when the feature is built for real, it is rebuilt test-first.
-2. **Name tests after requirement IDs:** `lab-04.broadcast.spec.ts`, `adm-11.reset-password.spec.ts`. Start from the test cases listed in `docs/docs/08-testing.md`.
+2. **Name tests after requirement IDs:** `lab-04.broadcast.spec.ts`, `adm-11.reset-password.spec.ts`. Start from the test cases listed in `docs/docs/08-testing.md`. A test that covers several requirements at once, like the seed, may use a descriptive name and list the IDs at the top of the file.
 3. **Run the tests** that cover your change before saying a task is done, and the full suite before a commit. Report real results; never claim tests pass without running them.
 4. **Offline only:** no CDNs, no external fonts, no calls to the internet at runtime. Fonts come from @fontsource; every dependency is installed locally.
 5. **Security on the server:** every endpoint and socket event checks role and ownership on the server (see the permissions table in `docs/docs/06-security-and-data.md`). Students only ever see their own data. Teachers only act on their own classes.
@@ -75,7 +75,7 @@ pnpm dev             # server + admin + apps in dev mode
 
 **Goal:** the admin can set up people, classes and the lab, and students can log in at any PC.
 
-- [ ] Prisma schema and migrations for People, Organisation and Lab tables; seed data
+- [x] Prisma schema and migrations for People, Organisation and Lab tables; seed data — People, Organisation, Lab and sessions plus `settings`; seed gives 1 admin, 2 teachers, 2 classes, 30 students, Lab 1 with 30 seats and the software name "Lab"
 - [ ] Login, refresh, logout, change password, account lockout (T-SEC-01)
 - [ ] Role guards and the full permissions test (T-ACL-01)
 - [ ] Users: create, edit, deactivate, first passwords, Excel import (ADM-01, ADM-02); teachers reset passwords for their own students (ADM-11)
@@ -95,10 +95,11 @@ Both exit criteria met. Broadcast and voice passed on 2 PCs (NFR-03 at 204 ms of
 
 ### Still open, carried into Phase 1
 
+- [ ] When the server gets its real build and Docker image: `packages/shared` needs a proper `tsc` build, and `pnpm db:seed` must run from the compiled output inside the container, without `tsx`
 - [ ] Confirm the hardware list with the institute — Maryam's, outside the code
 - [ ] Short video of the 2-PC spike — a Phase 0 deliverable, never recorded
 - [ ] GitHub milestones per phase and one issue per requirement ID — `gh` is authenticated now, so this is unblocked
-- [ ] **Server branch coverage is 66.66% against the 70% target** (lines are fine at 88.09%). Coverage is also never run in CI, so the threshold in `apps/server/vitest.config.ts` is unenforced. This blocks the Phase 1 exit criterion, so fix it early. Part of the gap is structural: `platform() === 'win32' ? …` can only ever cover one side per operating system
+- [x] **Server branch coverage** was 66.66% against the 70% target; the database and seed tests of Phase 1 task 1 lifted it to 83.33%, with lines at 94.79% against 80%. `pnpm test:coverage` runs in CI and fails the build when a threshold is missed. What remains uncovered is structural: `platform() === 'win32' ? …` in `src/health/disk.ts` can only ever cover one side per operating system
 - [ ] Testing Library and Playwright are installed but never exercised — no component test and no end-to-end test exists yet. `pnpm test:e2e` passes only because of `--pass-with-no-tests`
 - [ ] Gate 1 (end of week 9) still owes the wired lab network, real headsets, and an echo check, which the one-way spike could not do
 

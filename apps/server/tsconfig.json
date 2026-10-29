@@ -8,6 +8,6 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true
   },
-  "include": ["src", "test"],
+  "include": ["src", "test", "prisma"],
   "exclude": ["node_modules", "dist", "src/generated"]
 }

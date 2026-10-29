@@ -14,12 +14,12 @@ About 30 tables in six groups. Every table has `id` (UUID, primary key) unless a
 
 ### People
 
-| Table            | Columns                                                                                                                                                                                            | Notes                                                      |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| users            | `role` enum(admin, teacher, student), `username` text unique, `password_hash` text, `full_name` text, `phone` text?, `status` enum(active, inactive), `must_change_password` bool, `last_login_at` | Students log in with their student ID as username (S-1001) |
-| student_profiles | `user_id` PK/FK users, `roll_no` text, `guardian_name` text?, `guardian_phone` text?, `joined_on` date                                                                                             | One per student                                            |
-| teacher_profiles | `user_id` PK/FK users, `subjects` text[]                                                                                                                                                           | One per teacher                                            |
-| refresh_tokens   | `user_id` FK, `device_id` FK?, `token_hash` text, `expires_at`, `revoked_at`?                                                                                                                      | Lets the apps stay logged in safely                        |
+| Table            | Columns                                                                                                                                                                                            | Notes                                                                                                                                                 |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| users            | `role` enum(admin, teacher, student), `username` text unique, `password_hash` text, `full_name` text, `phone` text?, `status` enum(active, inactive), `must_change_password` bool, `last_login_at` | Students log in with their student ID as username (S-1001); usernames are unique without regard to case, so `s-1001` can never reach a second account |
+| student_profiles | `user_id` PK/FK users, `roll_no` text, `guardian_name` text?, `guardian_phone` text?, `joined_on` date                                                                                             | One per student                                                                                                                                       |
+| teacher_profiles | `user_id` PK/FK users, `subjects` text[]                                                                                                                                                           | One per teacher                                                                                                                                       |
+| refresh_tokens   | `user_id` FK, `device_id` FK?, `token_hash` text, `expires_at`, `revoked_at`?                                                                                                                      | Lets the apps stay logged in safely                                                                                                                   |
 
 ### Organisation
 
@@ -35,15 +35,15 @@ About 30 tables in six groups. Every table has `id` (UUID, primary key) unless a
 
 ### Lab and sessions
 
-| Table          | Columns                                                                                                                                                                       | Notes                                                                |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| lab_rooms      | `name` text, `rows` int, `seats_per_row` int, `layout` jsonb (pairs, gaps)                                                                                                    | Lab 1 = 5 rows x 6 seats; a second lab is added later as another row |
-| seats          | `lab_room_id` FK, `code` text (A1), `row` text, `position` int; unique(lab_room_id, code)                                                                                     |                                                                      |
-| devices        | `seat_id` FK unique?, `hostname` text (LAB1-A1), `mac` text unique, `ip` inet, `os_version` text, `app_version` text, `device_key_hash` text, `approved` bool, `last_seen_at` | One per lab PC; the admin approves new PCs                           |
-| device_logins  | `device_id` FK, `seat_id` FK, `student_id` FK, `logged_in_at`, `logged_out_at`?, `logout_reason` enum(manual, class_end, idle, admin)?                                        | Who sat where, and when. This is how "no fixed seats" works          |
-| class_sessions | `class_id` FK, `lab_room_id` FK, `teacher_id` FK, `started_at`, `ended_at`?, `status` enum(open, closed)                                                                      | One per taught class                                                 |
-| attendance     | `session_id` FK, `student_id` FK, `status` enum(present, late, absent), `seat_id` FK?, `first_seen_at`?; PK(session_id, student_id)                                           | Filled from device_logins at Start class and on late logins          |
-| session_events | `session_id` FK, `actor_id` FK, `type` text (broadcast.start, lock, quiz.start…), `targets` text[], `payload` jsonb                                                           | Log of every lab command                                             |
+| Table          | Columns                                                                                                                                                                            | Notes                                                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| lab_rooms      | `name` text, `rows` int, `seats_per_row` int, `layout` jsonb (pairs, gaps)                                                                                                         | Lab 1 = 5 rows x 6 seats; a second lab is added later as another row                                                                                                     |
+| seats          | `lab_room_id` FK, `code` text (A1), `row` text, `position` int; unique(lab_room_id, code)                                                                                          |                                                                                                                                                                          |
+| devices        | `seat_id` FK unique?, `hostname` text (LAB1-A1), `mac` text unique, `ip` inet?, `os_version` text?, `app_version` text?, `device_key_hash` text?, `approved` bool, `last_seen_at`? | One per lab PC; the admin approves new PCs. A PC registers with its hostname and MAC only, so the seat, address, versions and key stay empty until the admin approves it |
+| device_logins  | `device_id` FK, `seat_id` FK, `student_id` FK, `logged_in_at`, `logged_out_at`?, `logout_reason` enum(manual, class_end, idle, admin)?                                             | Who sat where, and when. This is how "no fixed seats" works. At most one open login per student and per PC, enforced by the partial unique indexes below                 |
+| class_sessions | `class_id` FK, `lab_room_id` FK, `teacher_id` FK, `started_at`, `ended_at`?, `status` enum(open, closed)                                                                           | One per taught class                                                                                                                                                     |
+| attendance     | `session_id` FK, `student_id` FK, `status` enum(present, late, absent), `seat_id` FK?, `first_seen_at`?; PK(session_id, student_id)                                                | Filled from device_logins at Start class and on late logins                                                                                                              |
+| session_events | `session_id` FK, `actor_id` FK, `type` text (broadcast.start, lock, quiz.start…), `targets` text[], `payload` jsonb                                                                | Log of every lab command                                                                                                                                                 |
 
 ### Content
 
@@ -72,7 +72,7 @@ About 30 tables in six groups. Every table has `id` (UUID, primary key) unless a
 
 | Table        | Columns                                                                                                                                        | Notes                                                                                        |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| settings     | `key` text PK, `value` jsonb, `updated_by` FK                                                                                                  | Software name, institute name, logo path, main colour, grading scale, pass mark, backup time |
+| settings     | `key` text PK, `value` jsonb, `updated_by` FK (required)                                                                                       | Software name, institute name, logo path, main colour, grading scale, pass mark, backup time |
 | audit_logs   | `actor_id` FK?, `action` text, `entity` text, `entity_id` uuid?, `details` jsonb, `ip` inet                                                    | Never edited or deleted from the app; includes every password reset, by admin or teacher     |
 | backups      | `kind` enum(automatic, manual, usb), `file_path` text, `size_bytes` bigint, `status` enum(running, done, failed), `started_at`, `finished_at`? |                                                                                              |
 | app_releases | `app` enum(student, teacher), `version` text, `file_path` text, `sha256` text, `is_current` bool                                               | Lets lab PCs update from the server                                                          |
@@ -93,7 +93,8 @@ About 30 tables in six groups. Every table has `id` (UUID, primary key) unless a
 **Indexes beyond primary and unique keys**
 
 - `enrollments(student_id)`, `class_teachers(teacher_id)`
-- `device_logins(device_id) where logged_out_at is null` (who is on a PC now)
+- `device_logins(student_id) where logged_out_at is null`, unique: one student is logged in at one PC at a time
+- `device_logins(device_id) where logged_out_at is null`, unique: one PC holds one student at a time (who is on a PC now)
 - `attendance(student_id)`, `class_sessions(class_id, started_at)`
 - `submissions(student_id, status)`, `answers(submission_id)`, `grades(submission_id)`
 - `session_events(session_id, created_at)`, `audit_logs(created_at)`
@@ -108,4 +109,6 @@ About 30 tables in six groups. Every table has `id` (UUID, primary key) unless a
 | Audit log                            | 2 years                                                                         |
 | Nightly backups                      | 14 days on the second disk; weekly USB copies kept by the admin                 |
 
-**Seed data** for a fresh install: one admin account (password changed at first login), the four modules, Lab 1 with 30 seats, and two sample lessons per module.
+**Seed data** for a fresh install (`pnpm db:seed`, see `apps/server/src/seed/seed.ts`): one admin account, two teachers, one course with one batch and two classes of fifteen students each (30 students, S-1001 to S-1030), Lab 1 with its 30-seat map (A1 to E6), and the default settings with the software name "Lab". Every seeded account must change its password at first login; the first password comes from `SEED_PASSWORD`. The four modules and two sample lessons per module are added with the lesson editor in Phase 2. Running the seed again changes nothing, and never overwrites a password that has already been changed.
+
+**Rules Prisma cannot express** are hand-written SQL inside the migration that creates the table: the case-insensitive unique index on `users(lower(username))`, and the two partial unique indexes on `device_logins`. Prisma keeps them: `prisma migrate dev` after they were added produced an empty migration, not a drop.

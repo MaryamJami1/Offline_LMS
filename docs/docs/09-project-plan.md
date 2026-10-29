@@ -42,7 +42,8 @@ Every task below is done test-first: write the failing test (named after the req
 
 **Goal:** the admin can set up people, classes and the lab, and students can log in at any PC.
 
-- [ ] Prisma schema and migrations for People, Organisation and Lab tables; seed data
+- [x] Prisma schema and migrations for People, Organisation and Lab tables; seed data — People, Organisation, Lab and sessions plus `settings`; seed gives 1 admin, 2 teachers, 2 classes, 30 students, Lab 1 with 30 seats and the software name "Lab"
+- [ ] When the server gets its real build and Docker image: give `packages/shared` a proper `tsc` build and run `pnpm db:seed` from the compiled output inside the container, without `tsx`
 - [ ] Login, refresh, logout, change password, account lockout (T-SEC-01)
 - [ ] Role guards and the full permissions test (T-ACL-01)
 - [ ] Users: create, edit, deactivate, first passwords, Excel import (ADM-01, ADM-02); teachers reset passwords for their own students (ADM-11)
