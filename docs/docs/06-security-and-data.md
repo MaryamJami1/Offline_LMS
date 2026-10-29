@@ -32,13 +32,20 @@ Each row is enforced by a NestJS guard and covered by an access test that tries 
 
 - Hashed with Argon2id; never stored or logged in plain text.
 - The admin sets each new account's first-login password and prints a slip; the user must change it at first login (at least 8 characters). Teachers can reset passwords only for students in their own classes, and every reset goes in the audit log.
-- Five wrong attempts lock the account for 10 minutes; the admin can unlock it.
+- Five wrong attempts lock the account for 10 minutes; the admin can unlock it. The count and the lock live on the account (`users.failed_login_attempts`, `users.locked_until`), so a restart does not clear them, and a good password clears them. Once the 10 minutes have passed the count starts again from zero, so an old lock cannot shut someone out on their first mistake.
+- A wrong password and a username that does not exist give the same 401, so the login screen cannot be used to find out which student IDs are real. A locked account is told so, with the time it opens again.
 
 **Tokens**
 
-- Access token: JWT, 15 minutes. Refresh token: random, stored hashed in `refresh_tokens`.
-- Staff refresh tokens last 7 days. Student refresh tokens end at logout, at End class, or after 30 minutes idle.
-- Logging in elsewhere ends a student's older login, so one student cannot be logged in on two PCs.
+- Access token: JWT (HS256), 15 minutes, signed with `JWT_SECRET` — at least 32 characters, with no default: the server refuses to start without it.
+- Refresh token: 32 random bytes, stored only as a SHA-256 hash in `refresh_tokens`, so a copied database row cannot be replayed as a login.
+- Every refresh rotates. `POST /auth/refresh` revokes the token it was given and returns a new one, so a refresh token works once; a token taken off a lab PC is already dead by the time the app has used it.
+- Staff refresh tokens last 7 days. Student refresh tokens last 30 minutes and are renewed on each use, so a student's login dies 30 minutes after the app goes quiet, and ends at logout or at End class.
+- The access token is checked on every request and the account is read with it, so a deactivation or a forced password change takes effect at once instead of waiting for the token to run out.
+- An account that must change its password may only see itself, change its password and log out. Every other endpoint answers 403 `PASSWORD_CHANGE_REQUIRED`: the apps hide the rest of the screen as well, but the server is what refuses.
+- Changing a password ends every login of that account on every PC and hands the app that asked for it a fresh pair, so a password given away in the lab can be taken back from one screen.
+- Logging out revokes that refresh token and frees the seat (`device_logins.logged_out_at`, reason `manual`). Logging out twice, or with a token the server never issued, answers the same 204; a refresh token belonging to someone else is refused with 403.
+- Logging in elsewhere ends a student's older login, so one student cannot be logged in on two PCs (STU-01, with the student app).
 
 **Device trust (lab PCs)**
 
@@ -64,7 +71,7 @@ Lab PCs reach the server by its IP address, and TLS forbids an IP literal in the
 - **Lesson files:** videos and PDFs are shown inside the app only; the student app offers no download or print.
 - **Leaving students** are deactivated, not deleted, so reports stay correct. Full deletion on request is an admin action that is logged.
 - **Audit log** records logins (success and failure), password resets (by admin or teacher), grade changes, deletions, restores, settings changes and every lab command, with who, when and from which PC. The app has no way to edit or delete audit entries.
-- **Error logs** on the server never include passwords, tokens or recordings, and are rotated after 30 days.
+- **Error logs** on the server never include passwords, tokens or recordings, and are rotated after 30 days. Nothing from a request body or header is logged or returned: a whole round of logins, refreshes, logouts and password changes is run in `apps/server/test/auth/nfr-13.no-secrets-in-logs.spec.ts` with everything the server prints captured, and no password, token or hash may appear in it.
 
 ## Backup and restore policy
 

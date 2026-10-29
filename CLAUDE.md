@@ -76,7 +76,7 @@ pnpm dev             # server + admin + apps in dev mode
 **Goal:** the admin can set up people, classes and the lab, and students can log in at any PC.
 
 - [x] Prisma schema and migrations for People, Organisation and Lab tables; seed data — People, Organisation, Lab and sessions plus `settings`; seed gives 1 admin, 2 teachers, 2 classes, 30 students, Lab 1 with 30 seats and the software name "Lab"
-- [ ] Login, refresh, logout, change password, account lockout (T-SEC-01)
+- [x] Login, refresh, logout, change password, account lockout (T-SEC-01) — rotating refresh tokens, a guard that reads the account on every request, and a first-login account held to `/me`, change-password and logout. Device keys and the seat recorded at login come with STU-01; the admin's unlock button with ADM-01
 - [ ] Role guards and the full permissions test (T-ACL-01)
 - [ ] Users: create, edit, deactivate, first passwords, Excel import (ADM-01, ADM-02); teachers reset passwords for their own students (ADM-11)
 - [ ] Courses, batches, classes, enrolments and groups (ADM-03)
