@@ -25,18 +25,22 @@ enum UserStatus {
 }
 
 model User {
-  id                 String     @id @default(uuid(7)) @db.Uuid
-  role               Role
+  id                  String     @id @default(uuid(7)) @db.Uuid
+  role                Role
   /// Students log in with their student ID (S-1001); staff with a name.
-  username           String     @unique
-  passwordHash       String     @map("password_hash")
-  fullName           String     @map("full_name")
-  phone              String?
-  status             UserStatus @default(active)
-  mustChangePassword Boolean    @default(true) @map("must_change_password")
-  lastLoginAt        DateTime?  @map("last_login_at") @db.Timestamptz(3)
-  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  username            String     @unique
+  passwordHash        String     @map("password_hash")
+  fullName            String     @map("full_name")
+  phone               String?
+  status              UserStatus @default(active)
+  mustChangePassword  Boolean    @default(true) @map("must_change_password")
+  lastLoginAt         DateTime?  @map("last_login_at") @db.Timestamptz(3)
+  /// Wrong passwords since the last success; five of them lock the account.
+  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
+  /// Set while the account is locked out; the admin can clear it.
+  lockedUntil         DateTime?  @map("locked_until") @db.Timestamptz(3)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   studentProfile StudentProfile?
   teacherProfile TeacherProfile?
