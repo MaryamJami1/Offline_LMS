@@ -19,14 +19,14 @@ Short step-by-step guides for teachers, students and the admin. They will become
 
 6. To choose who a control goes to, click seats (or **Select all**). With nothing selected, a control goes to everyone logged in.
 7. Press a control:
-    - **Broadcast PC:** students see your screen full-screen and cannot use their PC.
-    - **Screen Demo:** students see your screen in a window and keep working.
-    - **White Board:** write or draw; press **Save to lesson** to keep it.
-    - **Demo:** with no seat or many seats selected it plays the lesson audio or video; with one student selected, that student's screen and voice go to the class.
-    - **Quiz:** choose a quiz in the Quiz tab and press Launch; watch answers arrive; press **Show results to students** at the end.
-    - **Whole Talk:** speak to everyone in their headsets.
-    - **Intercom:** select one student, then press Intercom for a private call. When a hand is raised, press **Talk** next to the name.
-    - **Monitor:** see every screen; click one to see it full size. Students are not shown any sign that you are watching.
+   - **Broadcast PC:** students see your screen full-screen and cannot use their PC.
+   - **Screen Demo:** students see your screen in a window and keep working.
+   - **White Board:** write or draw; press **Save to lesson** to keep it.
+   - **Demo:** with no seat or many seats selected it plays the lesson audio or video; with one student selected, that student's screen and voice go to the class.
+   - **Quiz:** choose a quiz in the Quiz tab and press Launch; watch answers arrive; press **Show results to students** at the end.
+   - **Whole Talk:** speak to everyone in their headsets.
+   - **Intercom:** select one student, then press Intercom for a private call. When a hand is raised, press **Talk** next to the name.
+   - **Monitor:** see every screen; click one to see it full size. Students are not shown any sign that you are watching.
 8. The dark bar at the bottom always shows what is running. Press **Stop** to end it, or press the same control again.
 9. **Lock all** shows "Eyes on your teacher" on every screen. Press **Unlock all** to give control back.
 10. For pair or group speaking practice: Groups tab › **Pair by seat** or **Random groups of 4** › **Start Group Talk**.
@@ -52,10 +52,10 @@ Short step-by-step guides for teachers, students and the admin. They will become
 2. Type your student ID (for example S-1001) and your password, then press **Log in**. The first time, you choose a new password.
 3. Your dashboard shows **Today from your teacher**, your four modules and your latest marks.
 4. Press **Start** on a task:
-    - **Listening:** press play (you can play it twice), then answer the questions and press **Submit answers**.
-    - **Reading:** read the passage, answer the questions, press **Submit answers**.
-    - **Speaking:** listen to the model answer if you like, press the round button to record, press the square to stop, listen back, then **Send to teacher**.
-    - **Writing:** write your answer in the box; the counters show your words. Press **Submit to teacher**.
+   - **Listening:** press play (you can play it twice), then answer the questions and press **Submit answers**.
+   - **Reading:** read the passage, answer the questions, press **Submit answers**.
+   - **Speaking:** listen to the model answer if you like, press the round button to record, press the square to stop, listen back, then **Send to teacher**.
+   - **Writing:** write your answer in the box; the counters show your words. Press **Submit to teacher**.
 5. Need help? Press **Raise hand**. Your teacher sees it and can talk to you in your headset.
 6. When your teacher shares their screen, locks screens or starts a quiz, your screen changes by itself. Wait for your teacher to stop it.
 7. See your marks and your teacher's comments in **My results**.

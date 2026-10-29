@@ -3,6 +3,12 @@
 # change in a diff full of whitespace. Content here is reviewed by eye.
 CLAUDE.md
 
+# Design reference, never reformatted. The .dc.html files are the prototype as
+# it was built and are read for exact styles, sample data and screen
+# behaviour, so their whitespace is evidence; the screens are rebuilt in React
+# rather than shipped from here.
+prototype/
+
 # Generated or vendored
 apps/server/src/generated/
 spikes/broadcast/bin/
