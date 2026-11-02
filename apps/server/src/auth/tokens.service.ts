@@ -17,6 +17,14 @@ export const STAFF_REFRESH_DAYS = 7;
  */
 export const STUDENT_REFRESH_MINUTES = 30;
 
+/**
+ * How long after a token was rotated its own retry is still answered. The lab
+ * network drops a reply now and then and the app resends the refresh it has
+ * already had answered; inside this window, and only from the PC the token was
+ * issued to, that retry is served instead of being read as a theft.
+ */
+export const REFRESH_GRACE_SECONDS = 20;
+
 /** 256 bits of randomness: a refresh token is never guessed, only stolen. */
 const REFRESH_TOKEN_BYTES = 32;
 

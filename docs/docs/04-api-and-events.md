@@ -5,7 +5,7 @@ The apps use a REST API for data, Socket.IO for live lab commands, and LiveKit (
 ## Conventions
 
 - **Base URL:** `https://lingualab.local/api` (or the server's fixed IP). JSON in and out, UTF-8.
-- **Authentication:** `POST /api/auth/login` returns a short-lived access token (15 minutes, JWT) and a refresh token (7 days for staff; 30 minutes, renewed on each use, for students, and ending at logout or End class). Send `Authorization: Bearer <token>` on every call. Lab PCs also send `X-Device-Key`. Every refresh rotates: the token sent in is revoked and a new one comes back, so each refresh token works once, and using one twice ends every login of that account.
+- **Authentication:** `POST /api/auth/login` returns a short-lived access token (15 minutes, JWT) and a refresh token (7 days for staff; 30 minutes, renewed on each use, for students, and ending at logout or End class). Send `Authorization: Bearer <token>` on every call. Lab PCs also send `X-Device-Key`. Every refresh rotates: the token sent in is revoked and a new one comes back, so each refresh token works once, and using one twice ends every login of that account. The one exception is the app's own retry after a dropped reply: within 20 seconds, and only from the lab PC the token was issued to (`X-Device-Key`), the retry is answered with a fresh pair instead.
 - **Roles:** every endpoint below lists who may call it. The server checks the role and ownership on each request; the apps hiding a button is never the only check.
 - **Validation:** request bodies are checked against Zod schemas from `packages/shared`; a failed check returns 400 with the field errors.
 - **Errors:** `{ "error": { "code": "SEAT_EMPTY", "message": "No student is logged in at B4", "details": {} } }`. Statuses: 400 bad input, 401 not logged in, 403 not allowed, 404 not found, 409 conflict, 422 rule broken. `details` never carries a value from the request, so a mistyped password cannot come back in an error; a failed Zod check reports `{ issues: [{ field, message }] }`.
@@ -33,13 +33,13 @@ Who: A = admin, T = teacher (own classes only), S = student (own data only), D =
 
 **Auth in detail.** Request and response bodies are the schemas in `packages/shared/src/auth.ts`.
 
-| Call                         | Body in                            | Answer                                                                                                                          |
-| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /auth/login`           | `{ username, password }`           | 200 `{ accessToken, refreshToken, user }`                                                                                       |
-| `POST /auth/refresh`         | `{ refreshToken }`                 | 200 `{ accessToken, refreshToken }` — the old refresh token is revoked, and offering one twice ends every login of that account |
-| `POST /auth/logout`          | `{ refreshToken }`                 | 204, and the seat is freed                                                                                                      |
-| `POST /auth/change-password` | `{ currentPassword, newPassword }` | 200 `{ accessToken, refreshToken, user }`, every other login ended                                                              |
-| `GET /me`                    | —                                  | 200 `{ user, seat }`, `seat` null when they are not at a lab PC                                                                 |
+| Call                         | Body in                            | Answer                                                                                                                                                                               |
+| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /auth/login`           | `{ username, password }`           | 200 `{ accessToken, refreshToken, user }`                                                                                                                                            |
+| `POST /auth/refresh`         | `{ refreshToken }`                 | 200 `{ accessToken, refreshToken }` — the old refresh token is revoked, and offering one twice ends every login of that account, unless it is the same PC retrying within 20 seconds |
+| `POST /auth/logout`          | `{ refreshToken }`                 | 204, and the seat is freed                                                                                                                                                           |
+| `POST /auth/change-password` | `{ currentPassword, newPassword }` | 200 `{ accessToken, refreshToken, user }`, every other login ended                                                                                                                   |
+| `GET /me`                    | —                                  | 200 `{ user, seat }`, `seat` null when they are not at a lab PC                                                                                                                      |
 
 Error codes these calls return:
 

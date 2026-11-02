@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, Post, UseGuards } from '@nestjs/common';
 import {
   changePasswordRequestSchema,
   loginRequestSchema,
@@ -16,6 +16,7 @@ import type {
 import type { User } from '../generated/prisma/index.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AuthService } from './auth.service.js';
+import { DEVICE_KEY_HEADER } from './device-key.service.js';
 import { CurrentUser } from './current-user.decorator.js';
 import { JwtAuthGuard } from './jwt.guard.js';
 
@@ -35,8 +36,9 @@ export class AuthController {
   @HttpCode(200)
   async refresh(
     @Body(new ZodValidationPipe(refreshRequestSchema)) body: RefreshRequest,
+    @Headers(DEVICE_KEY_HEADER) deviceKey?: string,
   ): Promise<RefreshResponse> {
-    return this.auth.refresh(body);
+    return this.auth.refresh(body, deviceKey);
   }
 
   @Post('logout')
