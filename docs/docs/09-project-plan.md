@@ -49,7 +49,7 @@ Every task below is done test-first: write the failing test (named after the req
 - [ ] Users: create, edit, deactivate, first passwords, Excel import (ADM-01, ADM-02); teachers reset passwords for their own students (ADM-11)
 - [ ] Courses, batches, classes, enrolments and groups (ADM-03)
 - [ ] Labs (one or more), seat maps, PC registration and approval, device keys (ADM-04)
-- [ ] Student login at any PC with device_logins; one login per student (STU-01)
+- [ ] Student login at any PC with device_logins; one login per student (STU-01) — also free the seat when reuse detection ends a student's logins, which NFR-13 leaves open on purpose: the refresh endpoint revokes every token of the account but keeps the open `device_logins` row, so the student must be able to sit down again
 - [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
