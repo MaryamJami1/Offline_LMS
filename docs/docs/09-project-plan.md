@@ -45,12 +45,12 @@ Every task below is done test-first: write the failing test (named after the req
 - [x] Prisma schema and migrations for People, Organisation and Lab tables; seed data — People, Organisation, Lab and sessions plus `settings`; seed gives 1 admin, 2 teachers, 2 classes, 30 students, Lab 1 with 30 seats and the software name "Lab"
 - [ ] When the server gets its real build and Docker image: give `packages/shared` a proper `tsc` build and run `pnpm db:seed` from the compiled output inside the container, without `tsx`
 - [x] Login, refresh, logout, change password, account lockout (T-SEC-01) — rotating refresh tokens, a guard that reads the account on every request, and a first-login account held to `/me`, change-password and logout. Device keys and the seat recorded at login come with STU-01; the admin's unlock button with ADM-01
-- [ ] Role guards and the full permissions test (T-ACL-01)
+- [x] Role guards and the full permissions test (T-ACL-01) — the authentication and role guards are registered for the whole application, so an endpoint is protected unless it is deliberately public; ownership lives in `AccessService`; the table is tried as four accounts, with the rows whose endpoints are not built yet expecting 404 so they cannot be forgotten
 - [ ] Users: create, edit, deactivate, first passwords, Excel import (ADM-01, ADM-02); teachers reset passwords for their own students (ADM-11)
 - [ ] Courses, batches, classes, enrolments and groups (ADM-03)
 - [ ] Labs (one or more), seat maps, PC registration and approval, device keys (ADM-04)
 - [ ] Student login at any PC with device_logins; one login per student (STU-01) — also free the seat when reuse detection ends a student's logins, which NFR-13 leaves open on purpose: the refresh endpoint revokes every token of the account but keeps the open `device_logins` row, so the student must be able to sit down again. Setting `refresh_tokens.device_id` at login is also what turns on the 20-second retry window built for NFR-13, which stays shut while no token has a PC of its own; add a test that a refresh retried from the same seat is answered and the same retry from another seat is not
-- [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype
+- [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype — move the permissions table out of the T-ACL-01 test into `packages/shared` as part of this, so the panel hides buttons from the same source the server refuses by
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
 **Deliverables:** admin panel for setup; student app that logs in.
