@@ -53,6 +53,7 @@ model User {
   sessionEvents  SessionEvent[]
   groupMembers   GroupMember[]
   settingsSet    Setting[]
+  auditEntries   AuditLog[]
 
   @@map("users")
 }
@@ -405,4 +406,28 @@ model Setting {
   updatedByUser User @relation(fields: [updatedBy], references: [id], onDelete: Restrict)
 
   @@map("settings")
+}
+
+/// Who did what to which record, and from which address. Only ever added to:
+/// the app has no way to edit or delete an entry (docs/docs/06-security-and-data.md).
+model AuditLog {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  /// Null for something nobody was logged in to do, such as a failed login. SetNull
+  /// keeps the history if the account is ever deleted on request.
+  actorId   String?  @map("actor_id") @db.Uuid
+  /// What happened: user.created, user.password_reset.
+  action    String
+  /// The kind of record it happened to: user.
+  entity    String
+  entityId  String?  @map("entity_id") @db.Uuid
+  /// Context for the entry. Never a password, a token or a hash.
+  details   Json     @default("{}")
+  ip        String   @db.Inet
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@map("audit_logs")
 }
