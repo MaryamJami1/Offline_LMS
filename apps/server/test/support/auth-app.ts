@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import type { INestApplication } from '@nestjs/common';
+import type { INestApplication, ModuleMetadata } from '@nestjs/common';
 import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
 import { Clock } from '../../src/common/clock.js';
@@ -18,9 +18,13 @@ export interface AuthTestApp {
  * The real application, wired exactly as main.ts wires it, with the clock
  * replaced so lockout windows and token lifetimes can be advanced by hand.
  */
-export async function createAuthTestApp(): Promise<AuthTestApp> {
+export async function createAuthTestApp(
+  options: { imports?: NonNullable<ModuleMetadata['imports']> } = {},
+): Promise<AuthTestApp> {
   const clock = new FakeClock();
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule, ...(options.imports ?? [])],
+  })
     .overrideProvider(Clock)
     .useValue(clock)
     .compile();

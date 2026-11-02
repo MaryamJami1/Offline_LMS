@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { JwtService } from '@nestjs/jwt';
+import { Reflector } from '@nestjs/core';
 import type { ExecutionContext } from '@nestjs/common';
 import { FakeClock } from '../../test/support/fake-clock.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
@@ -9,6 +10,11 @@ import { JwtAuthGuard } from './jwt.guard.js';
 import { TokensService } from './tokens.service.js';
 
 const SECRET = 'test-only-secret-at-least-32-characters';
+
+/** Stands in for the controller class whose metadata a guard reads. */
+class ProbeController {
+  handle(): void {}
+}
 
 const account: User = {
   id: '01999999-9999-7999-8999-999999999999',
@@ -38,6 +44,8 @@ function contextFor(path: string, authorization?: string): ExecutionContext {
   };
   return {
     switchToHttp: () => ({ getRequest: () => request }),
+    getHandler: () => function handle() {},
+    getClass: () => ProbeController,
   } as unknown as ExecutionContext;
 }
 
@@ -45,7 +53,7 @@ function guard(): JwtAuthGuard {
   const prisma = {
     user: { findUnique: async () => stored },
   } as unknown as PrismaService;
-  return new JwtAuthGuard(tokens, prisma);
+  return new JwtAuthGuard(tokens, prisma, new Reflector());
 }
 
 function bearerFor(user: User): string {
@@ -87,7 +95,9 @@ describe('NFR-13 the authentication guard', () => {
     const prisma = { user: { findUnique: async () => null } } as unknown as PrismaService;
 
     await expect(
-      new JwtAuthGuard(tokens, prisma).canActivate(contextFor('/api/me', bearerFor(account))),
+      new JwtAuthGuard(tokens, prisma, new Reflector()).canActivate(
+        contextFor('/api/me', bearerFor(account)),
+      ),
     ).rejects.toMatchObject({ code: 'INVALID_TOKEN' });
   });
 

@@ -24,7 +24,15 @@ Yes = allowed; Own = only their own classes (teacher) or own data (student); No 
 | Reports and exports                                        | All   | Own classes                             | No            |
 | Settings (including branding), backups, restore, audit log | Yes   | No                                      | No            |
 
-Each row is enforced by a NestJS guard and covered by an access test that tries the action as every role (test-driven: the refusal tests are written first).
+Each row is enforced on the server and covered by an access test that tries the action as every role (test-driven: the refusal tests are written first).
+
+**How it is enforced.** Two checks, because a role cannot answer an ownership question:
+
+- **Deny by default.** The authentication guard and the role guard are registered for the whole application, so an endpoint is protected whether or not whoever wrote it remembered. Three routes are deliberately open, each marked `@Public()`: logging in, refreshing a token, and the health check the lab PCs read. `@Roles(...)` narrows a route further; a route that names no role is open to any logged-in account, which is what `/me` wants.
+- **Ownership** is checked against the record, in `AccessService`: `assertOwnClass` (the admin may act on any class, a teacher only on one they teach), `assertOwnStudent` (a teacher only on students of their own classes, a student only on themselves) and `classFilter`, which is what a list query is filtered by, on the server. Every endpoint that takes the id of a class or a student calls one of them.
+- **One refusal for all of it.** A wrong role, a class that is not yours, and a class that does not exist answer with exactly the same 403 and the same message, so an id cannot be used to find out what the institute has, and the message never names the role that would have been allowed. T-ACL-01 asserts the bodies are identical.
+
+T-ACL-01 holds the table as a list of rows tried as four accounts: the admin, the teacher of the class, another teacher, and a student. A row whose endpoint is not built yet is marked `todo` and expects 404 — not skipped, so the day that endpoint appears the row turns red and has to be switched on, which keeps this table and the API from drifting apart. The test also reads this document and fails if a row here has no row there.
 
 ## Authentication, sessions and device trust
 
