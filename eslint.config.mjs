@@ -23,7 +23,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/server/src/**/*.module.ts'],
+    files: ['apps/server/src/**/*.module.ts', 'apps/server/test/**/*.module.ts'],
     rules: {
       '@typescript-eslint/no-extraneous-class': 'off',
     },
