@@ -100,34 +100,53 @@ const rows: Row[] = [
     expected: ALL_FOUR(401),
   },
 
-  // Not built yet. Each expects 404 until its endpoint exists.
   {
     row: 'Create, edit, deactivate users; set first passwords',
     method: 'get',
     path: () => '/api/users',
     expected: ADMIN_ONLY,
-    todo: true,
   },
   {
     row: 'Create, edit, deactivate users; set first passwords',
     method: 'post',
     path: () => '/api/users',
     body: { username: 'S-9001', role: 'student', fullName: 'New Student' },
-    expected: ADMIN_ONLY,
-    todo: true,
+    expected: { ...ADMIN_ONLY, admin: 201 },
   },
   {
-    row: "Reset a student's password",
+    row: 'Create, edit, deactivate users; set first passwords',
+    method: 'get',
+    path: (world) => `/api/users/${world.ids.otherStudent}`,
+    expected: ADMIN_ONLY,
+  },
+  {
+    row: 'Create, edit, deactivate users; set first passwords',
+    method: 'patch',
+    path: (world) => `/api/users/${world.ids.otherStudent}`,
+    body: { phone: '0300-1234567' },
+    expected: ADMIN_ONLY,
+  },
+  {
+    row: 'Create, edit, deactivate users; set first passwords',
     method: 'post',
-    path: (world) => `/api/users/${world.ids.student}/reset-password`,
-    expected: ADMIN_OR_OWN_CLASS_TEACHER,
-    todo: true,
+    path: (world) => `/api/users/${world.ids.otherStudent}/unlock`,
+    expected: ADMIN_ONLY,
   },
   {
     row: 'Import students',
     method: 'post',
     path: () => '/api/users/import',
-    expected: ADMIN_ONLY,
+    // No file is attached: the admin reaches the import and is refused for
+    // that (400), everyone else is refused for who they are.
+    expected: { ...ADMIN_ONLY, admin: 400 },
+  },
+
+  // Not built yet. Each expects 404 until its endpoint exists.
+  {
+    row: "Reset a student's password",
+    method: 'post',
+    path: (world) => `/api/users/${world.ids.student}/reset-password`,
+    expected: ADMIN_OR_OWN_CLASS_TEACHER,
     todo: true,
   },
   {
