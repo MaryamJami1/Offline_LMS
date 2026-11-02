@@ -83,18 +83,23 @@ model TeacherProfile {
 }
 
 model RefreshToken {
-  id        String    @id @default(uuid(7)) @db.Uuid
-  userId    String    @map("user_id") @db.Uuid
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
   /// Set for lab PCs, so a student's tokens can be ended seat by seat.
-  deviceId  String?   @map("device_id") @db.Uuid
-  tokenHash String    @map("token_hash")
-  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
-  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deviceId     String?   @map("device_id") @db.Uuid
+  tokenHash    String    @map("token_hash")
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(3)
+  /// The token that replaced this one when it was rotated. It is what tells a
+  /// retry after a lost answer from a replayed token (NFR-13).
+  replacedById String?   @unique @map("replaced_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device     Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  replacedBy RefreshToken? @relation("RefreshTokenChain", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces   RefreshToken? @relation("RefreshTokenChain")
 
   @@index([userId])
   @@map("refresh_tokens")

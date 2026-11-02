@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller.js';
 import { MeController } from './me.controller.js';
 import { JwtAuthGuard } from './jwt.guard.js';
 import { AuthService } from './auth.service.js';
+import { DeviceKeyService } from './device-key.service.js';
 import { TokensService } from './tokens.service.js';
 import { requireJwtSecret } from './jwt-secret.js';
 
@@ -16,7 +17,7 @@ import { requireJwtSecret } from './jwt-secret.js';
     }),
   ],
   controllers: [AuthController, MeController],
-  providers: [AuthService, TokensService, JwtAuthGuard],
-  exports: [TokensService, JwtAuthGuard],
+  providers: [AuthService, DeviceKeyService, TokensService, JwtAuthGuard],
+  exports: [DeviceKeyService, TokensService, JwtAuthGuard],
 })
 export class AuthModule {}

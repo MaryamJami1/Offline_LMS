@@ -13,8 +13,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { Clock } from '../common/clock.js';
 import { AppError } from '../common/app-error.js';
 import { hashPassword, verifyPassword } from './password.js';
-import { TokensService } from './tokens.service.js';
-import type { User } from '../generated/prisma/index.js';
+import { DeviceKeyService } from './device-key.service.js';
+import { REFRESH_GRACE_SECONDS, TokensService } from './tokens.service.js';
+import type { RefreshToken, User } from '../generated/prisma/index.js';
 
 /** docs/docs/06-security-and-data.md: five wrong attempts, ten minutes. */
 export const MAX_FAILED_ATTEMPTS = 5;
@@ -57,6 +58,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokensService,
+    private readonly deviceKeys: DeviceKeyService,
     private readonly clock: Clock,
   ) {}
 
@@ -115,23 +117,30 @@ export class AuthService {
    * a token that was copied off a lab PC is good at most once (NFR-13). Using
    * one twice ends every login of that account.
    */
-  async refresh({ refreshToken }: RefreshRequest): Promise<RefreshResponse> {
+  async refresh({ refreshToken }: RefreshRequest, deviceKey?: string): Promise<RefreshResponse> {
     const now = this.clock.now();
     const stored = await this.prisma.refreshToken.findFirst({
       where: { tokenHash: this.tokens.hashRefreshToken(refreshToken) },
-      include: { user: true },
+      include: { user: true, replacedBy: true },
     });
     if (stored === null) {
       throw invalidToken();
     }
-    // A token offered a second time means the server can no longer tell the
-    // real app from whoever copied the token, because rotation gave each of
-    // them half of the same chain. Both are ended and the person logs in
-    // again. A token that merely ran out of time is not a replay.
+
     if (stored.revokedAt !== null) {
+      // The app's own retry after a dropped reply carries on from the token it
+      // never received. Anything else offered twice means the server can no
+      // longer tell the real app from whoever copied the token, because
+      // rotation gave each of them half of the same chain, so both are ended.
+      const unreceived = await this.lostAnswerFor(stored, now, deviceKey);
+      if (unreceived !== null) {
+        return this.rotate(unreceived, stored.user, now);
+      }
       await this.endEveryLogin(stored.userId, now);
       throw invalidToken();
     }
+
+    // A token that merely ran out of time is not a replay and ends nothing.
     if (stored.expiresAt <= now) {
       throw invalidToken();
     }
@@ -139,21 +148,66 @@ export class AuthService {
       throw new AppError(403, 'ACCOUNT_INACTIVE', 'This account has been deactivated');
     }
 
+    return this.rotate(stored, stored.user, now);
+  }
+
+  /**
+   * The replacement a retried refresh should carry on from: the token this one
+   * was rotated into, when it was issued to a PC that is presenting its own
+   * device key, within the grace window, and nobody has used it yet. Null in
+   * every other case, a token revoked by logging out among them, which has no
+   * replacement at all.
+   */
+  private async lostAnswerFor(
+    stored: RefreshToken & { user: User; replacedBy: RefreshToken | null },
+    now: Date,
+    deviceKey: string | undefined,
+  ): Promise<RefreshToken | null> {
+    const unreceived = stored.replacedBy;
+    if (stored.revokedAt === null || unreceived === null) {
+      return null;
+    }
+    if (unreceived.revokedAt !== null || unreceived.replacedById !== null) {
+      return null;
+    }
+    if (unreceived.expiresAt <= now || stored.user.status === 'inactive') {
+      return null;
+    }
+    if (now.getTime() - stored.revokedAt.getTime() > REFRESH_GRACE_SECONDS * 1000) {
+      return null;
+    }
+    // Until STU-01 records the PC a student logged in at, no token has a
+    // device of its own and the window is shut to every one of them.
+    if (stored.deviceId === null) {
+      return null;
+    }
+    return (await this.deviceKeys.resolveDevice(deviceKey)) === stored.deviceId ? unreceived : null;
+  }
+
+  /**
+   * Retires one refresh token and issues its replacement, keeping the link
+   * between the two so a retry can be told from a replay.
+   */
+  private async rotate(current: RefreshToken, user: User, now: Date): Promise<RefreshResponse> {
     const replacement = this.tokens.createRefreshToken();
-    await this.prisma.$transaction([
-      this.prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: now } }),
-      this.prisma.refreshToken.create({
+
+    await this.prisma.$transaction(async (tx) => {
+      const created = await tx.refreshToken.create({
         data: {
-          userId: stored.userId,
-          deviceId: stored.deviceId,
+          userId: current.userId,
+          deviceId: current.deviceId,
           tokenHash: replacement.hash,
-          expiresAt: this.tokens.refreshExpiryFor(stored.user.role),
+          expiresAt: this.tokens.refreshExpiryFor(user.role),
         },
-      }),
-    ]);
+      });
+      await tx.refreshToken.update({
+        where: { id: current.id },
+        data: { revokedAt: now, replacedById: created.id },
+      });
+    });
 
     return {
-      accessToken: this.tokens.signAccessToken(stored.user),
+      accessToken: this.tokens.signAccessToken(user),
       refreshToken: replacement.token,
     };
   }
