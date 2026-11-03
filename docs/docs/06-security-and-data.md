@@ -56,13 +56,14 @@ T-ACL-01 holds the table as a list of rows tried as four accounts: the admin, th
 - An account that must change its password may only see itself, change its password and log out. Every other endpoint answers 403 `PASSWORD_CHANGE_REQUIRED`: the apps hide the rest of the screen as well, but the server is what refuses.
 - Changing a password ends every login of that account on every PC and hands the app that asked for it a fresh pair, so a password given away in the lab can be taken back from one screen.
 - Logging out revokes that refresh token and frees the seat (`device_logins.logged_out_at`, reason `manual`). Logging out twice, or with a token the server never issued, answers the same 204; a refresh token belonging to someone else is refused with 403.
+- The seat map shows a teacher every seat and PC, but the name of a logged-in student only when that student is enrolled in one of the teacher's classes; other seats show as in use. The admin sees every name.
 - Logging in elsewhere ends a student's older login, so one student cannot be logged in on two PCs (STU-01, with the student app).
 
 **Device trust (lab PCs)**
 
 1. On first start, the student app sends `POST /devices/register` with its hostname and MAC address.
-2. The PC appears as "waiting" in Lab and seats; the admin approves it and binds it to a seat.
-3. The server issues a device key; the app stores it in the Windows Credential Manager. It is 32 random bytes kept as a SHA-256 hash in `devices.device_key_hash`, like a refresh token, and a key is only accepted for a PC the admin has approved. Issuing keys belongs to ADM-04; NFR-13 only checks a key that is presented.
+2. The server issues a device key in the answer, and the app stores it in the Windows Credential Manager. It is 32 random bytes kept as a SHA-256 hash in `devices.device_key_hash`, like a refresh token. The PC appears as "waiting" in Lab and seats, and its key is refused until the admin approves it, so registering alone gets nobody into the lab.
+3. The admin approves the PC and binds it to a seat. From then on the key is accepted. An approved PC that registers again without its key is refused, so a copied MAC address cannot take over a seat; a reinstalled PC is reset by the admin, which clears its key and ends every login on it, and then registers for a new one. At most 100 PCs may wait at once.
 4. Student logins and lab events are accepted only with a valid device key, so an unknown laptop on the network cannot join the lab.
 
 **Transport:** everything runs over HTTPS and WSS through Caddy with a local certificate authority. The installer adds the root certificate to each lab PC, which is also what lets the apps use the microphone and screen capture.

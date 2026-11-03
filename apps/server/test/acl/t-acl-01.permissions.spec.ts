@@ -273,21 +273,50 @@ const rows: Row[] = [
     expected: ADMIN_OR_OWN_CLASS_TEACHER,
   },
 
-  // Not built yet. Each expects 404 until its endpoint exists.
+  // Labs and PCs (ADM-04). The PC row renames it to the name it already has.
   {
     row: 'Manage labs, seats, approve PCs',
     method: 'get',
     path: () => '/api/labs',
     expected: ADMIN_ONLY,
-    todo: true,
+  },
+  {
+    row: 'Manage labs, seats, approve PCs',
+    method: 'post',
+    path: () => '/api/labs',
+    body: { name: 'Lab 2', rows: 2, seatsPerRow: 3 },
+    expected: { ...ADMIN_ONLY, admin: 201 },
+  },
+  {
+    row: 'Manage labs, seats, approve PCs',
+    method: 'patch',
+    path: (world) => `/api/labs/${world.ids.labRoom}`,
+    body: { name: 'Lab 1' },
+    expected: ADMIN_ONLY,
+  },
+  {
+    row: 'Manage labs, seats, approve PCs',
+    method: 'get',
+    // Seeing the seats is not managing them: every teacher's console needs
+    // the room, with names shown only for their own students.
+    path: (world) => `/api/labs/${world.ids.labRoom}/seats`,
+    expected: STAFF_ONLY,
   },
   {
     row: 'Manage labs, seats, approve PCs',
     method: 'get',
     path: () => '/api/devices',
     expected: ADMIN_ONLY,
-    todo: true,
   },
+  {
+    row: 'Manage labs, seats, approve PCs',
+    method: 'patch',
+    path: (world) => `/api/devices/${world.ids.device}`,
+    body: { action: 'rename', hostname: 'LAB1-A1' },
+    expected: ADMIN_ONLY,
+  },
+
+  // Not built yet. Each expects 404 until its endpoint exists.
   {
     row: 'Start and end a class; use lab controls',
     method: 'post',

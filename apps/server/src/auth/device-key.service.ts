@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -18,9 +18,18 @@ export class DeviceKeyService {
   }
 
   /**
+   * A new key for a PC that registers (ADM-04): 32 random bytes, written
+   * base64url for the header. Only the hash is stored.
+   */
+  issue(): { key: string; hash: string } {
+    const key = randomBytes(32).toString('base64url');
+    return { key, hash: this.hash(key) };
+  }
+
+  /**
    * The approved PC a key belongs to, or null when no key was sent, the key is
-   * unknown, or the PC is still waiting for the admin. Issuing keys belongs to
-   * ADM-04; this only checks one that is presented.
+   * unknown, or the PC is still waiting for the admin. A retired or reset PC
+   * has no key, so its old one is unknown.
    */
   async resolveDevice(key: string | undefined): Promise<string | null> {
     if (key === undefined || key.trim().length === 0) {

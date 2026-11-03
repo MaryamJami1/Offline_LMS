@@ -153,10 +153,14 @@ model Device {
   ip            String?   @db.Inet
   osVersion     String?   @map("os_version")
   appVersion    String?   @map("app_version")
-  /// Issued when the admin approves the PC, so it is empty while it waits.
+  /// Issued to the PC when it registers and accepted only once the admin has
+  /// approved it; cleared when the admin resets or retires the PC.
   deviceKeyHash String?   @map("device_key_hash")
   approved      Boolean   @default(false)
   lastSeenAt    DateTime? @map("last_seen_at") @db.Timestamptz(3)
+  /// Taken out of service. The row stays, because device_logins keep the
+  /// history of who sat at it.
+  retiredAt     DateTime? @map("retired_at") @db.Timestamptz(3)
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
