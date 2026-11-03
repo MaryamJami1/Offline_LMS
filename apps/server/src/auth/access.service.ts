@@ -66,6 +66,37 @@ export class AccessService {
   }
 
   /**
+   * Whose password this account may reset (ADM-11): the admin any account's;
+   * a teacher only a student enrolled, and not yet left, in a class they
+   * teach. Never a staff account, and never their own, which is changed with
+   * the current password instead.
+   */
+  async assertMayResetPassword(user: User, targetId: string): Promise<void> {
+    if (user.role === 'admin') {
+      const found = await this.prisma.user.findUnique({ where: { id: targetId } });
+      if (found === null) {
+        throw this.forbidden();
+      }
+      return;
+    }
+    if (user.role !== 'teacher') {
+      throw this.forbidden();
+    }
+
+    const taught = await this.prisma.enrollment.findFirst({
+      where: {
+        studentId: targetId,
+        status: 'active',
+        student: { role: 'student' },
+        class: { teachers: { some: { teacherId: user.id } } },
+      },
+    });
+    if (taught === null) {
+      throw this.forbidden();
+    }
+  }
+
+  /**
    * What a list of classes may hold for this account: every class for the
    * admin, the ones they teach for a teacher, the ones they are enrolled in
    * for a student. Lists are filtered on the server, never in the app.

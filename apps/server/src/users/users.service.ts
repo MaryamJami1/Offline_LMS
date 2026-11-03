@@ -4,6 +4,7 @@ import type {
   CreateUserRequest,
   CreateUserResponse,
   ListUsersQuery,
+  ResetPasswordResponse,
   UpdateUserRequest,
   UserListResponse,
 } from '@lingualab/shared';
@@ -18,6 +19,7 @@ import {
   ACCOUNT_TRANSACTION,
   ACCOUNT_VIEW,
   classesByCode,
+  endSessions,
   lockAccounts,
   nextStudentNumber,
   studentIdFor,
@@ -249,16 +251,7 @@ export class UsersService {
         return;
       }
       if (change.status === 'inactive') {
-        // Ends every login on every PC and frees the seat, so the console does
-        // not go on showing a deactivated student at a PC.
-        await tx.refreshToken.updateMany({
-          where: { userId: id, revokedAt: null },
-          data: { revokedAt: now },
-        });
-        await tx.deviceLogin.updateMany({
-          where: { studentId: id, loggedOutAt: null },
-          data: { loggedOutAt: now, logoutReason: 'admin' },
-        });
+        await endSessions(tx, id, now);
       }
       await this.audit.record(
         {
@@ -274,6 +267,44 @@ export class UsersService {
     });
 
     return this.get(id);
+  }
+
+  /**
+   * Gives an account a new first-login password made up here (ADM-11). Who may
+   * reset whose is checked before this by AccessService. The reset also does
+   * what a forgotten password calls for: it lifts a lockout, ends every login
+   * the old password opened and frees the seat. The audit entry is written in
+   * the same transaction, so a reset that cannot be logged does not happen.
+   */
+  async resetPassword(actor: User, id: string, ip: string): Promise<ResetPasswordResponse> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (user === null) {
+      throw notFound();
+    }
+    const generatedPassword = generateFirstPassword();
+    const passwordHash = await hashPassword(generatedPassword);
+    const now = this.clock.now();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data: { passwordHash, mustChangePassword: true, failedLoginAttempts: 0, lockedUntil: null },
+      });
+      await endSessions(tx, id, now);
+      await this.audit.record(
+        {
+          actorId: actor.id,
+          action: 'user.password_reset',
+          entity: 'user',
+          entityId: id,
+          details: { username: user.username, role: user.role },
+          ip,
+        },
+        tx,
+      );
+    });
+
+    return { id, username: user.username, fullName: user.fullName, generatedPassword };
   }
 
   /** Clears a lockout at once, instead of the account waiting out its ten minutes. */

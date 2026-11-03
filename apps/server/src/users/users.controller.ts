@@ -24,9 +24,11 @@ import type {
   CreateUserResponse,
   ImportResponse,
   ListUsersQuery,
+  ResetPasswordResponse,
   UpdateUserRequest,
   UserListResponse,
 } from '@lingualab/shared';
+import { AccessService } from '../auth/access.service.js';
 import type { User } from '../generated/prisma/index.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { ClientIp } from '../common/client-ip.decorator.js';
@@ -41,7 +43,8 @@ const idPipe = new ZodValidationPipe(z.uuid());
 
 /**
  * Accounts (docs/docs/04-api-and-events.md, Auth and users). The admin's
- * alone: the role guard refuses everyone else before any of this runs.
+ * alone, except a password reset: the role guard refuses everyone else before
+ * any of this runs.
  */
 @Controller('users')
 @Roles('admin')
@@ -49,6 +52,7 @@ export class UsersController {
   constructor(
     private readonly users: UsersService,
     private readonly imports: ImportService,
+    private readonly access: AccessService,
   ) {}
 
   @Get()
@@ -105,5 +109,22 @@ export class UsersController {
     @ClientIp() ip: string,
   ): Promise<AdminUser> {
     return this.users.unlock(actor, id, ip);
+  }
+
+  /**
+   * ADM-11. Open to teachers as well, for the students of their own classes:
+   * the role guard lets both in, and AccessService decides whose password
+   * each may reset before anything changes.
+   */
+  @Post(':id/reset-password')
+  @Roles('admin', 'teacher')
+  @HttpCode(200)
+  async resetPassword(
+    @CurrentUser() actor: User,
+    @Param('id', idPipe) id: string,
+    @ClientIp() ip: string,
+  ): Promise<ResetPasswordResponse> {
+    await this.access.assertMayResetPassword(actor, id);
+    return this.users.resetPassword(actor, id, ip);
   }
 }

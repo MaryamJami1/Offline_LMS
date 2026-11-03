@@ -87,3 +87,23 @@ export async function classesByCode(
   });
   return new Map(found.map((taught) => [taught.code.toUpperCase(), taught]));
 }
+
+/**
+ * Ends every login an account has on every PC and frees its seat, so the
+ * console does not go on showing it at a PC. Deactivating an account and
+ * resetting its password both call for this.
+ */
+export async function endSessions(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  now: Date,
+): Promise<void> {
+  await tx.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: now },
+  });
+  await tx.deviceLogin.updateMany({
+    where: { studentId: userId, loggedOutAt: null },
+    data: { loggedOutAt: now, logoutReason: 'admin' },
+  });
+}
