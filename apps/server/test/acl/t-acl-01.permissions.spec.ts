@@ -34,7 +34,8 @@ interface Row {
   method: 'get' | 'post' | 'patch' | 'put';
   /** Built from the world, so ids are real. */
   path: (world: PermissionsWorld) => string;
-  body?: object;
+  /** Built from the world when it needs ids. */
+  body?: object | ((world: PermissionsWorld) => object);
   expected: Record<Role4, number>;
   todo?: true;
 }
@@ -163,14 +164,47 @@ const rows: Row[] = [
     expected: ADMIN_ONLY,
   },
 
-  // Not built yet. Each expects 404 until its endpoint exists.
+  // Organisation (ADM-03). Every change here leaves the world as it was, so
+  // the rows after it still see the classes the world was built with.
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'get',
+    path: () => '/api/courses',
+    expected: ADMIN_ONLY,
+  },
   {
     row: 'Manage courses, batches, classes, enrolments',
     method: 'post',
     path: () => '/api/courses',
     body: { name: 'Business English' },
+    expected: { ...ADMIN_ONLY, admin: 201 },
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'patch',
+    path: (world) => `/api/courses/${world.ids.course}`,
+    body: { name: 'Spoken English' },
     expected: ADMIN_ONLY,
-    todo: true,
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'get',
+    path: () => '/api/batches',
+    expected: ADMIN_ONLY,
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'post',
+    path: () => '/api/batches',
+    body: (world) => ({ courseId: world.ids.course, name: 'Spring 2027', startsOn: '2027-02-01' }),
+    expected: { ...ADMIN_ONLY, admin: 201 },
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'patch',
+    path: (world) => `/api/batches/${world.ids.batch}`,
+    body: { name: 'Fall 2026' },
+    expected: ADMIN_ONLY,
   },
   {
     row: 'Manage courses, batches, classes, enrolments',
@@ -178,16 +212,68 @@ const rows: Row[] = [
     path: () => '/api/classes',
     // The teachers' list is filtered to their own classes, not refused.
     expected: STAFF_ONLY,
-    todo: true,
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'post',
+    path: () => '/api/classes',
+    body: (world) => ({
+      code: 'B-30',
+      name: 'Weekend',
+      batchId: world.ids.batch,
+      labRoomId: world.ids.labRoom,
+    }),
+    expected: { ...ADMIN_ONLY, admin: 201 },
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'get',
+    // Reading a class is not managing it: its own teacher may.
+    path: (world) => `/api/classes/${world.ids.ownClass}`,
+    expected: ADMIN_OR_OWN_CLASS_TEACHER,
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'patch',
+    path: (world) => `/api/classes/${world.ids.ownClass}`,
+    body: { name: 'Morning' },
+    expected: ADMIN_ONLY,
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'get',
+    path: (world) => `/api/classes/${world.ids.ownClass}/students`,
+    expected: ADMIN_OR_OWN_CLASS_TEACHER,
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'put',
+    path: (world) => `/api/classes/${world.ids.otherClass}/teachers`,
+    body: (world) => ({ teacherIds: [world.ids.teacherOther] }),
+    expected: ADMIN_ONLY,
+  },
+  {
+    row: 'Manage courses, batches, classes, enrolments',
+    method: 'put',
+    path: (world) => `/api/classes/${world.ids.otherClass}/students`,
+    body: (world) => ({ studentIds: [world.ids.otherStudent, world.ids.resetOtherStudent] }),
+    expected: ADMIN_ONLY,
   },
   {
     row: 'Make groups',
     method: 'post',
     path: (world) => `/api/classes/${world.ids.ownClass}/groups`,
     body: { kind: 'pair' },
-    expected: ADMIN_OR_OWN_CLASS_TEACHER,
-    todo: true,
+    expected: { admin: 201, teacherOwn: 201, teacherOther: 403, student: 403 },
   },
+  {
+    row: 'Make groups',
+    method: 'get',
+    path: (world) => `/api/classes/${world.ids.ownClass}/groups`,
+    expected: ADMIN_OR_OWN_CLASS_TEACHER,
+  },
+
+  // Not built yet. Each expects 404 until its endpoint exists.
   {
     row: 'Manage labs, seats, approve PCs',
     method: 'get',
@@ -352,7 +438,7 @@ for (const row of rows) {
         const res = await request(app.getHttpServer())
           [row.method](row.path(world))
           .set('Authorization', `Bearer ${world.tokens[role]}`)
-          .send(row.body ?? {});
+          .send(typeof row.body === 'function' ? row.body(world) : (row.body ?? {}));
 
         if (row.todo === true) {
           expect(

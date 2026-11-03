@@ -82,15 +82,43 @@ Import row codes: `NAME_REQUIRED`, `NAME_INVALID` (over 100 characters), `CLASS_
 
 ### Classes and groups
 
-| Method     | Path                    | Who             | Purpose                                       |
-| ---------- | ----------------------- | --------------- | --------------------------------------------- |
-| GET, POST  | `/courses`, `/batches`  | A               | Manage courses and batches                    |
-| GET, POST  | `/classes`              | A (T: list own) | Manage classes                                |
-| GET, PATCH | `/classes/:id`          | A, T            | Class details, schedule                       |
-| GET        | `/classes/:id/students` | A, T            | Students of a class (teacher screen T-09)     |
-| PUT        | `/classes/:id/teachers` | A               | Set teachers                                  |
-| PUT        | `/classes/:id/students` | A               | Set enrolled students                         |
-| GET, POST  | `/classes/:id/groups`   | A, T            | List and create groups (pair, random, manual) |
+| Method    | Path                           | Who             | Purpose                                           |
+| --------- | ------------------------------ | --------------- | ------------------------------------------------- |
+| GET, POST | `/courses`, `/batches`         | A               | Manage courses and batches                        |
+| PATCH     | `/courses/:id`, `/batches/:id` | A               | Rename a course; rename a batch or move its dates |
+| GET, POST | `/classes`                     | A (T: list own) | Manage classes                                    |
+| GET       | `/classes/:id`                 | A, T (own)      | Class details                                     |
+| PATCH     | `/classes/:id`                 | A               | Change a class: code, name, batch, lab, schedule  |
+| GET       | `/classes/:id/students`        | A, T (own)      | Students of a class (teacher screen T-09)         |
+| PUT       | `/classes/:id/teachers`        | A               | Set teachers                                      |
+| PUT       | `/classes/:id/students`        | A               | Set enrolled students                             |
+| GET, POST | `/classes/:id/groups`          | A, T (own)      | List and create groups (pair, random, manual)     |
+
+**Classes in detail.** Request and response bodies are the schemas in `packages/shared/src/classes.ts`; every list comes back as `{ items }`. Days are written `2026-09-01`. A teacher's call about a class they do not teach, or one that does not exist, gets the same 403 `FORBIDDEN`; the admin's calls answer 404 `NOT_FOUND` for a course, batch or class that does not exist. Nothing here is deleted, and class changes are not written to the audit log.
+
+| Call                        | Body in                                                                                                                     | Answer                                                                                                                                                                                                                                                    |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /courses`              | —                                                                                                                           | 200 `{ items: [{ id, name, description }] }` by name                                                                                                                                                                                                      |
+| `POST /courses`             | `{ name, description? }`                                                                                                    | 201 the course                                                                                                                                                                                                                                            |
+| `PATCH /courses/:id`        | Any of `{ name, description }`; `description: null` clears it                                                               | 200 the course                                                                                                                                                                                                                                            |
+| `GET /batches`              | Query: `courseId?`                                                                                                          | 200 `{ items: [{ id, courseId, courseName, name, startsOn, endsOn }] }`, latest start first                                                                                                                                                               |
+| `POST /batches`             | `{ courseId, name, startsOn, endsOn? }`                                                                                     | 201 the batch; 422 `COURSE_NOT_FOUND`; 422 `BATCH_ENDS_BEFORE_START`                                                                                                                                                                                      |
+| `PATCH /batches/:id`        | Any of `{ name, startsOn, endsOn }`; `endsOn: null` leaves it open. Never the course                                        | 200 the batch. A changed date is checked against the one the batch keeps: 422 `BATCH_ENDS_BEFORE_START`                                                                                                                                                   |
+| `GET /classes`              | —                                                                                                                           | 200 `{ items }` by code, each `{ id, code, name, course, batch, lab, schedule, teachers: [{ id, fullName }], studentCount, groupCount }`. `studentCount` counts the students enrolled now; `groupCount` the groups that belong to no single class session |
+| `POST /classes`             | `{ code, name, batchId, labRoomId, schedule?, teacherIds? }`; `schedule` is `{ days: ['mon', …], start: 'HH:MM', minutes }` | 201 the class. The code is kept in capitals (B-12); 409 `CLASS_CODE_TAKEN`; 422 `BATCH_NOT_FOUND`, `LAB_NOT_FOUND`, `TEACHER_NOT_FOUND`                                                                                                                   |
+| `PATCH /classes/:id`        | Any of `{ code, name, batchId, labRoomId, schedule }`; `schedule: null` clears it                                           | 200 the class, with the same errors as creating one                                                                                                                                                                                                       |
+| `PUT /classes/:id/teachers` | `{ teacherIds }`, the whole set                                                                                             | 200 the class; 422 `TEACHER_NOT_FOUND` when an id is not a teacher                                                                                                                                                                                        |
+| `PUT /classes/:id/students` | `{ studentIds }`, the whole set, at most 200                                                                                | 200 the class list. A student left out is marked `left`, not deleted, so their work stays, and is taken out of the class's groups; one who comes back is active again and keeps the day they first joined; 422 `STUDENT_NOT_FOUND`                        |
+| `GET /classes/:id/students` | —                                                                                                                           | 200 `{ items: [{ id, username, fullName, rollNo, status }] }`: the students enrolled now, by roll number as a number (2 before 10). `status` is the account's, so an inactive one shows why it cannot log in                                              |
+| `GET /classes/:id/groups`   | —                                                                                                                           | 200 `{ items: [{ id, name, kind, members: [{ id, username, fullName }] }] }`: the groups that last beyond one class session, by name                                                                                                                      |
+| `POST /classes/:id/groups`  | `{ kind: 'pair' }`, `{ kind: 'random', size }` (2 to 20), or `{ kind: 'manual', name, studentIds }`                         | 201 `{ items }`, the groups made; see below                                                                                                                                                                                                               |
+
+**Groups.** Only students enrolled now are grouped.
+
+- **Pair:** pairs in roll-number order (Pair 1, Pair 2, …), with an odd student joining the last pair, so nobody is alone. Pairing by seat during a class comes with LAB-15.
+- **Random:** the students are shuffled into as few groups as keep each to at most `size`, sized as evenly as possible (Group 1, Group 2, …). Ten students in fours make 4, 3 and 3. There is never a group of one: with too few students for that, there are fewer, larger groups.
+- **Replacing:** making pairs or random groups replaces the class's earlier groups of that kind and leaves the other kinds alone. A class with fewer than two students gets 422 `NOT_ENOUGH_STUDENTS`.
+- **Manual:** a group of the students named, added beside the others. A student not enrolled in the class gets 422 `NOT_IN_CLASS`; one already in another manual group of the class gets 409 `ALREADY_IN_GROUP`, with their ids in `details.studentIds`.
 
 ### Lab, devices and sessions
 
