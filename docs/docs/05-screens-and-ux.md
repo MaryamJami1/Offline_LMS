@@ -4,31 +4,37 @@ Every screen follows the approved clickable prototype (screenshots in `../protot
 
 ## Design system
 
-The tokens live in `packages/ui/tokens.ts` and the Tailwind config, so all three apps look the same.
+The tokens live in `packages/ui/src/tokens.ts`; `packages/ui/src/theme.css` turns them into the Tailwind theme, and a test keeps the two equal, so all three apps look the same. Tailwind's own palette is switched off: a screen can only use these colours.
 
 **Colours**
 
-| Token                          | Hex                              | Used for                                  |
-| ------------------------------ | -------------------------------- | ----------------------------------------- |
-| `bg`                           | #F4F6F9                          | Page background                           |
-| `surface`                      | #FFFFFF                          | Cards, panels, seat tiles                 |
-| `border` / `border-strong`     | #DDE3EA / #CBD3DD                | Card borders / buttons and inputs         |
-| `ink`                          | #0E1726                          | Main text; dark bars                      |
-| `ink-muted`                    | #4A5565                          | Secondary text (passes 4.5:1 on white)    |
-| `primary` / `primary-tint`     | #1D4ED8 / #E8EEFC                | Main buttons, selection, links, Speaking  |
-| `live` / `live-tint`           | #B42318 / #FDECEA                | Live controls, End class, on-call, errors |
-| `success` / `success-tint`     | #157F3D / #E7F5EC                | Online dot, correct answers, Reading      |
-| `warning` / `warning-tint`     | #B45309 (text #9A4508) / #FDF1E3 | Hand raised, drafts, Writing              |
-| `listening` / `listening-tint` | #6D28D9 / #F1EAFD                | Listening module                          |
-| `offline`                      | #A7B1BE                          | Offline and empty seats                   |
+| Token                          | Hex                              | Used for                                         |
+| ------------------------------ | -------------------------------- | ------------------------------------------------ |
+| `bg`                           | #F4F6F9                          | Page background                                  |
+| `surface`                      | #FFFFFF                          | Cards, panels, seat tiles                        |
+| `border` / `border-strong`     | #DDE3EA / #CBD3DD                | Card borders / buttons and inputs                |
+| `ink`                          | #0E1726                          | Main text; dark bars                             |
+| `ink-muted`                    | #4A5565                          | Secondary text (passes 4.5:1 on white)           |
+| `primary` / `primary-tint`     | #1D4ED8 / #E8EEFC                | Main buttons, selection, links, Speaking         |
+| `live` / `live-tint`           | #B42318 / #FDECEA                | Live controls, End class, on-call, errors        |
+| `success` / `success-tint`     | #157F3D / #E7F5EC                | Online dot, correct answers, Reading             |
+| `warning` / `warning-tint`     | #B45309 (text #9A4508) / #FDF1E3 | Hand raised, drafts, Writing                     |
+| `listening` / `listening-tint` | #6D28D9 / #F1EAFD                | Listening module                                 |
+| `offline`                      | #A7B1BE                          | Offline and empty seat dots (never text)         |
+| `muted` / `empty`              | #EEF1F5 / #FAFBFC                | Offline seat, muted badge, tracks / empty seat   |
+| `border-hover`                 | #8D99A8                          | Hovered buttons, seats and options               |
+| `ink-subtle`                   | #5A6577                          | Tab rail labels                                  |
+| `on-primary`                   | #FFFFFF                          | Text on primary, danger and toasts               |
+| `primary-hover` / `selected`   | #1E40AF / #F5F8FF                | Hovered primary button / selected seat or option |
+| `live-hover`                   | #912018                          | Hovered danger button                            |
 
-**Branding can change:** the software name, logo and `primary` colour are loaded from Settings when each app starts, so the institute can rebrand without a new build. Every other colour stays fixed so contrast always passes.
+**Branding can change:** the software name, logo and `primary` colour are loaded from Settings (`GET /settings/branding`) when each app starts, so the institute can rebrand without a new build. Every other colour stays fixed so contrast always passes. `BrandingProvider` in `packages/ui` replaces `primary` and makes `primary-hover` (18% darker), `primary-tint` (90% toward white) and `selected` (96% toward white) from it; the default blue keeps the exact values above. A main colour is used only if white text on it, and it on its own tint, both reach 4.5:1 (`isUsableBrandColour` in `packages/shared`); otherwise the app keeps the default blue. Until the server answers, or if it cannot, an app shows "Lab" in the default blue.
 
-**Type:** IBM Plex Sans for the interface (400, 500, 600, 700); IBM Plex Mono for seat codes, IDs and timers; IBM Plex Serif for reading passages and essays. Sizes: 12 labels, 13–14 body, 15–17 card titles, 20–28 page titles. Fonts are bundled with @fontsource.
+**Type:** IBM Plex Sans for the interface (400, 500, 600, 700); IBM Plex Mono for seat codes, IDs and timers; IBM Plex Serif for reading passages and essays. Sizes: 13 labels and badges, 13–14 body, 15–17 card titles, 20–28 page titles. Fonts are bundled with @fontsource.
 
-**Spacing and shape:** 4 px grid; buttons 40 px tall (44 px for primary controls), radius 8 px; cards radius 12–14 px, 16–20 px padding; pills fully rounded.
+**Spacing and shape:** 4 px grid; buttons 40 px tall (44 px for primary controls), radius 8 px; cards radius 12–14 px, 16–20 px padding; pills fully rounded. The prototype's small button is 32–34 px tall; the kit's small button keeps 40 px, the minimum touch target below, and is smaller only in padding and text.
 
-**Components (shadcn/ui based):** Button (default, primary, danger, small), Seat tile, Control button, Tab rail, Card, Badge (live, info, ok, warn, muted), Progress bar, Level meter, Toast, Modal, Table, Option button (A/B/C), Audio player, Video player, PDF viewer, Recorder, Form fields.
+**Components (shadcn/ui based):** Button (default, primary, danger, small), Seat tile, Control button, Tab rail, Card, Badge (live, info, ok, warn, muted), Progress bar, Level meter, Toast, Modal, Table, Option button (A/B/C), Audio player, Video player, PDF viewer, Recorder, Form fields. All but the four media components are in `packages/ui`; the Audio player, Recorder, Video player and PDF viewer come with the module work that uses them (MOD-04, MOD-01, MOD-10).
 
 ## Screen inventory
 
@@ -98,5 +104,5 @@ The tokens live in `packages/ui/tokens.ts` and the Tailwind config, so all three
 - Text contrast at least 4.5:1 (3:1 for 24 px and larger); status is never shown by colour alone (dots always have a label or badge).
 - Every control is a real button, link or input, reachable with Tab, with a visible focus ring.
 - Icon-only buttons have labels for screen readers; seat tiles announce the student, seat and state.
-- Minimum touch target 40 px; minimum text 12 px (13 px for body).
+- Minimum touch target 40 px; minimum text 13 px everywhere, labels and badges included (NFR-11). The prototype draws badges at 11 px and some labels at 12 px; the build uses 13 px.
 - Audio exercises show the transcript after submitting, for students who cannot hear well.

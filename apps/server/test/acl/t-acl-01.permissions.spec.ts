@@ -386,6 +386,13 @@ const rows: Row[] = [
     todo: true,
   },
   {
+    // Also answered with no login at all, for the login screens: see t-acl-01.guards.spec.ts.
+    row: 'See the branding (software name, logo, main colour)',
+    method: 'get',
+    path: () => '/api/settings/branding',
+    expected: ALL_FOUR(200),
+  },
+  {
     row: 'Settings (including branding), backups, restore, audit log',
     method: 'get',
     path: () => '/api/backups',

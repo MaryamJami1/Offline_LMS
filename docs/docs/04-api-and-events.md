@@ -6,7 +6,7 @@ The apps use a REST API for data, Socket.IO for live lab commands, and LiveKit (
 
 - **Base URL:** `https://lingualab.local/api` (or the server's fixed IP). JSON in and out, UTF-8.
 - **Authentication:** `POST /api/auth/login` returns a short-lived access token (15 minutes, JWT) and a refresh token (7 days for staff; 30 minutes, renewed on each use, for students, and ending at logout or End class). Send `Authorization: Bearer <token>` on every call. Lab PCs also send `X-Device-Key`. Every refresh rotates: the token sent in is revoked and a new one comes back, so each refresh token works once, and using one twice ends every login of that account. The one exception is the app's own retry after a dropped reply: within 20 seconds, and only from the lab PC the token was issued to (`X-Device-Key`), the retry is answered with a fresh pair instead.
-- **Roles:** every endpoint below lists who may call it. The server checks the role and ownership on each request; the apps hiding a button is never the only check. Authentication and the role check are registered for the whole application, so an endpoint needs a logged-in account unless it is marked public (`auth/login`, `auth/refresh`, `health`, and the lab PC's own `devices/register` and `devices/me`, which go by the device key), and a list is filtered to what the caller may see rather than refused.
+- **Roles:** every endpoint below lists who may call it. The server checks the role and ownership on each request; the apps hiding a button is never the only check. Authentication and the role check are registered for the whole application, so an endpoint needs a logged-in account unless it is marked public (`auth/login`, `auth/refresh`, `health`, `settings/branding`, and the lab PC's own `devices/register` and `devices/me`, which go by the device key), and a list is filtered to what the caller may see rather than refused.
 - **Validation:** request bodies are checked against Zod schemas from `packages/shared`; a failed check returns 400 with the field errors.
 - **Errors:** `{ "error": { "code": "SEAT_EMPTY", "message": "No student is logged in at B4", "details": {} } }`. Statuses: 400 bad input, 401 not logged in, 403 not allowed, 404 not found, 409 conflict, 422 rule broken. `details` never carries a value from the request, so a mistyped password cannot come back in an error; a failed Zod check reports `{ issues: [{ field, message }] }`.
 - **Lists:** `?page=1&pageSize=50&sort=name&q=search`; responses include `{ items, total, page, pageSize }`.
@@ -192,15 +192,18 @@ Import row codes: `NAME_REQUIRED`, `NAME_INVALID` (over 100 characters), `CLASS_
 
 ### Reports and system
 
-| Method     | Path                                            | Who                   | Purpose                                                             |
-| ---------- | ----------------------------------------------- | --------------------- | ------------------------------------------------------------------- |
-| GET        | `/reports/attendance`, `/reports/results`       | A, T                  | Filters: class, student, module, date range; `format=json/pdf/xlsx` |
-| GET, PATCH | `/settings`                                     | A (GET branding: all) | Institute settings, including branding (name, logo, main colour)    |
-| GET, POST  | `/backups`                                      | A                     | List backups; back up now                                           |
-| POST       | `/backups/:id/restore`, `/backups/:id/copy-usb` | A                     | Restore (needs admin password again); copy to USB                   |
-| GET        | `/audit-logs`                                   | A                     | Search the audit log                                                |
-| GET        | `/releases/latest?app=student`                  | D                     | Check for an app update                                             |
-| GET        | `/health`                                       | Anyone on the LAN     | Server, database, LiveKit and disk status                           |
+| Method     | Path                                            | Who               | Purpose                                                                                             |
+| ---------- | ----------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------- |
+| GET        | `/reports/attendance`, `/reports/results`       | A, T              | Filters: class, student, module, date range; `format=json/pdf/xlsx`                                 |
+| GET        | `/settings/branding`                            | Anyone, no login  | Software name, institute name, logo and main colour, for every app at start-up and its login screen |
+| GET, PATCH | `/settings`                                     | A                 | Institute settings, including branding (name, logo, main colour)                                    |
+| GET, POST  | `/backups`                                      | A                 | List backups; back up now                                                                           |
+| POST       | `/backups/:id/restore`, `/backups/:id/copy-usb` | A                 | Restore (needs admin password again); copy to USB                                                   |
+| GET        | `/audit-logs`                                   | A                 | Search the audit log                                                                                |
+| GET        | `/releases/latest?app=student`                  | D                 | Check for an app update                                                                             |
+| GET        | `/health`                                       | Anyone on the LAN | Server, database, LiveKit and disk status                                                           |
+
+**Branding in detail.** `GET /settings/branding` answers `{ softwareName, instituteName, logoUrl, primaryColour }` (`brandingSchema` in `packages/shared/src/settings.ts`) with no login, because the login screens show the name and logo before anyone has logged in; it says nothing else about the settings. Each value is checked on its own: one that is missing or unusable falls back to its default ("Lab", no institute name, no logo, `#1D4ED8`) and leaves the others alone. `logoUrl` is `/api/settings/branding/logo` once a logo is stored, else null; the logo file itself is served with ADM-07's upload. A colour too light for white text is passed on as stored: each app checks it and keeps the default (see 05), and ADM-07 will refuse such a colour when it is saved.
 
 ## Real-time lab events (Socket.IO)
 
