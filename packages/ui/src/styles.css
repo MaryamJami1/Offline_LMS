@@ -1,0 +1,19 @@
+/*
+ * What each app imports once, from its own stylesheet:
+ *   @import '@lingualab/ui/styles.css';
+ * Tailwind finds the classes in this package's components through @source.
+ */
+@import 'tailwindcss';
+@import './fonts.css';
+@import './theme.css';
+
+@source './components';
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background: var(--color-bg);
+    font-size: 14px;
+  }
+}

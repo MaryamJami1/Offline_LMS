@@ -76,6 +76,10 @@ describe('T-ACL-01 the server denies by default', () => {
     expect((await get('/api/health')).status).toBe(200);
   });
 
+  it('shows the branding to the login screens, before anyone logs in', async () => {
+    expect((await get('/api/settings/branding')).status).toBe(200);
+  });
+
   it('lets anybody log in', async () => {
     const res = await postLogin(app, { username: 'S-1001', password: TEST_PASSWORD });
 

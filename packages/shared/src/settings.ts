@@ -1,3 +1,6 @@
+import { z } from 'zod';
+import { isHexColour } from './contrast.js';
+
 /**
  * Institute settings live in the database, not in code: the software name, logo
  * and main colour can change without a new build (ADM-07). Every app reads these
@@ -31,4 +34,26 @@ export const DEFAULT_SETTINGS: Record<SettingKey, unknown> = {
   ],
   [SETTING_KEYS.quizPassMark]: 50,
   [SETTING_KEYS.backupTime]: '23:00',
+};
+
+/**
+ * `GET /settings/branding`: what every app shows, read at start-up and on the
+ * login screens before anyone logs in, so it is public. `logoUrl` is null
+ * until the admin uploads a logo (ADM-07).
+ */
+export const brandingSchema = z.object({
+  softwareName: z.string().min(1).max(60),
+  instituteName: z.string().max(120),
+  logoUrl: z.string().min(1).nullable(),
+  primaryColour: z.string().refine(isHexColour, 'Use a colour like #1D4ED8'),
+});
+
+export type Branding = z.infer<typeof brandingSchema>;
+
+/** What an app shows before the server answers, or when it cannot be reached. */
+export const DEFAULT_BRANDING: Branding = {
+  softwareName: 'Lab',
+  instituteName: '',
+  logoUrl: null,
+  primaryColour: '#1D4ED8',
 };

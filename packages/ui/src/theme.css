@@ -1,0 +1,44 @@
+/*
+ * The Tailwind theme: src/tokens.ts as CSS variables, kept equal to it by
+ * src/nfr-11.tokens.spec.ts. Tailwind's own palette is switched off, so a
+ * screen can only use the colours of the design system.
+ *
+ * BrandingProvider replaces --color-primary, --color-primary-hover,
+ * --color-primary-tint and --color-selected at run time.
+ */
+@theme {
+  --color-*: initial;
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-muted: #eef1f5;
+  --color-empty: #fafbfc;
+  --color-border: #dde3ea;
+  --color-border-strong: #cbd3dd;
+  --color-border-hover: #8d99a8;
+  --color-ink: #0e1726;
+  --color-ink-muted: #4a5565;
+  --color-ink-subtle: #5a6577;
+  --color-on-primary: #ffffff;
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
+  --color-primary-tint: #e8eefc;
+  --color-selected: #f5f8ff;
+  --color-live: #b42318;
+  --color-live-hover: #912018;
+  --color-live-tint: #fdecea;
+  --color-success: #157f3d;
+  --color-success-tint: #e7f5ec;
+  --color-warning: #b45309;
+  --color-warning-text: #9a4508;
+  --color-warning-tint: #fdf1e3;
+  --color-listening: #6d28d9;
+  --color-listening-tint: #f1eafd;
+  --color-offline: #a7b1be;
+
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-serif: 'IBM Plex Serif', Georgia, serif;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+}

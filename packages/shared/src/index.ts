@@ -1,8 +1,19 @@
 export { normalizeSeatCode } from './seat-code.js';
 export { buildSeatMap } from './seat-map.js';
 export type { SeatMapEntry, SeatMapSize } from './seat-map.js';
-export { DEFAULT_SETTINGS, SETTING_KEYS } from './settings.js';
-export type { SettingKey } from './settings.js';
+export { DEFAULT_BRANDING, DEFAULT_SETTINGS, SETTING_KEYS, brandingSchema } from './settings.js';
+export type { Branding, SettingKey } from './settings.js';
+export {
+  MIN_LARGE_TEXT_CONTRAST,
+  MIN_TEXT_CONTRAST,
+  contrastRatio,
+  derivePalette,
+  isHexColour,
+  isUsableBrandColour,
+  luminance,
+  mix,
+} from './contrast.js';
+export type { BrandPalette } from './contrast.js';
 export {
   PASSWORD_MINIMUM_LENGTH,
   authUserSchema,

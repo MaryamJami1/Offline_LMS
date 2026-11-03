@@ -23,6 +23,7 @@ Yes = allowed; Own = only their own classes (teacher) or own data (student); No 
 | See marks and progress                                     | All   | Own classes                             | Own           |
 | Reports and exports                                        | All   | Own classes                             | No            |
 | Settings (including branding), backups, restore, audit log | Yes   | No                                      | No            |
+| See the branding (software name, logo, main colour)        | Yes   | Yes                                     | Yes           |
 
 Each row is enforced on the server and covered by an access test that tries the action as every role (test-driven: the refusal tests are written first).
 
