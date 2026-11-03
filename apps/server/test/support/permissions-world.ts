@@ -20,6 +20,9 @@ export interface PermissionsWorld {
     otherStudent: string;
     ownClass: string;
     otherClass: string;
+    course: string;
+    batch: string;
+    labRoom: string;
     /**
      * Accounts that exist only to have their passwords reset. A reset makes
      * an account change its password before anything else, so resetting a
@@ -145,6 +148,9 @@ export async function buildPermissionsWorld(
       otherStudent: otherStudent.id,
       ownClass: ownClass.id,
       otherClass: otherClass.id,
+      course: course.id,
+      batch: batch.id,
+      labRoom: labRoom.id,
       resetOwnStudent: resetOwnStudent.id,
       resetOtherStudent: resetOtherStudent.id,
       resetTeacher: resetTeacher.id,
