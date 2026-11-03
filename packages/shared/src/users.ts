@@ -139,6 +139,18 @@ export const createUserResponseSchema = z.object({
   generatedPassword: z.string().nullable(),
 });
 
+/**
+ * The answer to `POST /users/:id/reset-password` (ADM-11): the new first-login
+ * password, shown this once, and what the slip needs. A teacher can reset a
+ * student's password without seeing the rest of the account.
+ */
+export const resetPasswordResponseSchema = z.strictObject({
+  id: z.uuid(),
+  username: z.string(),
+  fullName: z.string(),
+  generatedPassword: z.string(),
+});
+
 // ------------------------------------------------------------------ Import
 
 /** The columns a student import file must have, in any order and any case. */
@@ -212,6 +224,7 @@ export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 export type AdminUser = z.infer<typeof adminUserSchema>;
 export type UserListResponse = z.infer<typeof userListResponseSchema>;
 export type CreateUserResponse = z.infer<typeof createUserResponseSchema>;
+export type ResetPasswordResponse = z.infer<typeof resetPasswordResponseSchema>;
 export type UserStatus = z.infer<typeof userStatusSchema>;
 export type ImportRowError = z.infer<typeof importRowErrorSchema>;
 export type ImportRowErrorCode = (typeof IMPORT_ROW_ERROR_CODES)[number];

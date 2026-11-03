@@ -20,6 +20,16 @@ export interface PermissionsWorld {
     otherStudent: string;
     ownClass: string;
     otherClass: string;
+    /**
+     * Accounts that exist only to have their passwords reset. A reset makes
+     * an account change its password before anything else, so resetting a
+     * fixture that logs in would turn later rows into tests of that instead.
+     * Their usernames sit far from S-1001 so a test that adds the next student
+     * to this world does not collide with them.
+     */
+    resetOwnStudent: string;
+    resetOtherStudent: string;
+    resetTeacher: string;
   };
   codes: { ownClass: string; otherClass: string };
 }
@@ -59,6 +69,22 @@ export async function buildPermissionsWorld(
     fullName: 'Bilal Ahmed',
   });
 
+  const resetOwnStudent = await createAccount(prisma, {
+    username: 'S-2001',
+    role: 'student',
+    fullName: 'Hina Raza',
+  });
+  const resetOtherStudent = await createAccount(prisma, {
+    username: 'S-2002',
+    role: 'student',
+    fullName: 'Usman Tariq',
+  });
+  const resetTeacher = await createAccount(prisma, {
+    username: 'zainab.malik',
+    role: 'teacher',
+    fullName: 'Zainab Malik',
+  });
+
   const labRoom = await prisma.labRoom.create({
     data: { name: 'Lab 1', rows: 5, seatsPerRow: 6 },
   });
@@ -83,6 +109,12 @@ export async function buildPermissionsWorld(
     data: [
       { classId: ownClass.id, studentId: student.id, enrolledOn: new Date('2026-09-01') },
       { classId: otherClass.id, studentId: otherStudent.id, enrolledOn: new Date('2026-09-01') },
+      { classId: ownClass.id, studentId: resetOwnStudent.id, enrolledOn: new Date('2026-09-01') },
+      {
+        classId: otherClass.id,
+        studentId: resetOtherStudent.id,
+        enrolledOn: new Date('2026-09-01'),
+      },
     ],
   });
 
@@ -113,6 +145,9 @@ export async function buildPermissionsWorld(
       otherStudent: otherStudent.id,
       ownClass: ownClass.id,
       otherClass: otherClass.id,
+      resetOwnStudent: resetOwnStudent.id,
+      resetOtherStudent: resetOtherStudent.id,
+      resetTeacher: resetTeacher.id,
     },
     codes: { ownClass: ownClass.code, otherClass: otherClass.code },
   };

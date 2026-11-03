@@ -141,14 +141,29 @@ const rows: Row[] = [
     expected: { ...ADMIN_ONLY, admin: 400 },
   },
 
-  // Not built yet. Each expects 404 until its endpoint exists.
   {
     row: "Reset a student's password",
     method: 'post',
-    path: (world) => `/api/users/${world.ids.student}/reset-password`,
+    path: (world) => `/api/users/${world.ids.resetOwnStudent}/reset-password`,
     expected: ADMIN_OR_OWN_CLASS_TEACHER,
-    todo: true,
   },
+  {
+    row: "Reset a student's password",
+    method: 'post',
+    // The other teacher's student: the first teacher is refused, and the
+    // other teacher, whose class it is, is not.
+    path: (world) => `/api/users/${world.ids.resetOtherStudent}/reset-password`,
+    expected: { admin: 200, teacherOwn: 403, teacherOther: 200, student: 403 },
+  },
+  {
+    row: "Reset a student's password",
+    method: 'post',
+    // A staff account is the admin's alone to reset.
+    path: (world) => `/api/users/${world.ids.resetTeacher}/reset-password`,
+    expected: ADMIN_ONLY,
+  },
+
+  // Not built yet. Each expects 404 until its endpoint exists.
   {
     row: 'Manage courses, batches, classes, enrolments',
     method: 'post',
