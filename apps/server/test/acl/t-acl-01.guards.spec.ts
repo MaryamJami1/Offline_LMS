@@ -16,6 +16,7 @@ import {
   type PermissionsWorld,
   type Role4,
 } from '../support/permissions-world.js';
+import { postLogin } from '../support/lab-pc.js';
 
 /**
  * T-ACL-01, the mechanism: the server denies by default, each route's roles
@@ -76,9 +77,7 @@ describe('T-ACL-01 the server denies by default', () => {
   });
 
   it('lets anybody log in', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({ username: 'S-1001', password: TEST_PASSWORD });
+    const res = await postLogin(app, { username: 'S-1001', password: TEST_PASSWORD });
 
     expect(res.status).toBe(200);
   });
@@ -237,9 +236,7 @@ describe('NFR-13 an account that must change its password is held to the allowli
       fullName: 'Hira Shah',
       mustChangePassword: true,
     });
-    const login = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({ username: 'S-1003', password: TEST_PASSWORD });
+    const login = await postLogin(app, { username: 'S-1003', password: TEST_PASSWORD });
     const token = (login.body as { accessToken: string }).accessToken;
 
     const res = await get('/api/probe/any', token);

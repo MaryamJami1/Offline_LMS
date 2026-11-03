@@ -6,6 +6,7 @@ import {
   updateDeviceRequestSchema,
 } from '@lingualab/shared';
 import type {
+  DeviceMeResponse,
   DeviceView,
   Items,
   ListDevicesQuery,
@@ -48,6 +49,13 @@ export class DevicesController {
     const { created, answer } = await this.devices.register(body, deviceKey, ip);
     res.status(created ? 201 : 200);
     return answer;
+  }
+
+  /** Which PC and seat this is, for the login screen (S-01). Only an approved PC is answered. */
+  @Get('me')
+  @Public()
+  async me(@Headers(DEVICE_KEY_HEADER) deviceKey: string | undefined): Promise<DeviceMeResponse> {
+    return this.devices.whoAmI(deviceKey);
   }
 
   @Get()

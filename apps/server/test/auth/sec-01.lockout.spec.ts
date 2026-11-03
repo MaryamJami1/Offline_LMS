@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
-import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import type { PrismaClient } from '../../src/generated/prisma/index.js';
 import { LOCK_MINUTES, MAX_FAILED_ATTEMPTS } from '../../src/auth/auth.service.js';
@@ -10,13 +9,14 @@ import {
   createAuthTestApp,
   type AuthTestApp,
 } from '../support/auth-app.js';
+import { postLogin } from '../support/lab-pc.js';
 
 let context: AuthTestApp;
 let app: INestApplication;
 let prisma: PrismaClient;
 
 function login(password: string, username = 'S-1001') {
-  return request(app.getHttpServer()).post('/api/auth/login').send({ username, password });
+  return postLogin(app, { username, password });
 }
 
 async function failLogin(times: number): Promise<number[]> {

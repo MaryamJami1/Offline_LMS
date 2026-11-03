@@ -1,7 +1,7 @@
-import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import type { PrismaClient } from '../../src/generated/prisma/index.js';
 import { TEST_PASSWORD, createAccount } from './auth-app.js';
+import { postLogin } from './lab-pc.js';
 
 /**
  * What the account endpoints are tried against: an admin, a teacher, and two
@@ -21,9 +21,7 @@ export async function loginAs(
   username: string,
   password: string = TEST_PASSWORD,
 ): Promise<string> {
-  const res = await request(app.getHttpServer())
-    .post('/api/auth/login')
-    .send({ username, password });
+  const res = await postLogin(app, { username, password });
   if (res.status !== 200) {
     throw new Error(`${username} could not log in: ${res.status} ${JSON.stringify(res.body)}`);
   }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type {
+  DeviceMeResponse,
   DeviceView,
   Items,
   ListDevicesQuery,
@@ -10,7 +11,7 @@ import type {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Clock } from '../common/clock.js';
 import { AppError } from '../common/app-error.js';
-import { DeviceKeyService } from '../auth/device-key.service.js';
+import { DeviceKeyService, deviceNotApproved } from '../auth/device-key.service.js';
 import type { Prisma } from '../generated/prisma/index.js';
 import { byName, isUniqueViolation, notFound } from '../organisation/organisation.js';
 import { deviceStatus } from './device-status.js';
@@ -69,6 +70,26 @@ export class DevicesService {
     private readonly clock: Clock,
     private readonly keys: DeviceKeyService,
   ) {}
+
+  /** An approved PC asking who it is; asking counts as being seen. */
+  async whoAmI(deviceKey: string | undefined): Promise<DeviceMeResponse> {
+    const device = await this.keys.approvedDevice(deviceKey);
+    if (device === null) {
+      throw deviceNotApproved();
+    }
+    await this.prisma.device.update({
+      where: { id: device.id },
+      data: { lastSeenAt: this.clock.now() },
+    });
+    return {
+      deviceId: device.id,
+      hostname: device.hostname,
+      seat:
+        device.seat === null
+          ? null
+          : { seatCode: device.seat.code, labRoomName: device.seat.labRoom.name },
+    };
+  }
 
   async register(
     request: RegisterDeviceRequest,

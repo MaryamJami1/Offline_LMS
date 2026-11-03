@@ -11,6 +11,7 @@ import {
   type AuthTestApp,
 } from '../support/auth-app.js';
 import { buildUsersWorld, loginAs, type UsersWorld } from '../support/users-world.js';
+import { postLogin } from '../support/lab-pc.js';
 
 /**
  * ADM-01 (T-ADM-01): the admin creates, edits, deactivates and unlocks teacher
@@ -182,9 +183,10 @@ describe('ADM-01 creating accounts', () => {
 describe('ADM-01 first login', () => {
   it('holds a new account to changing its password, then lets it in', async () => {
     const created = await createStudent({ password: 'Karachi-2026' });
-    const login = await http()
-      .post('/api/auth/login')
-      .send({ username: created.user.username, password: 'Karachi-2026' });
+    const login = await postLogin(app, {
+      username: created.user.username,
+      password: 'Karachi-2026',
+    });
     expect(login.body.user.mustChangePassword).toBe(true);
 
     const held = await http()
@@ -326,18 +328,11 @@ describe('ADM-01 editing accounts', () => {
 describe('ADM-01 deactivating accounts', () => {
   async function seatedStudent() {
     const created = await createStudent({ password: TEST_PASSWORD });
-    const seat = await prisma.seat.create({
-      data: { labRoomId: world.labRoomId, code: 'A1', row: 'A', position: 1 },
+    // Logging in at a lab PC records the seat (STU-01).
+    const login = await postLogin(app, {
+      username: created.user.username,
+      password: TEST_PASSWORD,
     });
-    const device = await prisma.device.create({
-      data: { hostname: 'LAB1-A1', mac: '00:11:22:33:44:55', seatId: seat.id, approved: true },
-    });
-    await prisma.deviceLogin.create({
-      data: { deviceId: device.id, seatId: seat.id, studentId: created.user.id },
-    });
-    const login = await http()
-      .post('/api/auth/login')
-      .send({ username: created.user.username, password: TEST_PASSWORD });
     return { created, refreshToken: login.body.refreshToken as string };
   }
 
@@ -350,9 +345,10 @@ describe('ADM-01 deactivating accounts', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('inactive');
-    const login = await http()
-      .post('/api/auth/login')
-      .send({ username: created.user.username, password: TEST_PASSWORD });
+    const login = await postLogin(app, {
+      username: created.user.username,
+      password: TEST_PASSWORD,
+    });
     expect(login.body.error.code).toBe('ACCOUNT_INACTIVE');
     const refresh = await http().post('/api/auth/refresh').send({ refreshToken });
     expect(refresh.status).not.toBe(200);
@@ -389,9 +385,7 @@ describe('ADM-01 unlocking accounts', () => {
   it('shows the lock, and unlocking lets the account log in at once', async () => {
     const created = await createStudent({ password: TEST_PASSWORD });
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      await http()
-        .post('/api/auth/login')
-        .send({ username: created.user.username, password: 'wrong-password' });
+      await postLogin(app, { username: created.user.username, password: 'wrong-password' });
     }
     const locked = await asAdmin('get', `/api/users/${created.user.id}`);
     expect(locked.body.lockedUntil).toBe('2026-11-02T09:10:00.000Z');

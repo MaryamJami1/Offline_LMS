@@ -11,6 +11,7 @@ import {
   createAuthTestApp,
   type AuthTestApp,
 } from '../support/auth-app.js';
+import { postLogin } from '../support/lab-pc.js';
 
 let context: AuthTestApp;
 let app: INestApplication;
@@ -21,9 +22,7 @@ function refresh(refreshToken: unknown) {
 }
 
 async function loginAs(username: string): Promise<{ accessToken: string; refreshToken: string }> {
-  const res = await request(app.getHttpServer())
-    .post('/api/auth/login')
-    .send({ username, password: TEST_PASSWORD });
+  const res = await postLogin(app, { username, password: TEST_PASSWORD });
   expect(res.status).toBe(200);
   return res.body as { accessToken: string; refreshToken: string };
 }
