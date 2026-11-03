@@ -13,9 +13,10 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { Clock } from '../common/clock.js';
 import { AppError } from '../common/app-error.js';
 import { hashPassword, verifyPassword } from './password.js';
-import { DeviceKeyService } from './device-key.service.js';
+import { DeviceKeyService, deviceNotApproved, type ApprovedDevice } from './device-key.service.js';
+import { isUniqueViolation } from '../organisation/organisation.js';
 import { REFRESH_GRACE_SECONDS, TokensService } from './tokens.service.js';
-import type { RefreshToken, User } from '../generated/prisma/index.js';
+import type { Prisma, RefreshToken, User } from '../generated/prisma/index.js';
 
 /** docs/docs/06-security-and-data.md: five wrong attempts, ten minutes. */
 export const MAX_FAILED_ATTEMPTS = 5;
@@ -43,6 +44,13 @@ function accountLocked(unlocksAt: Date): AppError {
   );
 }
 
+/** An approved PC with a seat: the only kind a student can log in at. */
+type SeatedDevice = ApprovedDevice & { seat: NonNullable<ApprovedDevice['seat']> };
+
+function isSeated(device: ApprovedDevice): device is SeatedDevice {
+  return device.seat !== null;
+}
+
 function toAuthUser(user: User): AuthUser {
   return {
     id: user.id,
@@ -62,7 +70,13 @@ export class AuthService {
     private readonly clock: Clock,
   ) {}
 
-  async login({ username, password }: LoginRequest): Promise<LoginResponse> {
+  /**
+   * A student logs in only at an approved lab PC with a seat, which is
+   * recorded in device_logins (STU-01); staff log in anywhere and never get a
+   * seat. The password is checked before the PC, so a key found on a PC is no
+   * faster way to guess passwords.
+   */
+  async login({ username, password }: LoginRequest, deviceKey?: string): Promise<LoginResponse> {
     // Student IDs are unique without regard to case, so S-1001 and s-1001 are
     // the same account and either spelling may be typed at the seat.
     const user = await this.prisma.user.findFirst({
@@ -83,8 +97,31 @@ export class AuthService {
     if (!(await verifyPassword(user.passwordHash, password))) {
       throw await this.recordFailure(user, now);
     }
+    if (user.role !== 'student') {
+      return this.issueTokens(user, null);
+    }
 
-    return this.issueTokens(user);
+    const device = await this.deviceKeys.approvedDevice(deviceKey);
+    if (device === null) {
+      throw deviceNotApproved();
+    }
+    if (!isSeated(device)) {
+      throw new AppError(
+        403,
+        'DEVICE_NOT_SEATED',
+        'This PC has no seat yet. Ask the admin to place it on the seat map.',
+      );
+    }
+    try {
+      return await this.issueTokens(user, device, { takeSeat: true });
+    } catch (error) {
+      // Two logins racing for the same student or PC: the partial unique
+      // indexes refused the second. Trying again lets it take over properly.
+      if (isUniqueViolation(error)) {
+        return this.issueTokens(user, device, { takeSeat: true });
+      }
+      throw error;
+    }
   }
 
   /**
@@ -136,7 +173,10 @@ export class AuthService {
       if (unreceived !== null) {
         return this.rotate(unreceived, stored.user, now);
       }
-      await this.endEveryLogin(stored.userId, now);
+      if (await this.endedByNewerLogin(stored)) {
+        throw invalidToken();
+      }
+      await this.prisma.$transaction([...this.endEveryLogin(stored.userId, now)]);
       throw invalidToken();
     }
 
@@ -182,6 +222,28 @@ export class AuthService {
       return null;
     }
     return (await this.deviceKeys.resolveDevice(deviceKey)) === stored.deviceId ? unreceived : null;
+  }
+
+  /**
+   * Whether this token was revoked because its student logged in again, at
+   * another PC or at this one (STU-01). The PC it belonged to still has the
+   * app open and will try it once more; that is no theft, so it is refused
+   * without ending the student's new login. Rotated tokens, and tokens ended
+   * by logging out, are still treated as a replay.
+   */
+  private async endedByNewerLogin(stored: RefreshToken): Promise<boolean> {
+    if (stored.deviceId === null || stored.replacedById !== null || stored.revokedAt === null) {
+      return false;
+    }
+    const replaced = await this.prisma.deviceLogin.findFirst({
+      where: {
+        studentId: stored.userId,
+        deviceId: stored.deviceId,
+        logoutReason: 'replaced',
+        loggedOutAt: stored.revokedAt,
+      },
+    });
+    return replaced !== null;
   }
 
   /**
@@ -249,6 +311,7 @@ export class AuthService {
   async changePassword(
     user: User,
     { currentPassword, newPassword }: ChangePasswordRequest,
+    deviceKey?: string,
   ): Promise<LoginResponse> {
     if (!(await verifyPassword(user.passwordHash, currentPassword))) {
       throw invalidCredentials();
@@ -257,9 +320,10 @@ export class AuthService {
     // Hashing takes long enough that it is done before the transaction opens.
     const passwordHash = await hashPassword(newPassword);
     const now = this.clock.now();
+    const stay = await this.seatKeptBy(user, deviceKey);
 
-    const [, updated] = await this.prisma.$transaction([
-      this.endEveryLogin(user.id, now),
+    const [, , updated] = await this.prisma.$transaction([
+      ...this.endEveryLogin(user.id, now, stay?.id),
       this.prisma.user.update({
         where: { id: user.id },
         data: {
@@ -271,19 +335,52 @@ export class AuthService {
       }),
     ]);
 
-    return this.issueTokens(updated);
+    return this.issueTokens(updated, stay);
+  }
+
+  /**
+   * The PC a student changing their password stays logged in at: the one
+   * their open login is at, when the request carries that PC's key. Any other
+   * change, from another PC or none, frees the seat with the other logins.
+   */
+  private async seatKeptBy(
+    user: User,
+    deviceKey: string | undefined,
+  ): Promise<SeatedDevice | null> {
+    if (user.role !== 'student') {
+      return null;
+    }
+    const device = await this.deviceKeys.approvedDevice(deviceKey);
+    if (device === null || !isSeated(device)) {
+      return null;
+    }
+    const open = await this.prisma.deviceLogin.findFirst({
+      where: { studentId: user.id, deviceId: device.id, loggedOutAt: null },
+    });
+    return open === null ? null : device;
   }
 
   /**
    * Revokes every refresh token the account still has, so every PC it is
-   * logged in at has to log in again. Returned rather than awaited so it can
-   * also go inside a transaction.
+   * logged in at has to log in again, and frees the seats those logins held,
+   * except at the PC named in `keepDeviceId`. Returned rather than awaited so
+   * it goes inside a transaction.
    */
-  private endEveryLogin(userId: string, now: Date) {
-    return this.prisma.refreshToken.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: now },
-    });
+  private endEveryLogin(userId: string, now: Date, keepDeviceId?: string) {
+    return [
+      this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+      this.prisma.deviceLogin.updateMany({
+        where: {
+          studentId: userId,
+          loggedOutAt: null,
+          ...(keepDeviceId === undefined ? {} : { deviceId: { not: keepDeviceId } }),
+        },
+        data: { loggedOutAt: now, logoutReason: 'revoked' },
+      }),
+    ] as const;
   }
 
   /** Own profile and the seat they are sitting at now, if any. */
@@ -300,29 +397,78 @@ export class AuthService {
     };
   }
 
-  private async issueTokens(user: User): Promise<LoginResponse> {
+  /**
+   * A new pair for the account. A student's refresh token belongs to the PC
+   * they are at, which is what lets a retried refresh from that PC through
+   * (NFR-13). With `takeSeat`, the login is recorded at the PC's seat, and
+   * whatever held the student or the PC before is ended: one login per
+   * student, one student per PC.
+   */
+  private async issueTokens(
+    user: User,
+    device: SeatedDevice | null,
+    options: { takeSeat?: boolean } = {},
+  ): Promise<LoginResponse> {
     const refresh = this.tokens.createRefreshToken();
     const now = this.clock.now();
 
-    await this.prisma.$transaction([
-      this.prisma.refreshToken.create({
+    await this.prisma.$transaction(async (tx) => {
+      if (device !== null && options.takeSeat === true) {
+        await this.takeSeat(tx, user.id, device, now);
+      }
+      await tx.refreshToken.create({
         data: {
           userId: user.id,
+          deviceId: device?.id ?? null,
           tokenHash: refresh.hash,
           expiresAt: this.tokens.refreshExpiryFor(user.role),
         },
-      }),
-      this.prisma.user.update({
+      });
+      await tx.user.update({
         where: { id: user.id },
         // A good password clears whatever wrong ones came before it.
         data: { lastLoginAt: now, failedLoginAttempts: 0, lockedUntil: null },
-      }),
-    ]);
+      });
+    });
 
     return {
       accessToken: this.tokens.signAccessToken(user),
       refreshToken: refresh.token,
       user: toAuthUser(user),
+      seat:
+        device === null
+          ? null
+          : { seatCode: device.seat.code, labRoomName: device.seat.labRoom.name },
     };
+  }
+
+  /**
+   * Ends the student's open login wherever it is, and the login of anyone
+   * still at this PC, revoking their tokens so those PCs are logged out for
+   * real; then records the student at this PC's seat.
+   */
+  private async takeSeat(
+    tx: Prisma.TransactionClient,
+    studentId: string,
+    device: SeatedDevice,
+    now: Date,
+  ): Promise<void> {
+    const displaced = await tx.deviceLogin.findMany({
+      where: { loggedOutAt: null, OR: [{ studentId }, { deviceId: device.id }] },
+    });
+    if (displaced.length > 0) {
+      await tx.deviceLogin.updateMany({
+        where: { id: { in: displaced.map((login) => login.id) } },
+        data: { loggedOutAt: now, logoutReason: 'replaced' },
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId: { in: displaced.map((login) => login.studentId) }, revokedAt: null },
+        data: { revokedAt: now },
+      });
+    }
+    await tx.deviceLogin.create({
+      data: { deviceId: device.id, seatId: device.seat.id, studentId, loggedInAt: now },
+    });
+    await tx.device.update({ where: { id: device.id }, data: { lastSeenAt: now } });
   }
 }

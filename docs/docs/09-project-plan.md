@@ -50,7 +50,7 @@ Every task below is done test-first: write the failing test (named after the req
 - [x] Teachers reset passwords for their own students (ADM-11, T-ADM-11)
 - [x] Courses, batches, classes, enrolments and groups (ADM-03)
 - [x] Labs (one or more), seat maps, PC registration and approval, device keys (ADM-04)
-- [ ] Student login at any PC with device_logins; one login per student (STU-01) — also free the seat when reuse detection ends a student's logins, which NFR-13 leaves open on purpose: the refresh endpoint revokes every token of the account but keeps the open `device_logins` row, so the student must be able to sit down again. Setting `refresh_tokens.device_id` at login is also what turns on the 20-second retry window built for NFR-13, which stays shut while no token has a PC of its own; add a test that a refresh retried from the same seat is answered and the same retry from another seat is not
+- [x] Student login at any PC with device_logins; one login per student (STU-01) — students log in only at an approved, seated PC (`X-Device-Key`); a login ends the student's older login and whoever was at that PC (reason `replaced`), and the replaced PC's leftover token is refused without ending anything; reuse detection now frees the seat (reason `revoked`); the student's refresh token carries the PC, which turns on the NFR-13 retry window; a password change at the student's own PC keeps the seat; `GET /devices/me` tells the login screen where it is. Linking the login to the class session's attendance comes with LAB-03
 - [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype — move the permissions table out of the T-ACL-01 test into `packages/shared` as part of this, so the panel hides buttons from the same source the server refuses by
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
@@ -65,7 +65,7 @@ Every task below is done test-first: write the failing test (named after the req
 - [ ] Socket.IO gateway, rooms, seat updates and re-sync after reconnect (T-LAB-01)
 - [ ] Teacher console: seat grid, selection, status bar (LAB-01, LAB-02, LAB-16)
   - During a running session the console shows the names of that session's class students. Outside a session, `GET /labs/:id/seats` shows a teacher only the names of students in their own classes and the other seats as in use (ADM-04).
-- [ ] Start and End class with attendance (LAB-03)
+- [ ] Start and End class with attendance (LAB-03) — attendance comes from the `device_logins` rows STU-01 records: a student counts as present for the session they logged in during
 - [ ] Broadcast PC and Screen Demo (LAB-04, LAB-05)
   - Student apps join the session's LiveKit room at **Start class** and stay connected for the
     whole session. Broadcast then only has to subscribe to the teacher's track, so it starts in

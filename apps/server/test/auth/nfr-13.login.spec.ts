@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
-import request from 'supertest';
 import { createHash } from 'node:crypto';
 import { loginResponseSchema } from '@lingualab/shared';
 import type { INestApplication } from '@nestjs/common';
@@ -12,13 +11,14 @@ import {
   createAuthTestApp,
   type AuthTestApp,
 } from '../support/auth-app.js';
+import { postLogin } from '../support/lab-pc.js';
 
 let context: AuthTestApp;
 let app: INestApplication;
 let prisma: PrismaClient;
 
 function login(body: object) {
-  return request(app.getHttpServer()).post('/api/auth/login').send(body);
+  return postLogin(app, body);
 }
 
 beforeAll(async () => {

@@ -29,8 +29,9 @@ export class AuthController {
   @Public()
   async login(
     @Body(new ZodValidationPipe(loginRequestSchema)) body: LoginRequest,
+    @Headers(DEVICE_KEY_HEADER) deviceKey?: string,
   ): Promise<LoginResponse> {
-    return this.auth.login(body);
+    return this.auth.login(body, deviceKey);
   }
 
   @Post('refresh')
@@ -57,7 +58,8 @@ export class AuthController {
   async changePassword(
     @CurrentUser() user: User,
     @Body(new ZodValidationPipe(changePasswordRequestSchema)) body: ChangePasswordRequest,
+    @Headers(DEVICE_KEY_HEADER) deviceKey?: string,
   ): Promise<LoginResponse> {
-    return this.auth.changePassword(user, body);
+    return this.auth.changePassword(user, body, deviceKey);
   }
 }

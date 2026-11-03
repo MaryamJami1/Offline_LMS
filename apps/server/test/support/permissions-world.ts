@@ -1,7 +1,7 @@
-import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import type { PrismaClient } from '../../src/generated/prisma/index.js';
 import { TEST_PASSWORD, createAccount } from './auth-app.js';
+import { postLogin } from './lab-pc.js';
 
 /**
  * The smallest institute the permissions table can be tried against: one
@@ -134,9 +134,7 @@ export async function buildPermissionsWorld(
   };
   const tokens = {} as Record<Role4, string>;
   for (const role of ROLE4) {
-    const res = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({ username: usernames[role], password: TEST_PASSWORD });
+    const res = await postLogin(app, { username: usernames[role], password: TEST_PASSWORD });
     if (res.status !== 200) {
       throw new Error(`the ${role} fixture could not log in: ${res.status}`);
     }

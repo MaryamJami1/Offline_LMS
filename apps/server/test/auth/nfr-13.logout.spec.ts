@@ -9,6 +9,7 @@ import {
   createAuthTestApp,
   type AuthTestApp,
 } from '../support/auth-app.js';
+import { postLogin } from '../support/lab-pc.js';
 
 let context: AuthTestApp;
 let app: INestApplication;
@@ -20,9 +21,7 @@ interface Tokens {
 }
 
 async function loginAs(username: string): Promise<Tokens> {
-  const res = await request(app.getHttpServer())
-    .post('/api/auth/login')
-    .send({ username, password: TEST_PASSWORD });
+  const res = await postLogin(app, { username, password: TEST_PASSWORD });
   expect(res.status).toBe(200);
   return res.body as Tokens;
 }
@@ -77,17 +76,7 @@ describe('NFR-13 POST /api/auth/logout', () => {
   });
 
   it('frees the seat the student was sitting at', async () => {
-    const student = await prisma.user.findFirstOrThrow({ where: { username: 'S-1001' } });
-    const lab = await prisma.labRoom.create({ data: { name: 'Lab 1', rows: 5, seatsPerRow: 6 } });
-    const seat = await prisma.seat.create({
-      data: { labRoomId: lab.id, code: 'A1', row: 'A', position: 1 },
-    });
-    const device = await prisma.device.create({
-      data: { hostname: 'LAB1-A1', mac: '00:1B:44:11:3A:B7', seatId: seat.id, approved: true },
-    });
-    await prisma.deviceLogin.create({
-      data: { deviceId: device.id, seatId: seat.id, studentId: student.id },
-    });
+    // Logging in at a lab PC records the seat (STU-01).
     const tokens = await loginAs('S-1001');
 
     await logout(tokens);

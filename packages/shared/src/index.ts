@@ -112,6 +112,7 @@ export {
   MAX_LAB_ROWS,
   MAX_SEATS_PER_ROW,
   createLabRequestSchema,
+  deviceMeResponseSchema,
   deviceViewSchema,
   hostnameSchema,
   labLayoutSchema,
@@ -127,6 +128,7 @@ export {
 } from './labs.js';
 export type {
   CreateLabRequest,
+  DeviceMeResponse,
   DeviceStatus,
   DeviceView,
   LabLayout,

@@ -5,6 +5,7 @@ import type { ArgumentsHost, INestApplication } from '@nestjs/common';
 import type { PrismaClient } from '../../src/generated/prisma/index.js';
 import { ErrorFilter } from '../../src/common/error.filter.js';
 import { resetDatabase } from '../db/database.js';
+import { postLogin } from '../support/lab-pc.js';
 import {
   TEST_PASSWORD,
   createAccount,
@@ -69,16 +70,12 @@ describe('NFR-13 nothing secret reaches the log', () => {
     const printed = await printedWhile(async () => {
       const server = app.getHttpServer();
 
-      const login = await request(server)
-        .post('/api/auth/login')
-        .send({ username: 'S-1001', password: TEST_PASSWORD });
+      const login = await postLogin(app, { username: 'S-1001', password: TEST_PASSWORD });
       tokens = login.body as typeof tokens;
 
       // A wrong password, a refresh, a logout, a password change and a body
       // that does not even parse: every way in which a secret is handled.
-      await request(server)
-        .post('/api/auth/login')
-        .send({ username: 'S-1001', password: 'wrong-password-here' });
+      await postLogin(app, { username: 'S-1001', password: 'wrong-password-here' });
       const rotated = await request(server)
         .post('/api/auth/refresh')
         .send({ refreshToken: tokens.refreshToken });

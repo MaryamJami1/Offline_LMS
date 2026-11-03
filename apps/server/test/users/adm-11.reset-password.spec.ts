@@ -12,6 +12,7 @@ import {
   type AuthTestApp,
 } from '../support/auth-app.js';
 import { buildUsersWorld, loginAs, type UsersWorld } from '../support/users-world.js';
+import { postLogin } from '../support/lab-pc.js';
 
 /**
  * ADM-11 (T-ADM-11): a teacher resets the password of a student in their own
@@ -73,7 +74,7 @@ function reset(token: string, id: string) {
 }
 
 async function canLogIn(username: string, password: string): Promise<boolean> {
-  const res = await http().post('/api/auth/login').send({ username, password });
+  const res = await postLogin(app, { username, password });
   return res.status === 200;
 }
 
@@ -95,9 +96,7 @@ describe('T-ADM-11 a teacher resets a student of their own class', () => {
     const { generatedPassword } = res.body as ResetPasswordResponse;
 
     expect(await canLogIn('S-1001', TEST_PASSWORD)).toBe(false);
-    const login = await http()
-      .post('/api/auth/login')
-      .send({ username: 'S-1001', password: generatedPassword });
+    const login = await postLogin(app, { username: 'S-1001', password: generatedPassword });
     expect(login.status).toBe(200);
     expect(login.body.user.mustChangePassword).toBe(true);
   });
@@ -128,18 +127,8 @@ describe('T-ADM-11 a teacher resets a student of their own class', () => {
   });
 
   it('ends the logins the old password opened and frees the seat', async () => {
-    const seat = await prisma.seat.create({
-      data: { labRoomId: world.labRoomId, code: 'A1', row: 'A', position: 1 },
-    });
-    const device = await prisma.device.create({
-      data: { hostname: 'LAB1-A1', mac: '00:11:22:33:44:55', seatId: seat.id, approved: true },
-    });
-    await prisma.deviceLogin.create({
-      data: { deviceId: device.id, seatId: seat.id, studentId: own.id },
-    });
-    const login = await http()
-      .post('/api/auth/login')
-      .send({ username: 'S-1001', password: TEST_PASSWORD });
+    // Logging in at a lab PC records the seat (STU-01).
+    const login = await postLogin(app, { username: 'S-1001', password: TEST_PASSWORD });
     const refreshToken = login.body.refreshToken as string;
 
     await reset(world.teacherToken, own.id);

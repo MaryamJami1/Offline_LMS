@@ -10,6 +10,7 @@ import {
   createAuthTestApp,
   type AuthTestApp,
 } from '../support/auth-app.js';
+import { postLogin } from '../support/lab-pc.js';
 
 const NEW_PASSWORD = 'Karachi-2026-lab';
 
@@ -21,9 +22,7 @@ async function loginAs(
   username: string,
   password = TEST_PASSWORD,
 ): Promise<{ accessToken: string; refreshToken: string }> {
-  const res = await request(app.getHttpServer())
-    .post('/api/auth/login')
-    .send({ username, password });
+  const res = await postLogin(app, { username, password });
   expect(res.status).toBe(200);
   return res.body as { accessToken: string; refreshToken: string };
 }
@@ -95,12 +94,8 @@ describe('NFR-13 POST /api/auth/change-password', () => {
       newPassword: NEW_PASSWORD,
     });
 
-    const withOld = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({ username: 'S-1001', password: TEST_PASSWORD });
-    const withNew = await request(app.getHttpServer())
-      .post('/api/auth/login')
-      .send({ username: 'S-1001', password: NEW_PASSWORD });
+    const withOld = await postLogin(app, { username: 'S-1001', password: TEST_PASSWORD });
+    const withNew = await postLogin(app, { username: 'S-1001', password: NEW_PASSWORD });
 
     expect(withOld.status).toBe(401);
     expect(withNew.status).toBe(200);

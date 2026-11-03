@@ -49,34 +49,41 @@ async function loginAs(username: string): Promise<Tokens> {
   return res.body as Tokens;
 }
 
+let seatCount = 0;
+
+/** An approved lab PC at a seat of its own, as STU-01 needs for a student to log in there. */
 async function createDevice(options: {
   key: string;
   hostname: string;
   mac: string;
-  approved?: boolean;
 }): Promise<string> {
+  const lab =
+    (await prisma.labRoom.findFirst()) ??
+    (await prisma.labRoom.create({ data: { name: 'Lab 1', rows: 1, seatsPerRow: 6 } }));
+  seatCount += 1;
+  const seat = await prisma.seat.create({
+    data: { labRoomId: lab.id, code: `A${seatCount}`, row: 'A', position: seatCount },
+  });
   const device = await prisma.device.create({
     data: {
       hostname: options.hostname,
       mac: options.mac,
-      approved: options.approved ?? true,
+      seatId: seat.id,
+      approved: true,
       deviceKeyHash: createHash('sha256').update(options.key).digest('hex'),
     },
   });
   return device.id;
 }
 
-/**
- * A login as STU-01 will leave it once it records the PC: the student's
- * refresh token belongs to the lab PC they are sitting at.
- */
-async function loginAtDevice(username: string, deviceId: string): Promise<Tokens> {
-  const tokens = await loginAs(username);
-  await prisma.refreshToken.updateMany({
-    where: { user: { username }, revokedAt: null },
-    data: { deviceId },
-  });
-  return tokens;
+/** A student logs in at the lab PC whose key is sent, so their tokens belong to it (STU-01). */
+async function loginAtDevice(username: string, deviceKey: string): Promise<Tokens> {
+  const res = await request(app.getHttpServer())
+    .post('/api/auth/login')
+    .set('X-Device-Key', deviceKey)
+    .send({ username, password: TEST_PASSWORD });
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
+  return res.body as Tokens;
 }
 
 async function liveTokenCount(): Promise<number> {
@@ -113,8 +120,8 @@ afterAll(async () => {
 
 describe('NFR-13 a refresh token retried after a lost answer', () => {
   it('answers a retry from the same PC inside the window with a working pair', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     const lost = (await refresh(first.refreshToken, DEVICE_KEY)).body as Tokens;
     context.clock.advanceSeconds(5);
 
@@ -127,8 +134,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
   });
 
   it('hands back a pair that works in turn', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
     context.clock.advanceSeconds(5);
 
@@ -145,8 +152,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
    * only stores the hash of, so it issues another one instead.
    */
   it('still answers the replacement it had to retire, while the window is open', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     const crossed = (await refresh(first.refreshToken, DEVICE_KEY)).body as Tokens;
     context.clock.advanceSeconds(5);
     await refresh(first.refreshToken, DEVICE_KEY);
@@ -155,8 +162,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
   });
 
   it('closes that window too, twenty seconds on', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     const crossed = (await refresh(first.refreshToken, DEVICE_KEY)).body as Tokens;
     context.clock.advanceSeconds(5);
     await refresh(first.refreshToken, DEVICE_KEY);
@@ -168,8 +175,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
   });
 
   it('gives a student the usual thirty minutes, not the old deadline', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     context.clock.advanceMinutes(10);
     await refresh(first.refreshToken, DEVICE_KEY);
     context.clock.advanceSeconds(5);
@@ -184,8 +191,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
 
   it('closes the window twenty seconds after the token was rotated', async () => {
     expect(REFRESH_GRACE_SECONDS).toBe(20);
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
     const revokedAt = await rotatedAt();
 
@@ -195,8 +202,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
   });
 
   it('is one millisecond too late just after that', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
     const revokedAt = await rotatedAt();
 
@@ -207,8 +214,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
   });
 
   it('records which token replaced which', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
 
     await refresh(first.refreshToken, DEVICE_KEY);
 
@@ -238,8 +245,8 @@ describe('NFR-13 a refresh token retried after a lost answer', () => {
 
 describe('NFR-13 a replay the grace window does not cover', () => {
   it('treats a second retry of the same token as theft', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
     context.clock.advanceSeconds(5);
     await refresh(first.refreshToken, DEVICE_KEY);
@@ -251,8 +258,8 @@ describe('NFR-13 a replay the grace window does not cover', () => {
   });
 
   it('treats a replay whose replacement has been used as theft', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     const second = (await refresh(first.refreshToken, DEVICE_KEY)).body as Tokens;
     await refresh(second.refreshToken, DEVICE_KEY);
 
@@ -263,9 +270,9 @@ describe('NFR-13 a replay the grace window does not cover', () => {
   });
 
   it('treats a retry from another PC as theft, inside the window or not', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
     await createDevice({ key: OTHER_DEVICE_KEY, hostname: 'LAB1-A2', mac: 'AA:02' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
     context.clock.advanceSeconds(5);
 
@@ -277,7 +284,13 @@ describe('NFR-13 a replay the grace window does not cover', () => {
 
   it('never covers a token revoked by logging out', async () => {
     const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const laptop = await loginAtDevice('sara.iqbal', deviceId);
+    // Staff logins never carry a PC; this one is given one by hand, to show
+    // that even a token with a PC of its own is not covered once logged out.
+    const laptop = await loginAs('sara.iqbal');
+    await prisma.refreshToken.updateMany({
+      where: { user: { username: 'sara.iqbal' }, revokedAt: null },
+      data: { deviceId },
+    });
     const desktop = await loginAs('sara.iqbal');
     await request(app.getHttpServer())
       .post('/api/auth/logout')
@@ -292,14 +305,11 @@ describe('NFR-13 a replay the grace window does not cover', () => {
   });
 
   it('does not cover a PC the admin has not approved', async () => {
-    const deviceId = await createDevice({
-      key: DEVICE_KEY,
-      hostname: 'LAB1-A1',
-      mac: 'AA:01',
-      approved: false,
-    });
-    const first = await loginAtDevice('S-1001', deviceId);
+    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
+    // The admin withdraws the PC between the answer that was lost and the retry.
+    await prisma.device.update({ where: { id: deviceId }, data: { approved: false } });
     context.clock.advanceSeconds(5);
 
     const retry = await refresh(first.refreshToken, DEVICE_KEY);
@@ -309,8 +319,8 @@ describe('NFR-13 a replay the grace window does not cover', () => {
   });
 
   it('does not cover a retry that brings no device key of its own', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
     context.clock.advanceSeconds(5);
 
@@ -321,8 +331,8 @@ describe('NFR-13 a replay the grace window does not cover', () => {
   });
 
   it('does not cover an account deactivated since it logged in', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const first = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const first = await loginAtDevice('S-1001', DEVICE_KEY);
     await refresh(first.refreshToken, DEVICE_KEY);
     await prisma.user.updateMany({ where: { username: 'S-1001' }, data: { status: 'inactive' } });
     context.clock.advanceSeconds(5);
@@ -333,8 +343,8 @@ describe('NFR-13 a replay the grace window does not cover', () => {
     expect(await liveTokenCount()).toBe(0);
   });
 
-  it('does not cover a token with no PC of its own, until STU-01 records one', async () => {
-    const first = await loginAs('S-1001');
+  it('does not cover a token with no PC of its own, as a teacher’s is', async () => {
+    const first = await loginAs('sara.iqbal');
     await refresh(first.refreshToken);
     context.clock.advanceSeconds(5);
 
@@ -345,8 +355,8 @@ describe('NFR-13 a replay the grace window does not cover', () => {
   });
 
   it('leaves every other account logged in', async () => {
-    const deviceId = await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
-    const student = await loginAtDevice('S-1001', deviceId);
+    await createDevice({ key: DEVICE_KEY, hostname: 'LAB1-A1', mac: 'AA:01' });
+    const student = await loginAtDevice('S-1001', DEVICE_KEY);
     const teacher = await loginAs('sara.iqbal');
     await refresh(student.refreshToken, DEVICE_KEY);
     context.clock.advanceMinutes(5);

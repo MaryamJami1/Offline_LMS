@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { currentSeatSchema } from './auth.js';
 
 /**
  * Labs, seat maps and lab PCs (ADM-04), per docs/docs/04-api-and-events.md,
@@ -168,6 +169,16 @@ export const labSeatsResponseSchema = z.object({
   seats: z.array(labSeatSchema),
 });
 
+/**
+ * `GET /devices/me`: what the login screen shows before anyone logs in, "This
+ * PC and seat" (S-01). Only an approved PC is answered.
+ */
+export const deviceMeResponseSchema = z.object({
+  deviceId: z.uuid(),
+  hostname: z.string(),
+  seat: currentSeatSchema.nullable(),
+});
+
 export type LabLayout = z.infer<typeof labLayoutSchema>;
 export type CreateLabRequest = z.infer<typeof createLabRequestSchema>;
 export type UpdateLabRequest = z.infer<typeof updateLabRequestSchema>;
@@ -180,3 +191,4 @@ export type UpdateDeviceRequest = z.infer<typeof updateDeviceRequestSchema>;
 export type DeviceView = z.infer<typeof deviceViewSchema>;
 export type LabSeat = z.infer<typeof labSeatSchema>;
 export type LabSeatsResponse = z.infer<typeof labSeatsResponseSchema>;
+export type DeviceMeResponse = z.infer<typeof deviceMeResponseSchema>;

@@ -24,12 +24,6 @@ export const authUserSchema = z.object({
   mustChangePassword: z.boolean(),
 });
 
-export const loginResponseSchema = z.object({
-  accessToken: z.string(),
-  refreshToken: z.string(),
-  user: authUserSchema,
-});
-
 export const refreshRequestSchema = z.object({
   refreshToken: z.string().min(1),
 });
@@ -50,6 +44,17 @@ export const changePasswordRequestSchema = z.object({
 export const currentSeatSchema = z.object({
   seatCode: z.string(),
   labRoomName: z.string(),
+});
+
+/**
+ * A student's login names the seat it recorded (STU-01); staff, who do not
+ * log in at a lab PC, get null.
+ */
+export const loginResponseSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+  user: authUserSchema,
+  seat: currentSeatSchema.nullable(),
 });
 
 export const meResponseSchema = z.object({

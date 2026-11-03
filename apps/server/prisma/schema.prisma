@@ -266,6 +266,10 @@ enum LogoutReason {
   class_end
   idle
   admin
+  /// A newer login took over: the same student at another PC, or another student at this one.
+  replaced
+  /// Ended with every login of the account: a replayed refresh token, or a password change away from that PC.
+  revoked
 }
 
 enum SessionStatus {
