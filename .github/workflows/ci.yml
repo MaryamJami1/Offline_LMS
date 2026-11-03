@@ -22,7 +22,7 @@ jobs:
 
       # Cheapest gate first: formatting is mechanical, so a miss should be
       # reported before the runner spends minutes on the stack and the tests.
-      # prototype/ is excluded in .prettierignore as a design reference.
+      # docs/prototype/ is excluded in .prettierignore as a design reference.
       - name: Formatting
         run: pnpm format:check
 

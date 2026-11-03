@@ -10,7 +10,7 @@ Every prompt you need to build LinguaLab with Claude Code, from Phase 0 to versi
 4. **Don't accept "done" without real test output.** If you are not sure, paste **U4**.
 5. **After every task**, paste **U3** (commit and pull request). **After every phase**, paste **U5** (phase check).
 6. Follow-up messages can be in Roman Urdu; Claude will reply in the same language. Code and docs stay in English.
-7. A screenshot number in a prompt, such as `prototype/screenshots/14`, means the file that starts with that number (`14-student-listening-marked.png`); `prototype/README.md` lists them all.
+7. A screenshot number in a prompt, such as `docs/prototype/screenshots/14`, means the file that starts with that number (`14-student-listening-marked.png`); `docs/prototype/README.md` lists them all.
 
 **Before you start:** have Claude Code, Node.js 22 LTS, pnpm (`corepack enable`), Git, Docker Desktop and the GitHub CLI installed, and run `gh auth login` once. Have a second Windows PC ready by Phase 0 task 7.
 
@@ -90,8 +90,8 @@ show me the test passing, and run the full suite. Name the test after the requir
 ### U7. Make a screen match the prototype
 
 ```text
-Compare screen <ID, e.g. A-02> with prototype/screenshots/<file>.png and
-prototype/source/<file>.dc.html. Run the app, take a 1440x900 screenshot with Playwright, and list
+Compare screen <ID, e.g. A-02> with docs/prototype/screenshots/<file>.png and
+docs/prototype/source/<file>.dc.html. Run the app, take a 1440x900 screenshot with Playwright, and list
 every difference in layout, colours, fonts, spacing and text. Fix them with packages/ui tokens and
 components (no hard-coded colours, branding from settings). Show me the before and after screenshots.
 ```
@@ -344,7 +344,7 @@ Tell me the plan before writing files.
 ```text
 Phase 1, task 9: packages/ui.
 Read docs/docs/05-screens-and-ux.md (colour tokens, type, components) and look at the styles in
-prototype/source/*.dc.html.
+docs/prototype/source/*.dc.html.
 Build the design tokens and the shared components listed in docs/docs/05-screens-and-ux.md
 (Button, Seat tile, Control button, Tab rail, Card, Badge, Progress bar, Level meter, Toast, Modal,
 Table, Option button, Form fields) on shadcn/ui with Tailwind, with IBM Plex from @fontsource
@@ -358,8 +358,8 @@ Tell me the plan before writing files.
 
 ```text
 Phase 1, task 10: admin panel. Screens A-01, A-02, A-03, A-04 and A-07.
-Read the admin screens in docs/docs/05-screens-and-ux.md and compare with prototype/screenshots/22, 23
-and 26 (A-03 and A-04 have no screenshot; follow prototype/source/Admin.dc.html).
+Read the admin screens in docs/docs/05-screens-and-ux.md and compare with docs/prototype/screenshots/22, 23
+and 26 (A-03 and A-04 have no screenshot; follow docs/prototype/source/Admin.dc.html).
 Build apps/admin (React + Vite) with login, the dashboard, students (with today's seat, add, import,
 reset password), teachers, classes, and lab and seats (lab picker, seat map, PC details, approve new
 PCs). Use only packages/ui components. Test-first: component tests for each screen, and one Playwright
@@ -408,7 +408,7 @@ Tell me the plan before writing files.
 ```text
 Phase 2, task 2: teacher console. Covers LAB-01, LAB-02 and LAB-16; tests T-LAB-02 and T-LAB-16;
 screens T-01 and T-02.
-Read the teacher screens in docs/docs/05-screens-and-ux.md and compare with prototype/screenshots/02 and 03.
+Read the teacher screens in docs/docs/05-screens-and-ux.md and compare with docs/prototype/screenshots/02 and 03.
 Build apps/teacher in Electron + React: teacher login (T-01); the seat grid in room order with each
 seat's state (offline, free, logged-in student, hand raised, activity); selecting one seat, several,
 a group or all, where nothing selected means every logged-in student (T-LAB-02, unit); the eight
@@ -469,7 +469,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 2, task 7: White Board. Covers LAB-06; screen T-04.
-Compare with prototype/screenshots/07.
+Compare with docs/prototype/screenshots/07.
 Test-first: whiteboard.start opens the board on the targets; strokes from the teacher
 (lab:whiteboard.stroke) are drawn live on the student screens; Clear clears every board; "Save to
 lesson" stores the board as an image on a lesson. Use Excalidraw on the teacher side as in
@@ -492,7 +492,7 @@ Tell me the plan before writing files.
 ```text
 Phase 2, task 9: lesson editor. Covers MOD-05 and ADM-05 (lessons); test T-MOD-05; screens A-05 and A-06.
 Read "Content" in docs/docs/03-database.md and "Lessons and quizzes" in docs/docs/04-api-and-events.md;
-compare with prototype/screenshots/24 and 25.
+compare with docs/prototype/screenshots/24 and 25.
 Test-first: the content list with module tabs; the editor with module, title, class, instructions,
 text, five question types (multiple choice, true/false, fill in the blank, recording, free writing),
 live student preview, save as draft and publish. Publishing is refused without a title, with no
@@ -556,7 +556,7 @@ Run the test in the lab, then paste **U5** with N = 2. That is Gate 1.
 
 ```text
 Phase 3, task 1: Monitor. Covers LAB-11 and NFR-06; tests T-LAB-11 and T-LAB-11b; screen T-05.
-Compare with prototype/screenshots/08 and 09.
+Compare with docs/prototype/screenshots/08 and 09.
 Test-first: while Monitor is on, each student app sends a 320 px JPEG thumbnail every 3 s; thumbnails
 go only to the console and are never written to disk; they stop when Monitor stops (T-LAB-11). The
 student app shows no icon or message while Monitor runs (T-LAB-11b, Electron e2e). Clicking a
@@ -581,7 +581,7 @@ Phase 3, task 3: Intercom and mute. Covers LAB-09; test T-LAB-09.
 Test-first: intercom.start needs exactly one seat; the teacher and that student both get tokens for
 the room s-<sessionId>-ic-<seat> and no other room (T-LAB-09, unit); nobody else hears them. The
 teacher can mute any speaker from the server, and the student cannot unmute themselves. Show the
-intercom call panel (T-03, prototype/screenshots/06).
+intercom call panel (T-03, docs/prototype/screenshots/06).
 Tell me the plan before writing files.
 ```
 
@@ -598,7 +598,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 3, task 5: groups. Covers LAB-15 and LAB-09 (Group Talk); screen T-06.
-Compare with prototype/screenshots/10.
+Compare with docs/prototype/screenshots/10.
 Test-first: make groups by pairing seats, random groups of N, or by hand; grouptalk.start creates one
 room per group (s-<sessionId>-g<n>) where only its members speak and listen; the teacher can join any
 group to listen or speak; Stop ends every group room.
@@ -621,7 +621,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 3, task 7: live quiz. Covers LAB-08; tests T-LAB-08a and T-LAB-08b; screens T-03 and T-06.
-Compare with prototype/screenshots/05 and 21.
+Compare with docs/prototype/screenshots/05 and 21.
 Test-first: a quiz bank; POST /sessions/:id/quizzes launches a quiz with a timer as a takeover on the
 targets; answers arrive with quiz:answer and are auto-marked (multiple choice, true/false, gap), and
 the live count on the console matches the answers received (T-LAB-08a); answers after the quiz closes
@@ -641,7 +641,7 @@ Tell me the plan before writing files.
 ### P3-9. Console polish
 
 ```text
-Phase 3, task 9: compare every console panel and tab (T-03 to T-07) with prototype/screenshots/03 to 11,
+Phase 3, task 9: compare every console panel and tab (T-03 to T-07) with docs/prototype/screenshots/03 to 11,
 as in prompt U7, and fix the differences. Then check that every control is reachable by keyboard and
 that common actions take one or two clicks (NFR-10, NFR-11).
 ```
@@ -687,7 +687,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 4, task 4: student home. Covers STU-02, STU-05 and MOD-08 (display); screens S-02, S-07 and S-09.
-Compare with prototype/screenshots/13 and 18 (S-09 is not in the prototype; design it from the same
+Compare with docs/prototype/screenshots/13 and 18 (S-09 is not in the prototype; design it from the same
 components).
 Test-first: the dashboard with today's work, the four module tiles with progress, latest marks and
 feedback; the module page with units and lessons, done and to do; My results. A student never sees
@@ -699,7 +699,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 4, task 5: Listening. Covers MOD-04; screen S-03.
-Compare with prototype/screenshots/14.
+Compare with docs/prototype/screenshots/14.
 Test-first: the audio player with the play-count limit set by the teacher (the count is saved with
 the submission); multiple choice, fill in the blank and dictation; the transcript appears only after
 submitting; marks show at once.
@@ -710,7 +710,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 4, task 6: Reading. Covers MOD-02; screen S-04.
-Compare with prototype/screenshots/15.
+Compare with docs/prototype/screenshots/15.
 Test-first: the passage with its glossary; multiple choice, true/false, fill in the blank and matching;
 automatic marking.
 Tell me the plan before writing files.
@@ -720,7 +720,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 4, task 7: Speaking. Covers MOD-01; test T-MOD-01; screen S-05.
-Compare with prototype/screenshots/16.
+Compare with docs/prototype/screenshots/16.
 Test-first: a Recorder component (MediaRecorder, WebM/Opus, up to 60 s, level meter, play back,
 record again); the speaking task with prompt and model audio; POST /answers/:id/recording saves the
 file under /data/recordings/ and refuses recordings over 60 s or 5 MB (T-MOD-01). The recording must
@@ -732,7 +732,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 4, task 8: Writing. Covers MOD-03; screen S-06.
-Compare with prototype/screenshots/17.
+Compare with docs/prototype/screenshots/17.
 Test-first: sentence, paragraph and essay tasks with a live word counter and minimum and maximum word
 limits; grammar exercises that use the auto-marked question types; the essay goes to the grading
 inbox on submit.
@@ -791,7 +791,7 @@ Then paste **U5** with N = 4.
 
 ```text
 Phase 5, task 1: reports. Covers ADM-06; screen A-08.
-Compare with prototype/screenshots/27.
+Compare with docs/prototype/screenshots/27.
 Test-first: GET /reports/attendance and /reports/results with filters (class, student, module, date
 range) and format=json, pdf or xlsx; charts and tables in the admin panel; teachers only see their own
 classes. Suggest the PDF and Excel libraries and ask me before adding them.
@@ -814,7 +814,7 @@ Tell me the plan before writing files.
 
 ```text
 Phase 5, task 3: Settings. Covers ADM-07; test T-ADM-07; screen A-10.
-Compare with prototype/screenshots/29.
+Compare with docs/prototype/screenshots/29.
 Test-first: the admin changes the software name, logo, main colour, institute name, grading scale,
 quiz pass mark and backup time; after changing the name, logo and colour, all three apps show them at
 their next start (T-ADM-07, end-to-end). Search the code for any hard-coded product name or main
