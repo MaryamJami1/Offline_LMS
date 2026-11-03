@@ -23,6 +23,8 @@ export interface PermissionsWorld {
     course: string;
     batch: string;
     labRoom: string;
+    /** A lab PC waiting for approval, for the rows that act on a PC. */
+    device: string;
     /**
      * Accounts that exist only to have their passwords reset. A reset makes
      * an account change its password before anything else, so resetting a
@@ -91,6 +93,9 @@ export async function buildPermissionsWorld(
   const labRoom = await prisma.labRoom.create({
     data: { name: 'Lab 1', rows: 5, seatsPerRow: 6 },
   });
+  const device = await prisma.device.create({
+    data: { hostname: 'LAB1-A1', mac: 'aa:bb:cc:00:00:01' },
+  });
   const course = await prisma.course.create({ data: { name: 'Spoken English' } });
   const batch = await prisma.batch.create({
     data: { courseId: course.id, name: 'Fall 2026', startsOn: new Date('2026-09-01') },
@@ -151,6 +156,7 @@ export async function buildPermissionsWorld(
       course: course.id,
       batch: batch.id,
       labRoom: labRoom.id,
+      device: device.id,
       resetOwnStudent: resetOwnStudent.id,
       resetOtherStudent: resetOtherStudent.id,
       resetTeacher: resetTeacher.id,

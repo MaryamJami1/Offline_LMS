@@ -122,18 +122,41 @@ Import row codes: `NAME_REQUIRED`, `NAME_INVALID` (over 100 characters), `CLASS_
 
 ### Lab, devices and sessions
 
-| Method    | Path                        | Who               | Purpose                                        |
-| --------- | --------------------------- | ----------------- | ---------------------------------------------- |
-| GET, POST | `/labs`                     | A                 | Manage labs (one or more) and seat layouts     |
-| GET       | `/labs/:id/seats`           | A, T              | Seats with PC status and who is logged in now  |
-| POST      | `/devices/register`         | Unapproved lab PC | PC asks to join; waits for admin approval      |
-| GET       | `/devices`                  | A                 | All PCs, status, versions                      |
-| PATCH     | `/devices/:id`              | A                 | Approve, bind to a seat, rename, retire        |
-| POST      | `/sessions`                 | T                 | Start class: opens a session, takes attendance |
-| POST      | `/sessions/:id/end`         | T                 | End class: saves, logs students off            |
-| GET       | `/sessions/:id`             | T                 | Session details, attendance, events            |
-| POST      | `/sessions/:id/media-token` | T, S              | LiveKit token for this session's rooms         |
-| POST      | `/sessions/:id/collect`     | T                 | Ask target PCs to upload files                 |
+| Method    | Path                        | Who               | Purpose                                                                       |
+| --------- | --------------------------- | ----------------- | ----------------------------------------------------------------------------- |
+| GET, POST | `/labs`                     | A                 | Manage labs (one or more) and seat layouts                                    |
+| PATCH     | `/labs/:id`                 | A                 | Rename, resize or re-lay out a lab                                            |
+| GET       | `/labs/:id/seats`           | A, T              | Seats with PC status and who is logged in now (T: names of own students only) |
+| POST      | `/devices/register`         | Unapproved lab PC | PC asks to join; waits for admin approval                                     |
+| GET       | `/devices`                  | A                 | All PCs, status, versions                                                     |
+| PATCH     | `/devices/:id`              | A                 | Approve, bind to a seat, rename, retire, reset                                |
+| POST      | `/sessions`                 | T                 | Start class: opens a session, takes attendance                                |
+| POST      | `/sessions/:id/end`         | T                 | End class: saves, logs students off                                           |
+| GET       | `/sessions/:id`             | T                 | Session details, attendance, events                                           |
+| POST      | `/sessions/:id/media-token` | T, S              | LiveKit token for this session's rooms                                        |
+| POST      | `/sessions/:id/collect`     | T                 | Ask target PCs to upload files                                                |
+
+**Labs and PCs in detail.** Request and response bodies are the schemas in `packages/shared/src/labs.ts`; lists come back as `{ items }`.
+
+| Call                     | Body in                                                                                                                                                                             | Answer                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /labs`              | —                                                                                                                                                                                   | 200 `{ items: [{ id, name, rows, seatsPerRow, layout, seatCount, pcCount }] }` by name. `pcCount` is the PCs bound to its seats                                                                                                                                                                                                                                                   |
+| `POST /labs`             | `{ name, rows, seatsPerRow, layout? }`. `layout` is `{ pairs, aisles }`: desks drawn in twos, and the seat positions with a walkway after them                                      | 201 the lab, with every seat created, row A first (A1 … E6). Rows 1 to 26, seats per row 1 to 20; 422 `AISLE_OUTSIDE_ROW` for an aisle after the last seat                                                                                                                                                                                                                        |
+| `PATCH /labs/:id`        | Any of `{ name, rows, seatsPerRow, layout }`                                                                                                                                        | 200 the lab. Growing adds seats; shrinking removes them, but a seat with a PC bound to it or any login or attendance history is never removed: 409 `SEAT_IN_USE` with `details.seats`, and nothing changes                                                                                                                                                                        |
+| `GET /labs/:id/seats`    | —                                                                                                                                                                                   | 200 `{ lab, seats: [{ id, code, row, position, device, occupied, student }] }` in room order. `device` is `{ id, hostname, ip, appVersion, status, lastSeenAt }` or null. `occupied` says someone is logged in there now; `student` says who, for the admin always and for a teacher only when the student is enrolled in one of their classes. 404 for a lab that does not exist |
+| `POST /devices/register` | `{ hostname, mac, osVersion?, appVersion? }`, and the `X-Device-Key` header once the PC has one. No login                                                                           | See below                                                                                                                                                                                                                                                                                                                                                                         |
+| `GET /devices`           | Query: `status?`                                                                                                                                                                    | 200 `{ items }` by host name, each `{ id, hostname, mac, ip, osVersion, appVersion, status, lastSeenAt, seat: { id, code, labId, labName } or null, createdAt }`                                                                                                                                                                                                                  |
+| `PATCH /devices/:id`     | One of `{ action: 'approve', seatId? }`, `{ action: 'bind', seatId }` (null takes it off its seat), `{ action: 'rename', hostname }`, `{ action: 'retire' }`, `{ action: 'reset' }` | 200 the PC. 409 `SEAT_TAKEN` when another PC has the seat; 422 `SEAT_NOT_FOUND`; 422 `DEVICE_RETIRED` to approve or bind a retired PC; 422 `WAITING_FOR_PC` to approve a reset PC that has not registered again                                                                                                                                                                   |
+
+**A PC's status** is `waiting` until approved, then `online` if it was seen in the last two minutes and `offline` otherwise, or `retired`. For now a PC is seen when it registers or checks in at start; the Socket.IO heartbeat keeps it fresh from Phase 2.
+
+**Registering.** The student app calls `POST /devices/register` on every start.
+
+- **A new PC** gets 201 `{ deviceId, status: 'waiting', deviceKey }`. It stores the key and sends it in `X-Device-Key` from then on. The key does nothing until the admin approves the PC. MAC addresses are written `aa:bb:cc:00:11:22` whatever form the PC sends.
+- **A PC with its key** is checking in: 200 with `deviceKey: null`. Its address, versions and last-seen time are updated; the name the admin gave it stays.
+- **A waiting PC without its key** (a reinstall before approval) gets a new key, and the old one stops working.
+- **An approved PC without its key** gets 409 `DEVICE_ALREADY_REGISTERED`, so a copied MAC address cannot take over a seat. A reinstalled PC needs the admin's **Reset**, which sends it back to waiting with no key and ends every login on it; **Retire** does the same and also takes it off its seat. A retired PC gets 409 `DEVICE_RETIRED` until it is reset.
+- **New PCs are refused** with 429 `TOO_MANY_WAITING` while 100 are waiting, since anyone on the network can call this endpoint. PCs that are already waiting can still register.
 
 ### Lessons and quizzes
 
