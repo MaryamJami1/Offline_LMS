@@ -15,14 +15,14 @@ Read the relevant document before working on a feature. If code and docs disagre
 | Stack, repo layout, flows, ports | `docs/docs/02-architecture.md` |
 | Tables and columns | `docs/docs/03-database.md` |
 | REST endpoints, Socket.IO events, LiveKit rooms | `docs/docs/04-api-and-events.md` |
-| Colours, fonts, screens (IDs T-xx, S-xx, A-xx) | `docs/docs/05-screens-and-ux.md` + `prototype/screenshots/` |
+| Colours, fonts, screens (IDs T-xx, S-xx, A-xx) | `docs/docs/05-screens-and-ux.md` + `docs/prototype/screenshots/` |
 | Permissions, auth, device trust, backups | `docs/docs/06-security-and-data.md` |
 | Server and app installation | `docs/docs/07-installation.md` |
 | TDD method, test IDs, load test | `docs/docs/08-testing.md` |
 | Phases, tasks, exit criteria | `docs/docs/09-project-plan.md` |
 | How users use it | `docs/docs/10-user-guides.md` |
 
-The prototype's `.dc.html` files in `prototype/source/` hold the exact styles, sample data and screen behaviour. They are a design reference, not code to ship; rebuild the screens in React with the shared UI kit.
+The prototype's `.dc.html` files in `docs/prototype/source/` hold the exact styles, sample data and screen behaviour. They are a design reference, not code to ship; rebuild the screens in React with the shared UI kit.
 
 ## Non-negotiable rules
 
@@ -78,7 +78,8 @@ pnpm dev             # server + admin + apps in dev mode
 - [x] Prisma schema and migrations for People, Organisation and Lab tables; seed data — People, Organisation, Lab and sessions plus `settings`; seed gives 1 admin, 2 teachers, 2 classes, 30 students, Lab 1 with 30 seats and the software name "Lab"
 - [x] Login, refresh, logout, change password, account lockout (T-SEC-01) — rotating refresh tokens, a guard that reads the account on every request, and a first-login account held to `/me`, change-password and logout. Device keys and the seat recorded at login come with STU-01; the admin's unlock button with ADM-01
 - [x] Role guards and the full permissions test (T-ACL-01) — the authentication and role guards are registered for the whole application, so an endpoint is protected unless it is deliberately public; ownership lives in `AccessService`; the table is tried as four accounts, with the rows whose endpoints are not built yet expecting 404 so they cannot be forgotten
-- [ ] Users: create, edit, deactivate, first passwords, Excel import (ADM-01, ADM-02); teachers reset passwords for their own students (ADM-11)
+- [x] Users: create, edit, deactivate, unlock, first passwords, Excel import (ADM-01, ADM-02; T-ADM-01, T-ADM-02) — `/users` endpoints, generated first passwords shown once, the student import from .xlsx or CSV with numbered errors and no duplicates, and the `audit_logs` table with entries for accounts created, deactivated, reactivated and unlocked
+- [ ] Teachers reset passwords for their own students (ADM-11, T-ADM-11)
 - [ ] Courses, batches, classes, enrolments and groups (ADM-03)
 - [ ] Labs (one or more), seat maps, PC registration and approval, device keys (ADM-04)
 - [ ] Student login at any PC with device_logins; one login per student (STU-01) — also free the seat when reuse detection ends a student's logins, which NFR-13 leaves open on purpose: the refresh endpoint revokes every token of the account but keeps the open `device_logins` row, so the student must be able to sit down again. Setting `refresh_tokens.device_id` at login is also what turns on the 20-second retry window built for NFR-13, which stays shut while no token has a PC of its own; add a test that a refresh retried from the same seat is answered and the same retry from another seat is not

@@ -39,8 +39,8 @@ T-ACL-01 holds the table as a list of rows tried as four accounts: the admin, th
 **Passwords**
 
 - Hashed with Argon2id; never stored or logged in plain text.
-- The admin sets each new account's first-login password and prints a slip; the user must change it at first login (at least 8 characters). Teachers can reset passwords only for students in their own classes, and every reset goes in the audit log.
-- Five wrong attempts lock the account for 10 minutes; the admin can unlock it. The count and the lock live on the account (`users.failed_login_attempts`, `users.locked_until`), so a restart does not clear them, and a good password clears them. Once the 10 minutes have passed the count starts again from zero, so an old lock cannot shut someone out on their first mistake.
+- The admin sets each new account's first-login password and prints a slip; the user must change it at first login (at least 8 characters). The admin may type it, or leave it to the server, which makes up ten characters without look-alikes (0/O, 1/l/I) and shows it once, in the answer to the request that created the account; it is never stored or shown again. Imported students always get one each: a password shared across a class would let a classmate claim an account before its owner first logs in. Teachers can reset passwords only for students in their own classes, and every reset goes in the audit log.
+- Five wrong attempts lock the account for 10 minutes; the admin can unlock it at once (`POST /users/:id/unlock`). The count and the lock live on the account (`users.failed_login_attempts`, `users.locked_until`), so a restart does not clear them, and a good password clears them. Once the 10 minutes have passed the count starts again from zero, so an old lock cannot shut someone out on their first mistake.
 - A wrong password and a username that does not exist give the same 401, so the login screen cannot be used to find out which student IDs are real. A locked account is told so, with the time it opens again.
 
 **Tokens**
@@ -81,7 +81,8 @@ Lab PCs reach the server by its IP address, and TLS forbids an IP literal in the
 - **Monitoring:** screen thumbnails are shown live and never saved. Students see no "monitored" icon; this is the institute's decision.
 - **Lesson files:** videos and PDFs are shown inside the app only; the student app offers no download or print.
 - **Leaving students** are deactivated, not deleted, so reports stay correct. Full deletion on request is an admin action that is logged.
-- **Audit log** records logins (success and failure), password resets (by admin or teacher), grade changes, deletions, restores, settings changes and every lab command, with who, when and from which PC. The app has no way to edit or delete audit entries.
+- **Audit log** records logins (success and failure), accounts created (one entry per student of an import), deactivated, reactivated and unlocked, password resets (by admin or teacher), grade changes, deletions, restores, settings changes and every lab command, with who, when and from which PC. An entry is written in the same transaction as the change, so neither is saved without the other, and it never holds a password, token or hash. The app has no way to edit or delete audit entries. "From which PC" is the address Caddy saw: the server trusts exactly one proxy hop (`TRUSTED_PROXY_HOPS` in `apps/server/src/app.setup.ts`), because port 3000 is open only to Caddy, which replaces any `X-Forwarded-For` a PC sends.
+- **Deactivating an account** ends every login it has on every PC and frees its seat (`device_logins.logout_reason` = `admin`); the admin cannot deactivate their own account.
 - **Error logs** on the server never include passwords, tokens or recordings, and are rotated after 30 days. Nothing from a request body or header is logged or returned: a whole round of logins, refreshes, logouts and password changes is run in `apps/server/test/auth/nfr-13.no-secrets-in-logs.spec.ts` with everything the server prints captured, and no password, token or hash may appear in it.
 
 ## Backup and restore policy
