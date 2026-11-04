@@ -1,3 +1,6 @@
+export { PERMISSIONS, accessOf, may } from './permissions.js';
+export type { Access, Action, PermissionRow } from './permissions.js';
+export { INSTITUTE_TIME_ZONE, startOfInstituteDay } from './time.js';
 export { normalizeSeatCode } from './seat-code.js';
 export { buildSeatMap } from './seat-map.js';
 export type { SeatMapEntry, SeatMapSize } from './seat-map.js';
@@ -44,6 +47,7 @@ export {
   listUsersQuerySchema,
   phoneSchema,
   resetPasswordResponseSchema,
+  seatTodaySchema,
   updateUserRequestSchema,
   userClassSchema,
   userListResponseSchema,
@@ -61,6 +65,7 @@ export type {
   ImportRowErrorCode,
   ListUsersQuery,
   ResetPasswordResponse,
+  SeatToday,
   UpdateUserRequest,
   UserListResponse,
   UserStatus,

@@ -15,8 +15,16 @@ export { Card } from './components/card.js';
 export type { CardProps } from './components/card.js';
 export { ControlButton } from './components/control-button.js';
 export type { ControlButtonProps } from './components/control-button.js';
-export { TextAreaField, TextField } from './components/form-fields.js';
-export type { TextAreaFieldProps, TextFieldProps } from './components/form-fields.js';
+export { CheckboxGroup, SelectField, TextAreaField, TextField } from './components/form-fields.js';
+export type {
+  CheckboxChoice,
+  CheckboxGroupProps,
+  SelectFieldProps,
+  TextAreaFieldProps,
+  TextFieldProps,
+} from './components/form-fields.js';
+export { SideNav, SideNavItem } from './components/side-nav.js';
+export type { SideNavItemProps, SideNavProps } from './components/side-nav.js';
 export { LevelMeter } from './components/level-meter.js';
 export type { LevelMeterProps } from './components/level-meter.js';
 export { Modal } from './components/modal.js';

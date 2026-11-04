@@ -3,6 +3,7 @@ import {
   useId,
   type InputHTMLAttributes,
   type ReactNode,
+  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
 import { cn } from '../lib/cn.js';
@@ -95,6 +96,88 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
     </FieldFrame>
   );
 });
+
+export type SelectFieldProps = FieldText & Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'>;
+
+/** A labelled native select: the browser's own list works with the keyboard and screen readers. */
+export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(function SelectField(
+  { label, hint, error, className, children, ...props },
+  ref,
+) {
+  const field = useField({ label, hint, error });
+  return (
+    <FieldFrame {...field} label={label} hint={hint} error={error}>
+      <select
+        ref={ref}
+        id={field.id}
+        className={cn(CONTROL, 'min-h-10', controlBorder(error), className)}
+        {...field.aria}
+        {...props}
+      >
+        {children}
+      </select>
+    </FieldFrame>
+  );
+});
+
+export interface CheckboxChoice {
+  value: string;
+  label: string;
+}
+
+export interface CheckboxGroupProps {
+  legend: string;
+  options: readonly CheckboxChoice[];
+  /** The values ticked now. */
+  value: readonly string[];
+  /** The values ticked after the change, in the order of the options. */
+  onChange: (value: string[]) => void;
+  error?: string;
+}
+
+/** Several choices under one legend, such as a class's days (A-04). */
+export function CheckboxGroup({ legend, options, value, onChange, error }: CheckboxGroupProps) {
+  const id = useId();
+  const errorId = error === undefined ? undefined : `${id}-error`;
+  const ticked = new Set(value);
+
+  function toggle(choice: string): void {
+    const next = new Set(ticked);
+    if (next.has(choice)) {
+      next.delete(choice);
+    } else {
+      next.add(choice);
+    }
+    onChange(options.map((option) => option.value).filter((option) => next.has(option)));
+  }
+
+  return (
+    <fieldset className="flex flex-col gap-1.5" aria-describedby={errorId}>
+      <legend className="mb-1.5 text-[13px] font-semibold text-ink">{legend}</legend>
+      <div className="flex flex-wrap gap-x-4">
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink"
+          >
+            <input
+              type="checkbox"
+              className={cn('size-4 accent-primary', FOCUS_RING)}
+              checked={ticked.has(option.value)}
+              onChange={() => toggle(option.value)}
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+      {error !== undefined && (
+        <p id={errorId} className="text-[13px] font-semibold text-live">
+          {error}
+        </p>
+      )}
+    </fieldset>
+  );
+}
 
 export type TextAreaFieldProps = FieldText &
   Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id'>;

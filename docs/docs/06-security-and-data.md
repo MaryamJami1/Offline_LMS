@@ -27,6 +27,8 @@ Yes = allowed; Own = only their own classes (teacher) or own data (student); No 
 
 Each row is enforced on the server and covered by an access test that tries the action as every role (test-driven: the refusal tests are written first).
 
+The same table is data in `packages/shared/src/permissions.ts` (`PERMISSIONS`, read with `may(role, action)`), and the apps decide which buttons to show from it. T-ACL-01 checks it against this document cell for cell and every endpoint against it, so the apps cannot hide less, or more, than the server refuses. Hiding a button is never the check; the server refuses on its own.
+
 **How it is enforced.** Two checks, because a role cannot answer an ownership question:
 
 - **Deny by default.** The authentication guard and the role guard are registered for the whole application, so an endpoint is protected whether or not whoever wrote it remembered. Three routes are deliberately open, each marked `@Public()`: logging in, refreshing a token, and the health check the lab PCs read. `@Roles(...)` narrows a route further; a route that names no role is open to any logged-in account, which is what `/me` wants.

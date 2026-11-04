@@ -34,7 +34,7 @@ The tokens live in `packages/ui/src/tokens.ts`; `packages/ui/src/theme.css` turn
 
 **Spacing and shape:** 4 px grid; buttons 40 px tall (44 px for primary controls), radius 8 px; cards radius 12–14 px, 16–20 px padding; pills fully rounded. The prototype's small button is 32–34 px tall; the kit's small button keeps 40 px, the minimum touch target below, and is smaller only in padding and text.
 
-**Components (shadcn/ui based):** Button (default, primary, danger, small), Seat tile, Control button, Tab rail, Card, Badge (live, info, ok, warn, muted), Progress bar, Level meter, Toast, Modal, Table, Option button (A/B/C), Audio player, Video player, PDF viewer, Recorder, Form fields. All but the four media components are in `packages/ui`; the Audio player, Recorder, Video player and PDF viewer come with the module work that uses them (MOD-04, MOD-01, MOD-10).
+**Components (shadcn/ui based):** Button (default, primary, danger, small), Seat tile, Control button, Tab rail, Card, Badge (live, info, ok, warn, muted), Progress bar, Level meter, Toast, Modal, Table, Option button (A/B/C), Audio player, Video player, PDF viewer, Recorder, Form fields (text, text area, select, checkbox group), Side navigation (the admin panel's dark bar; its focus ring is white, because the main colour's would not show on it). On the admin's seat map (A-07) a seat tile also shows the PC's name, and a seat with no PC bound to it reads "No PC". All but the four media components are in `packages/ui`; the Audio player, Recorder, Video player and PDF viewer come with the module work that uses them (MOD-04, MOD-01, MOD-10).
 
 ## Screen inventory
 

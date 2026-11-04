@@ -11,7 +11,7 @@ import {
   type AuthTestApp,
 } from '../support/auth-app.js';
 import { buildUsersWorld, loginAs, type UsersWorld } from '../support/users-world.js';
-import { postLogin } from '../support/lab-pc.js';
+import { labPc, postLogin } from '../support/lab-pc.js';
 
 /**
  * ADM-01 (T-ADM-01): the admin creates, edits, deactivates and unlocks teacher
@@ -285,6 +285,97 @@ describe('ADM-01 listing and viewing accounts', () => {
     expect((found.body as AdminUser).phone).toBe('0300-1234567');
     expect(missing.status).toBe(404);
     expect(malformed.status).toBe(400);
+  });
+});
+
+describe("ADM-01 today's seat, for the Students screen (A-02)", () => {
+  // The clock stands at 2026-11-02 09:00 UTC, which is 14:00 in Karachi.
+  async function studentWithPassword(fullName: string): Promise<CreateUserResponse> {
+    return createStudent({ fullName, password: TEST_PASSWORD });
+  }
+
+  async function logIn(username: string, at?: string, key?: string): Promise<request.Response> {
+    const now = context.clock.now();
+    if (at !== undefined) {
+      context.clock.set(new Date(at));
+    }
+    const res =
+      key === undefined
+        ? await postLogin(app, { username, password: TEST_PASSWORD })
+        : await http()
+            .post('/api/auth/login')
+            .set('X-Device-Key', key)
+            .send({ username, password: TEST_PASSWORD });
+    context.clock.set(now);
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    return res;
+  }
+
+  async function seatTodayOf(id: string): Promise<AdminUser['seatToday'] | undefined> {
+    const list = await asAdmin('get', '/api/users?pageSize=200');
+    return (list.body as UserListResponse).items.find((user) => user.id === id)?.seatToday;
+  }
+
+  it('shows the seat of a student logged in now, and none for one who has not come', async () => {
+    const here = await studentWithPassword('Ayesha Khan');
+    const away = await studentWithPassword('Bilal Ahmed');
+    await logIn(here.user.username);
+
+    expect(await seatTodayOf(here.user.id)).toEqual({
+      seatCode: 'T1',
+      labName: 'Test lab',
+      loggedIn: true,
+    });
+    expect(await seatTodayOf(away.user.id)).toBeNull();
+    expect(await seatTodayOf(world.teacherId)).toBeNull();
+  });
+
+  it('keeps the seat after the student logs out, saying they are no longer there', async () => {
+    const created = await studentWithPassword('Ayesha Khan');
+    const login = await logIn(created.user.username);
+    const logout = await http()
+      .post('/api/auth/logout')
+      .set('Authorization', `Bearer ${login.body.accessToken as string}`)
+      .send({ refreshToken: login.body.refreshToken });
+    expect(logout.status).toBe(204);
+
+    expect(await seatTodayOf(created.user.id)).toEqual({
+      seatCode: 'T1',
+      labName: 'Test lab',
+      loggedIn: false,
+    });
+  });
+
+  it('counts the day in Karachi time: 00:30 there is today, 23:30 the night before is not', async () => {
+    const early = await studentWithPassword('Ayesha Khan');
+    const late = await studentWithPassword('Bilal Ahmed');
+    await logIn(early.user.username, '2026-11-01T19:30:00.000Z');
+    await logIn(late.user.username, '2026-11-01T18:30:00.000Z');
+
+    expect((await seatTodayOf(early.user.id))?.seatCode).toBe('T1');
+    expect(await seatTodayOf(late.user.id)).toBeNull();
+  });
+
+  it('shows the latest seat when the student moved to another PC', async () => {
+    const created = await studentWithPassword('Ayesha Khan');
+    await logIn(created.user.username, '2026-11-02T05:00:00.000Z');
+    const other = await labPc(prisma, 'another-pc');
+    await logIn(created.user.username, '2026-11-02T06:00:00.000Z', other.key);
+
+    expect(await seatTodayOf(created.user.id)).toEqual({
+      seatCode: other.seatCode,
+      labName: 'Test lab',
+      loggedIn: true,
+    });
+  });
+
+  it('shows it on a single account too', async () => {
+    const created = await studentWithPassword('Ayesha Khan');
+    await logIn(created.user.username);
+
+    const res = await asAdmin('get', `/api/users/${created.user.id}`);
+
+    expect((res.body as AdminUser).seatToday).toMatchObject({ seatCode: 'T1', loggedIn: true });
   });
 });
 

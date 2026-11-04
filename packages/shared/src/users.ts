@@ -103,6 +103,12 @@ export const listUsersQuerySchema = z.object({
 });
 
 /** An account as the admin panel shows it. Never the password hash. */
+export const seatTodaySchema = z.object({
+  seatCode: z.string(),
+  labName: z.string(),
+  loggedIn: z.boolean(),
+});
+
 export const adminUserSchema = z.object({
   id: z.uuid(),
   username: z.string(),
@@ -120,6 +126,12 @@ export const adminUserSchema = z.object({
   rollNo: z.string().nullable(),
   /** A teacher's modules; empty for everyone else. */
   subjects: z.array(z.string()),
+  /**
+   * Where a student last logged in today, in the institute's time, and whether
+   * they are still logged in there; null for staff and for a student who has
+   * not logged in today.
+   */
+  seatToday: seatTodaySchema.nullable(),
   createdAt: z.iso.datetime({ offset: true }),
 });
 
@@ -231,3 +243,5 @@ export type ImportRowErrorCode = (typeof IMPORT_ROW_ERROR_CODES)[number];
 export type ImportCreatedRow = z.infer<typeof importCreatedRowSchema>;
 export type ImportResponse = z.infer<typeof importResponseSchema>;
 export type ImportFileReason = (typeof IMPORT_FILE_REASONS)[number];
+
+export type SeatToday = z.infer<typeof seatTodaySchema>;
