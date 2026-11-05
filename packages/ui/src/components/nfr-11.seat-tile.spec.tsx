@@ -93,6 +93,30 @@ describe('NFR-11 Seat tile', () => {
     expect(onSelect).toHaveBeenCalledOnce();
   });
 
+  it('names a seat with no PC bound to it, for the seat map (A-07)', () => {
+    render(<SeatTile seatCode="E6" state="no-pc" onSelect={() => {}} />);
+
+    const tile = screen.getByRole('button', { name: 'E6, no PC' });
+    expect(tile).toHaveTextContent('No PC');
+    expect(tile).toHaveClass('bg-empty', 'border-dashed');
+  });
+
+  it("shows and announces the PC's name when given one (A-07)", () => {
+    render(
+      <SeatTile
+        seatCode="D3"
+        hostname="LAB1-D3"
+        studentName="Ayesha Khan"
+        state="online"
+        onSelect={() => {}}
+      />,
+    );
+
+    const tile = screen.getByRole('button', { name: 'D3, PC LAB1-D3, Ayesha Khan, online' });
+    expect(screen.getByText('LAB1-D3')).toHaveClass('font-mono');
+    expect(tile).toHaveTextContent('LAB1-D3');
+  });
+
   it('prints the seat code in the mono font', () => {
     render(<SeatTile seatCode="D5" state="empty" onSelect={() => {}} />);
 

@@ -17,7 +17,7 @@ import { generateFirstPassword } from '../auth/generate-password.js';
 import type { Prisma, User } from '../generated/prisma/index.js';
 import {
   ACCOUNT_TRANSACTION,
-  ACCOUNT_VIEW,
+  accountView,
   classesByCode,
   endSessions,
   lockAccounts,
@@ -60,17 +60,17 @@ export class UsersService {
 
   async list(query: ListUsersQuery): Promise<UserListResponse> {
     const filter = this.filterFor(query);
+    const now = this.clock.now();
     const [total, users] = await this.prisma.$transaction([
       this.prisma.user.count({ where: filter }),
       this.prisma.user.findMany({
         where: filter,
-        include: ACCOUNT_VIEW,
+        include: accountView(now),
         orderBy: orderOf(query.sort),
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
       }),
     ]);
-    const now = this.clock.now();
     return {
       items: users.map((user) => toAdminUser(user, now)),
       total,
@@ -113,11 +113,12 @@ export class UsersService {
   }
 
   async get(id: string): Promise<AdminUser> {
-    const user = await this.prisma.user.findUnique({ where: { id }, include: ACCOUNT_VIEW });
+    const now = this.clock.now();
+    const user = await this.prisma.user.findUnique({ where: { id }, include: accountView(now) });
     if (user === null) {
       throw notFound();
     }
-    return toAdminUser(user, this.clock.now());
+    return toAdminUser(user, now);
   }
 
   async create(actor: User, request: CreateUserRequest, ip: string): Promise<CreateUserResponse> {

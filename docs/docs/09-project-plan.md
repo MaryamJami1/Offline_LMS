@@ -52,7 +52,10 @@ Every task below is done test-first: write the failing test (named after the req
 - [x] Labs (one or more), seat maps, PC registration and approval, device keys (ADM-04)
 - [x] Student login at any PC with device_logins; one login per student (STU-01) — students log in only at an approved, seated PC (`X-Device-Key`); a login ends the student's older login and whoever was at that PC (reason `replaced`), and the replaced PC's leftover token is refused without ending anything; reuse detection now frees the seat (reason `revoked`); the student's refresh token carries the PC, which turns on the NFR-13 retry window; a password change at the student's own PC keeps the seat; `GET /devices/me` tells the login screen where it is. Linking the login to the class session's attendance comes with LAB-03
 - [x] UI kit in `packages/ui` (NFR-11; T-NFR-11a, T-NFR-11b) — design tokens and the Tailwind 4 theme, IBM Plex from @fontsource, Button, Seat tile, Control button, Tab rail, Card, Badge, Progress bar, Level meter, Toast, Modal, Table, Option buttons and form fields on Radix, and `BrandingProvider`, which reads the public `GET /settings/branding` and keeps "Lab" in the default blue until it answers or when the main colour would fail contrast. The media components come with MOD-01, MOD-04 and MOD-10
-- [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype — move the permissions table out of the T-ACL-01 test into `packages/shared` as part of this, so the panel hides buttons from the same source the server refuses by
+- [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype — move the permissions table out of the T-ACL-01 test into `packages/shared` as part of this, so the panel hides buttons from the same source the server refuses by. In three pull requests:
+  - [x] The permissions table in `packages/shared` (`PERMISSIONS`, `may()`), which T-ACL-01 checks against 06 cell by cell and every endpoint against; `seatToday` on `GET /users` for A-02; Select field, Checkbox group, Side navigation and the seat map's "no PC" tile in `packages/ui`
+  - [ ] `apps/admin` (React, Vite, TanStack Query, React Router): login and the five screens, test-first
+  - [ ] Real builds for `packages/shared` and the server, the Playwright journey (log in, import students, approve a PC, bind it to a seat), and a strict Content-Security-Policy for the panel in the Caddyfile
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
 **Deliverables:** admin panel for setup; student app that logs in.
@@ -79,6 +82,7 @@ Every task below is done test-first: write the failing test (named after the req
     prefix, so `/livekit/*` returns a 404 until this is done — found during the Phase 0 Docker
     re-check. Contract in 04-api-and-events.md (Media rooms) and 06-security-and-data.md
     (Transport); test it first, through Caddy, not against port 7880.
+- [ ] Before Gate 1: the server joins `infra/docker-compose.yml`, and the end-to-end journeys also run through Caddy over HTTPS, as the lab reaches them. Until then the Playwright journey of Phase 1 runs against the built server and `vite preview` directly
 - [ ] Whole Talk (part of LAB-09)
 - [ ] Lock, unlock, message, launch activity (LAB-13)
 - [ ] White Board (LAB-06)

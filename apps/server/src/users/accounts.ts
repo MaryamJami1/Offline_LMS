@@ -1,4 +1,4 @@
-import type { AdminUser } from '@lingualab/shared';
+import { startOfInstituteDay, type AdminUser } from '@lingualab/shared';
 import type { Prisma } from '../generated/prisma/index.js';
 
 /**
@@ -32,19 +32,29 @@ export function studentIdFor(number: number): string {
   return `S-${number}`;
 }
 
-/** Everything an account is shown with. */
-export const ACCOUNT_VIEW = {
-  studentProfile: true,
-  teacherProfile: true,
-  enrollments: {
-    where: { status: 'active' },
-    include: { class: true },
-    orderBy: { class: { code: 'asc' } },
-  },
-  classesTaught: { include: { class: true }, orderBy: { class: { code: 'asc' } } },
-} satisfies Prisma.UserInclude;
+/** Everything an account is shown with, as it stands at 
+ow. */
+export function accountView(now: Date) {
+  return {
+    studentProfile: true,
+    teacherProfile: true,
+    enrollments: {
+      where: { status: 'active' },
+      include: { class: true },
+      orderBy: { class: { code: 'asc' } },
+    },
+    classesTaught: { include: { class: true }, orderBy: { class: { code: 'asc' } } },
+    // Today's seat (A-02): the latest login since midnight at the institute.
+    deviceLogins: {
+      where: { loggedInAt: { gte: startOfInstituteDay(now) } },
+      include: { seat: { include: { labRoom: true } } },
+      orderBy: { loggedInAt: 'desc' },
+      take: 1,
+    },
+  } satisfies Prisma.UserInclude;
+}
 
-export type AccountRow = Prisma.UserGetPayload<{ include: typeof ACCOUNT_VIEW }>;
+export type AccountRow = Prisma.UserGetPayload<{ include: ReturnType<typeof accountView> }>;
 
 /** An account as the admin panel shows it: never the hash or the lockout counter. */
 export function toAdminUser(user: AccountRow, now: Date): AdminUser {
@@ -66,7 +76,20 @@ export function toAdminUser(user: AccountRow, now: Date): AdminUser {
     classes: taught.map((taughtClass) => ({ code: taughtClass.code, name: taughtClass.name })),
     rollNo: user.studentProfile?.rollNo ?? null,
     subjects: user.teacherProfile?.subjects ?? [],
+    seatToday: seatTodayOf(user),
     createdAt: user.createdAt.toISOString(),
+  };
+}
+
+function seatTodayOf(user: AccountRow): AdminUser['seatToday'] {
+  const [latest] = user.deviceLogins;
+  if (latest === undefined) {
+    return null;
+  }
+  return {
+    seatCode: latest.seat.code,
+    labName: latest.seat.labRoom.name,
+    loggedIn: latest.loggedOutAt === null,
   };
 }
 
