@@ -56,6 +56,8 @@ The release comes as an offline bundle (`lingualab-server-<version>.zip`) with t
 
 **Upgrades:** copy the new bundle, `docker load`, then `docker compose up -d`. Database migrations run automatically, and a backup is taken first.
 
+**Developing the admin panel:** `pnpm --filter @lingualab/admin dev` serves it at `http://localhost:5173` and sends `/api` to the server on port 3000 of the same machine; `pnpm --filter @lingualab/admin build` writes the static files to `apps/admin/dist`, which the server's image will serve. The server's own build and start script come with Phase 1 task 10c.
+
 ## Installing the teacher and student apps
 
 **Student app (each lab PC)**

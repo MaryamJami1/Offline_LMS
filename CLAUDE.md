@@ -86,7 +86,7 @@ pnpm dev             # server + admin + apps in dev mode
 - [x] UI kit in `packages/ui` (NFR-11; T-NFR-11a, T-NFR-11b) — design tokens and the Tailwind 4 theme, IBM Plex from @fontsource, Button, Seat tile, Control button, Tab rail, Card, Badge, Progress bar, Level meter, Toast, Modal, Table, Option buttons and form fields on Radix, and `BrandingProvider`, which reads the public `GET /settings/branding` and keeps "Lab" in the default blue until it answers or when the main colour would fail contrast. The media components come with MOD-01, MOD-04 and MOD-10
 - [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype — move the permissions table out of the T-ACL-01 test into `packages/shared` as part of this, so the panel hides buttons from the same source the server refuses by. Three pull requests:
   - [x] (a) `PERMISSIONS` and `may()` in `packages/shared`, checked by T-ACL-01 against 06 and against every endpoint; `seatToday` on `GET /users`; Select field, Checkbox group, Side navigation and the "no PC" seat tile
-  - [ ] (b) `apps/admin`: login and the five screens, test-first; columns and cards with no data yet stay hidden (05)
+  - [x] (b) `apps/admin`: login and the five screens, test-first against a fake `AdminApi`; an API client that keeps the access token in memory and the refresh token in sessionStorage and sends requests refused at once to one refresh; columns and cards with no data yet stay hidden (05); a mandatory password change before anything else
   - [ ] (c) real builds for `packages/shared` and the server, the Playwright journey, and a strict Content-Security-Policy in the Caddyfile
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
