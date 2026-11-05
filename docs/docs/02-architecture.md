@@ -37,7 +37,7 @@ Teacher PC (Electron console) ──┐                 ┌── Admin (any bro
 | Screen and voice        | LiveKit server (self-hosted SFU) + livekit-client                                                                                                                                                          | Teacher uploads once, server forwards to every seat; runs offline                                                                                               |
 | Teacher console         | Electron + React + Vite + Tailwind + shadcn/ui                                                                                                                                                             | Silent screen capture (desktopCapturer), native window                                                                                                          |
 | Student app             | Electron + React (same UI kit)                                                                                                                                                                             | Kiosk mode, input lock, auto-start, microphone recording                                                                                                        |
-| Admin panel             | React + Vite web app, served by the server                                                                                                                                                                 | Opens in any browser; nothing to install                                                                                                                        |
+| Admin panel             | React + Vite web app with React Router, served by the server                                                                                                                                               | Opens in any browser; nothing to install                                                                                                                        |
 | White board             | Excalidraw (MIT licence)                                                                                                                                                                                   | Strokes travel as small data messages, not video                                                                                                                |
 | State and data fetching | TanStack Query + Zustand                                                                                                                                                                                   | Server data cached; small local state stores                                                                                                                    |
 | Validation              | Zod schemas in a shared package                                                                                                                                                                            | The same rules check data on the server and in the apps                                                                                                         |
@@ -53,21 +53,24 @@ Teacher PC (Electron console) ──┐                 ┌── Admin (any bro
 
 **Pinned versions.** These are kept at exact versions, never `^` ranges:
 
-| Piece                                                                | Version                                     | Where it is pinned                                  |
-| -------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------- |
-| LiveKit server                                                       | `v1.13.11`                                  | `infra/docker-compose.yml` (image tag)              |
-| `livekit-client`                                                     | `2.23.0`                                    | each app's `package.json`                           |
-| `livekit-server-sdk`                                                 | `2.19.2`                                    | the server's `package.json`                         |
-| `electron`                                                           | `44.9.3`                                    | `apps/teacher`, `apps/student` packages             |
-| `tailwindcss`                                                        | `4.3.4`                                     | `packages/ui`                                       |
-| `@radix-ui/react-slot`, `-tabs`, `-toast`, `-dialog`, `-radio-group` | `1.5.0`, `1.2.1`, `1.3.1`, `1.3.1`, `1.5.1` | `packages/ui`                                       |
-| `class-variance-authority`, `clsx`, `tailwind-merge`                 | `0.7.1`, `2.1.1`, `3.7.0`                   | `packages/ui`                                       |
-| `@fontsource/ibm-plex-sans`, `-mono`, `-serif`                       | `5.3.0`                                     | `packages/ui`                                       |
-| `react`, `react-dom`                                                 | `19.3.1`                                    | `packages/ui` (dev; a peer dependency for the apps) |
+| Piece                                                                | Version                                     | Where it is pinned                                                |
+| -------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------- |
+| LiveKit server                                                       | `v1.13.11`                                  | `infra/docker-compose.yml` (image tag)                            |
+| `livekit-client`                                                     | `2.23.0`                                    | each app's `package.json`                                         |
+| `livekit-server-sdk`                                                 | `2.19.2`                                    | the server's `package.json`                                       |
+| `electron`                                                           | `44.9.3`                                    | `apps/teacher`, `apps/student` packages                           |
+| `tailwindcss`                                                        | `4.3.4`                                     | `packages/ui`                                                     |
+| `@radix-ui/react-slot`, `-tabs`, `-toast`, `-dialog`, `-radio-group` | `1.5.0`, `1.2.1`, `1.3.1`, `1.3.1`, `1.5.1` | `packages/ui`                                                     |
+| `class-variance-authority`, `clsx`, `tailwind-merge`                 | `0.7.1`, `2.1.1`, `3.7.0`                   | `packages/ui`                                                     |
+| `@fontsource/ibm-plex-sans`, `-mono`, `-serif`                       | `5.3.0`                                     | `packages/ui`                                                     |
+| `react`, `react-dom`                                                 | `19.3.1`                                    | `packages/ui` (dev; a peer dependency for the apps), `apps/admin` |
+| `vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`                  | `8.3.5`, `6.2.1`, `4.3.4`                   | `apps/admin` (dev)                                                |
+| `@tanstack/react-query`                                              | `5.106.0`                                   | `apps/admin`                                                      |
+| `react-router`                                                       | `8.5.1`                                     | `apps/admin`                                                      |
+| `@node-rs/argon2`                                                    | `2.2.2`                                     | the server's `package.json`                                       |
+| `tsx`                                                                | `4.23.15`                                   | the server's `package.json` (dev only)                            |
 
-`@tailwindcss/vite` is approved too, pinned when the first app gets its Vite build (the admin panel, A-01).
-| `@node-rs/argon2` | `2.2.2` | the server's `package.json` |
-| `tsx` | `4.23.15` | the server's `package.json` (dev only) |
+**Routing** in the browser apps is React Router: the admin panel's sections each have an address, so the browser's Back button and a page reload keep the admin where they were.
 
 Upgrade the three LiveKit pieces together, and re-check the broadcast after any bump: a server
 older than the client makes the client try the current `/rtc/v1` signalling path, take a 404 and

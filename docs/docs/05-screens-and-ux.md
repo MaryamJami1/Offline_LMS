@@ -85,6 +85,16 @@ The tokens live in `packages/ui/src/tokens.ts`; `packages/ui/src/theme.css` turn
 | A-10 | Settings      | Branding (software name, logo, main colour), institute, grading, backup time                                      | ADM-07         | In prototype                                     | 29         |
 | A-11 | Audit log     | Searchable list                                                                                                   | ADM-09         | To design                                        |            |
 
+**Admin panel as built in Phase 1 (A-01 to A-04, A-07).** Nothing is shown that the server cannot say yet; each hidden part appears when its requirement is built:
+
+- **Side bar:** lists only the sections that exist (Dashboard, Students, Teachers, Classes, Lab and seats), each shown by its row of the shared permissions table. Content, Reports, Backups and Settings join it with A-05, A-08, A-09 and A-10; their addresses answer "Not here yet" until then. The prototype's "Server running" box and Switch role link are left out; the bottom of the bar says who is logged in, with Log out. The software name, institute and logo come from the branding.
+- **Login:** the panel is for the admin. A teacher or student who logs in is logged out again with "This panel is for the admin. Teachers use the teacher console." A first-login account changes its password before anything else. A locked account is told when it opens again, in Karachi time.
+- **A-01 Dashboard:** Students, Teachers, Classes, and one "PCs online" card per lab. "Needs attention" lists offline PCs by lab and seat, and new PCs waiting for approval. The Lessons card (MOD-05), "In the lab now" (LAB-01) and "submissions to mark" (MOD-07) are hidden.
+- **A-02 Students:** ID, Name, Class, Today's seat (the latest seat since midnight, with "logged out" once that login has ended, or "Not today"), Status and Reset password. Status is the account's own state (Active, First login, Locked, Inactive). Attendance, Average and Present/Absent are hidden until LAB-03 and MOD-08. The class filter is part of the address (`/students?class=B-12`), so Manage students on Classes opens it.
+- **A-03 Teachers and A-04 Classes:** as in the prototype. New class has the batch, lab, days, start time, length and teachers. Courses and batches have no screen yet.
+- **A-07 Lab and seats:** a lab picker; the seat map with the back row at the top and "Front of room" at the bottom, and a walkway where the layout has one. A seat's details give its PC, IP address, app version, last seen (Karachi time) and who is logged in, with **Take PC off seat**, or **Bind PC** for a seat with none. **New PCs waiting** approves each new PC onto a free seat of the lab. Edit room layout, Check connection, new labs, and retiring or resetting a PC are not on the screen yet; the server already supports all but Check connection.
+- **First passwords** (Add student, Add teacher, Import, Reset password) are shown once, in the mono font, with a reminder to write them on the slip.
+
 ## Interaction rules and accessibility
 
 **Rules every screen follows**

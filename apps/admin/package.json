@@ -4,10 +4,29 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "echo \"not yet\"",
-    "dev": "echo \"not yet\"",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest run",
-    "lint": "eslint src/",
+    "lint": "eslint src/ vite.config.ts",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lingualab/shared": "workspace:*",
+    "@lingualab/ui": "workspace:*",
+    "@tanstack/react-query": "5.106.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.4",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "tailwindcss": "4.3.4",
+    "vite": "8.3.5"
   }
 }

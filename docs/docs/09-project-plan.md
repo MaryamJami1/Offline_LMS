@@ -54,7 +54,7 @@ Every task below is done test-first: write the failing test (named after the req
 - [x] UI kit in `packages/ui` (NFR-11; T-NFR-11a, T-NFR-11b) — design tokens and the Tailwind 4 theme, IBM Plex from @fontsource, Button, Seat tile, Control button, Tab rail, Card, Badge, Progress bar, Level meter, Toast, Modal, Table, Option buttons and form fields on Radix, and `BrandingProvider`, which reads the public `GET /settings/branding` and keeps "Lab" in the default blue until it answers or when the main colour would fail contrast. The media components come with MOD-01, MOD-04 and MOD-10
 - [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype — move the permissions table out of the T-ACL-01 test into `packages/shared` as part of this, so the panel hides buttons from the same source the server refuses by. In three pull requests:
   - [x] The permissions table in `packages/shared` (`PERMISSIONS`, `may()`), which T-ACL-01 checks against 06 cell by cell and every endpoint against; `seatToday` on `GET /users` for A-02; Select field, Checkbox group, Side navigation and the seat map's "no PC" tile in `packages/ui`
-  - [ ] `apps/admin` (React, Vite, TanStack Query, React Router): login and the five screens, test-first
+  - [x] `apps/admin` (React, Vite, TanStack Query, React Router): login and the five screens, test-first, against a fake of the API; the tokens and the single shared refresh in its own API client; the parts with no data yet hidden (05)
   - [ ] Real builds for `packages/shared` and the server, the Playwright journey (log in, import students, approve a PC, bind it to a seat), and a strict Content-Security-Policy for the panel in the Caddyfile
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
