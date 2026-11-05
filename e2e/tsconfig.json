@@ -2,9 +2,10 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["src"],
+  "include": ["src", "playwright.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

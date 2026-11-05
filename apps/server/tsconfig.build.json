@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "declarationMap": false,
+    // Node runs the compiled shared package, so its types come from there too.
+    "customConditions": []
+  },
+  "include": ["src", "prisma/seed.ts"],
+  "exclude": ["node_modules", "dist", "src/generated", "src/**/*.spec.ts", "test"]
+}

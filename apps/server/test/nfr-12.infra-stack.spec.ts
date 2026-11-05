@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { connect } from 'node:tls';
+import { get as httpsGet } from 'node:https';
+import { readFile } from 'node:fs/promises';
 import type { PeerCertificate } from 'node:tls';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -88,6 +90,20 @@ function certificateWithoutSni(host: string, port: number): Promise<PeerCertific
   });
 }
 
+// The header Caddy actually sends on the panel's address. The certificate is
+// Caddy's own, so it is not checked here; the tests above check it.
+function headerFromCaddy(lanIp: string, name: string): Promise<string | undefined> {
+  return new Promise((resolve, reject) => {
+    const req = httpsGet(`https://${lanIp}/`, { rejectUnauthorized: false }, (res) => {
+      res.resume();
+      const value = res.headers[name.toLowerCase()];
+      resolve(Array.isArray(value) ? value.join(', ') : value);
+    });
+    req.setTimeout(8000, () => req.destroy(new Error(`https://${lanIp}/ timed out`)));
+    req.on('error', reject);
+  });
+}
+
 describe('NFR-12 the Docker stack is up', () => {
   it('runs postgres, livekit and caddy', async () => {
     const running = (await composePs())
@@ -148,6 +164,17 @@ describe('NFR-13 Caddy serves the lab over HTTPS', () => {
     const cert = await certificateWithoutSni(lanIp, 443);
 
     expect(cert.subjectaltname ?? '').toContain(lanIp);
+  });
+
+  it("sends the admin panel's Content-Security-Policy, as infra/Caddyfile writes it", async () => {
+    const lanIp = await labAddress();
+    const caddyfile = await readFile(join(dirname(composeFile), 'Caddyfile'), 'utf8');
+    const written = /header\s+Content-Security-Policy\s+"([^"]+)"/.exec(caddyfile)?.[1];
+
+    const sent = await headerFromCaddy(lanIp, 'Content-Security-Policy');
+
+    expect(written, 'infra/Caddyfile has no Content-Security-Policy').toBeTruthy();
+    expect(sent, START_THE_STACK).toBe(written);
   });
 });
 

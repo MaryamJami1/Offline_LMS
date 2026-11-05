@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "echo \"not yet\"",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-prisma-client.mjs",
     "dev": "echo \"not yet\"",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -13,9 +13,10 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "node dist/prisma/seed.js",
     "db:reset": "prisma migrate reset --force",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "start": "node dist/src/main.js"
   },
   "devDependencies": {
     "@nestjs/testing": "^12.2.0",
@@ -24,8 +25,7 @@
     "@types/supertest": "^7.2.1",
     "fflate": "0.8.3",
     "prisma": "7.10.1",
-    "supertest": "^7.3.1",
-    "tsx": "4.23.15"
+    "supertest": "^7.3.1"
   },
   "dependencies": {
     "@lingualab/shared": "workspace:*",
@@ -36,6 +36,7 @@
     "@node-rs/argon2": "2.2.2",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "7.10.1",
+    "@prisma/client-runtime-utils": "7.10.1",
     "pg": "^8.16.3",
     "read-excel-file": "9.3.14",
     "reflect-metadata": "^0.2.2",

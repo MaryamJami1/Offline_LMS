@@ -11,6 +11,15 @@
 {$LAN_IP}:443 {
 	tls internal
 
+	# The admin panel keeps its refresh token in sessionStorage, so the page may
+	# run only its own scripts: no inline code, no eval, nothing from another
+	# address. vite preview reads this line too (apps/admin/src/csp.ts), so the
+	# end-to-end journey runs under exactly this policy. NFR-13; see 06.
+	# The one exception is style-src-elem 'unsafe-inline': Radix's dialogs add
+	# <style> elements whose content changes (the scrollbar's width), so no hash
+	# can name them. A style cannot run code or read the token.
+	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; style-src-elem 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
 	handle /api/* {
 		reverse_proxy server:3000
 	}
