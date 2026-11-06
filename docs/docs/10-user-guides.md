@@ -59,7 +59,7 @@ Short step-by-step guides for teachers, students and the admin. They will become
 5. Need help? Press **Raise hand**. Your teacher sees it and can talk to you in your headset.
 6. When your teacher shares their screen, locks screens or starts a quiz, your screen changes by itself. Wait for your teacher to stop it.
 7. See your marks and your teacher's comments in **My results**.
-8. Press **Log out** when you leave. If you forget, you are logged out at the end of class.
+8. Press **Log out** when you leave. If you forget, you are logged out at the end of class, or after 30 minutes without touching the keyboard or mouse.
 
 Your work is saved to your account, not the computer, so you can sit at a different PC next time.
 
@@ -91,6 +91,8 @@ Open `https://192.168.10.2` (or `https://lingualab.local`) in any browser on the
 - To restore: **Backups** › choose a backup › **Restore** › type the admin password. The lab is unavailable for a few minutes.
 
 **Passwords:** **Students** or **Teachers** › find the person › **Reset password** gives a new first-login password. Teachers can also reset passwords for students in their own classes. Locked accounts unlock after 10 minutes, or straight away from the same page.
+
+**Closing the student app on a lab PC:** press **Ctrl+Alt+Shift+Q**, type the exit PIN and press **Close app**. A student who is logged in is logged out first. The server checks the PIN, so if it is down the app cannot be closed this way: press Ctrl+Alt+Del and switch to the admin Windows account instead. Keep the shortcut to the admin and the lab technician; it is not in the student guide on purpose.
 
 **The exit PIN:** a six-digit PIN closes the student app on a lab PC. Change the first one straight after installing: on the **Dashboard**, under **Needs attention**, press **Change** beside "The student app still has the first exit PIN", type the new PIN twice and your own password. Every lab PC uses the new PIN at once. Five wrong PINs at one PC lock that PC out for 15 minutes. Keep the PIN to the admin and the lab technician.
 

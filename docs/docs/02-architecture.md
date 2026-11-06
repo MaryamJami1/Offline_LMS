@@ -125,7 +125,7 @@ lingualab/
 │  │  ├─ src/modules/  auth, users, classes, lab, sessions, lessons, quizzes, grading, reports, backups
 │  │  └─ test/         integration and API tests (Supertest)
 │  ├─ teacher/       Electron + React teacher console
-│  ├─ student/       Electron + React student app
+│  ├─ student/       Electron + React student app (src/main, src/preload, src/renderer)
 │  └─ admin/         React web admin panel
 ├─ packages/
 │  ├─ shared/        Zod schemas, TypeScript types, event names, constants
