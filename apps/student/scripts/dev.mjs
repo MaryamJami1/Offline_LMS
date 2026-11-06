@@ -14,7 +14,9 @@ const inRoot = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 
 await build({ configFile: inRoot('vite.main.config.ts'), root, logLevel: 'warn' });
 await build({ configFile: inRoot('vite.preload.config.ts'), root, logLevel: 'warn' });
-const screens = await createServer({ configFile: inRoot('vite.renderer.config.ts'), root });
+// No `root` here: it would override the config's src/renderer, and the
+// screens' index.html would not be found (a blank window).
+const screens = await createServer({ configFile: inRoot('vite.renderer.config.ts') });
 await screens.listen();
 const rendererUrl = screens.resolvedUrls?.local[0];
 if (rendererUrl === undefined) {
