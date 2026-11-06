@@ -1,0 +1,6 @@
+/*
+ * The UI kit's stylesheet brings Tailwind, the IBM Plex fonts from @fontsource
+ * and the design tokens; @source adds the classes the student screens use.
+ */
+@import '@lingualab/ui/styles.css';
+@source '.';

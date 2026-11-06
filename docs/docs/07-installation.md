@@ -66,6 +66,8 @@ JWT_SECRET=<at least 32 characters> pnpm --filter @lingualab/server start   # ht
 pnpm --filter @lingualab/admin preview       # the built panel at http://localhost:4173, under the lab's CSP
 ```
 
+**The student app on a developer laptop.** `pnpm --filter @lingualab/student dev` opens it in an ordinary window you can close, with the screens on Vite's dev server; the server address comes from `apps/student/lingualab.config.dev.json` (`http://localhost:3000`) unless `LINGUALAB_CONFIG` names another file, and `LINGUALAB_KIOSK=1` tries kiosk mode, which then closes only with the exit PIN (Ctrl+Alt+Shift+Q). `pnpm --filter @lingualab/student build` writes the screens, the main process and the preload script to `apps/student/dist`. Both variables are ignored by an installed app.
+
 The server reads `DATABASE_URL` (default: the compose database), `JWT_SECRET` (required) and `PORT` (default 3000). `pnpm --filter @lingualab/admin dev` serves the panel at `http://localhost:5173` with hot reload instead; it sends no Content-Security-Policy, because hot reload needs inline scripts. Both send `/api` to `LINGUALAB_SERVER`, by default `http://localhost:3000`. Until the server joins docker-compose (Phase 2), Caddy has nothing behind it, so the panel is reached on these ports rather than at `https://<LAN_IP>`.
 
 ## Installing the teacher and student apps
@@ -73,12 +75,12 @@ The server reads `DATABASE_URL` (default: the compose database), `JWT_SECRET` (r
 **Student app (each lab PC)**
 
 1. Log in to Windows as an administrator and run `LinguaLab-Student-Setup-<version>.exe` from a USB drive or from `https://192.168.10.2/downloads`.
-2. Enter the server address when asked. The installer adds the root certificate, the firewall rules and auto-start.
+2. Enter the server address when asked. The installer writes it to `lingualab.config.json` next to the app, as `{ "serverUrl": "https://192.168.10.2" }`, and adds the root certificate, the firewall rules and auto-start. A student cannot change the file; to move the lab to another server, edit it as an administrator.
 3. Create a standard (non-admin) Windows account for students that logs in automatically; the app starts with it.
 4. On first start the PC shows "Waiting for approval". In the admin panel, open Lab and seats, approve the PC and bind it to its seat (for example A1).
 5. The login screen now shows "This PC: LAB1-A1 · Seat A1". Test with a headset: the setup check plays a sound and records 3 seconds.
 
-To set up 30 PCs quickly, install on one PC, check it, then clone the disk image; each clone still registers itself and needs approval.
+To set up 30 PCs quickly, install on one PC, check it, then clone the disk image; each clone still registers itself and needs approval. Each PC keeps its device key with its network card's MAC address, so a clone, whose card is different, throws the copied key away and registers as itself. Taking the image before the app's first start avoids carrying a key at all.
 
 **Teacher console (teacher PC)**
 

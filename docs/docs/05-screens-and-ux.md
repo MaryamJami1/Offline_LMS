@@ -58,7 +58,7 @@ The tokens live in `packages/ui/src/tokens.ts`; `packages/ui/src/theme.css` turn
 
 | ID   | Screen               | Main contents                                                                               | Requirements   | Status       | Screenshot |
 | ---- | -------------------- | ------------------------------------------------------------------------------------------- | -------------- | ------------ | ---------- |
-| S-01 | Login                | This PC and seat, student ID, password                                                      | STU-01         | In prototype | 12         |
+| S-01 | Login                | This PC and seat, student ID, password                                                      | STU-01         | Built        | 12         |
 | S-02 | Dashboard            | Today's work, four module tiles with progress, feedback, coming up                          | STU-02         | In prototype | 13         |
 | S-03 | Listening exercise   | Audio player with play limit, questions, marking                                            | MOD-04         | In prototype | 14         |
 | S-04 | Reading exercise     | Passage, glossary, questions                                                                | MOD-02         | In prototype | 15         |
@@ -68,6 +68,8 @@ The tokens live in `packages/ui/src/tokens.ts`; `packages/ui/src/theme.css` turn
 | S-08 | Teacher takeovers    | Broadcast view, lock screen, quiz, message                                                  | STU-03         | In prototype | 19, 20, 21 |
 | S-09 | Module page          | Units and lessons of one module, done and to do                                             | MOD-06, MOD-08 | To design    |            |
 | S-10 | Video and PDF viewer | Video player (play, pause, seek, full screen) and PDF pages with zoom; no download or print | MOD-10         | To design    |            |
+
+**Around S-01**, built with the student app shell (STU-06, STU-07) and not in the prototype, in S-01's layout (the mark, a 26 px heading, the grey chip, a 420 px column): _Waiting for approval_ with "This PC: LAB1-A1"; _The server cannot be reached_, naming the address it is trying every 30 seconds; _This PC cannot join the lab_, saying what the admin has to do; _Choose a new password_ at a first login, with Log out; and, until S-02 comes with STU-02, a logged-in screen with "Hello, <name>", "S-1001 · LAB1-D3 · Seat D3" and Log out. S-01 shows why the student was logged out (idle, End class) above the form. The admin's PIN dialog, "Close the student app", opens over any screen on Ctrl+Alt+Shift+Q, and nothing on screen points to it.
 
 ### Admin panel
 
