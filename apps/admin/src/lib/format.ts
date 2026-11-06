@@ -42,3 +42,17 @@ export function problemOf(error: unknown): string {
   }
   return 'The server cannot be reached. Check the network and try again.';
 }
+
+const DAY = new Intl.DateTimeFormat('en-GB', {
+  timeZone: INSTITUTE_TIME_ZONE,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
+/** "Thursday, 5 November": today at the institute, under the Dashboard's title. */
+export function instituteDay(now: Date): string {
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    DAY.formatToParts(now).find((piece) => piece.type === type)?.value ?? '';
+  return `${part('weekday')}, ${part('day')} ${part('month')}`;
+}

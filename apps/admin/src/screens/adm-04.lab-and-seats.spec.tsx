@@ -72,6 +72,17 @@ describe('ADM-04 Lab and seats (A-07)', () => {
     expect(within(map).getByRole('button', { name: 'A3, no PC' })).toBeInTheDocument();
   });
 
+  it("draws compact seats, as the prototype's seat map does", async () => {
+    renderAdmin(loggedInAsAdmin(), '/lab');
+    const map = await seatMap();
+
+    const seats = await within(map).findAllByRole('button', { name: /^[AB]\d,/ });
+    expect(seats).toHaveLength(8);
+    for (const seat of seats) {
+      expect(seat).toHaveAttribute('data-size', 'compact');
+    }
+  });
+
   it('leaves a walkway where the layout has one', async () => {
     renderAdmin(loggedInAsAdmin(), '/lab');
     const map = await seatMap();

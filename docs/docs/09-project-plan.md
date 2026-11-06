@@ -56,6 +56,7 @@ Every task below is done test-first: write the failing test (named after the req
   - [x] The permissions table in `packages/shared` (`PERMISSIONS`, `may()`), which T-ACL-01 checks against 06 cell by cell and every endpoint against; `seatToday` on `GET /users` for A-02; Select field, Checkbox group, Side navigation and the seat map's "no PC" tile in `packages/ui`
   - [x] `apps/admin` (React, Vite, TanStack Query, React Router): login and the five screens, test-first, against a fake of the API; the tokens and the single shared refresh in its own API client; the parts with no data yet hidden (05)
   - [x] Real builds for `packages/shared` and the server (`pnpm build`, `start`, `PORT`), the Playwright journey (log in, import students, approve a PC, bind it to a seat; T-E2E-01) on a database made for each run, and a strict Content-Security-Policy for the panel in the Caddyfile (T-SEC-05)
+  - [ ] The screens checked against the prototype and brought to it: compact seat tiles and the seeded Lab 1 in pairs with walkways; the side menu's logo square, name, "Admin", 240 px width and 42 px items, and its "Server running · offline mode" box with Log out; the Dashboard's date line; the Students search and filter labelled for screen readers only. Edit room layout comes later
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
 **Deliverables:** admin panel for setup; student app that logs in.

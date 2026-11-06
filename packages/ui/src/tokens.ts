@@ -26,6 +26,8 @@ export const colours = {
   ink: '#0E1726',
   /** Secondary text. */
   'ink-muted': '#4A5565',
+  /** Raised parts of the dark side menu: a hovered item, the status box at its foot. */
+  'ink-raised': '#1B2638',
   /** Tab rail labels. */
   'ink-subtle': '#5A6577',
   /** Text on primary and live buttons. */
@@ -98,7 +100,7 @@ export const TEXT_PAIRS: readonly TextPair[] = [
   { text: 'on-primary', on: 'live', usedFor: 'danger button' },
   { text: 'on-primary', on: 'live-hover', usedFor: 'hovered danger button' },
   { text: 'on-primary', on: 'ink', usedFor: 'toast, side navigation' },
-  { text: 'on-primary', on: 'ink-muted', usedFor: 'hovered side navigation item' },
+  { text: 'on-primary', on: 'ink-raised', usedFor: 'hovered side navigation item, status box' },
   { text: 'primary', on: 'surface', usedFor: 'links' },
   { text: 'primary', on: 'primary-tint', usedFor: 'selected tab and control, info badge' },
   { text: 'primary', on: 'selected', usedFor: 'option letter when chosen' },

@@ -126,6 +126,12 @@ describe('Seed: lab', () => {
     expect(seats[29]?.code).toBe('E6');
   });
 
+  it('draws Lab 1 as the prototype does: desks in pairs, a walkway after every two seats', async () => {
+    const lab = await prisma.labRoom.findFirstOrThrow({ where: { name: 'Lab 1' } });
+
+    expect(lab.layout).toEqual({ pairs: true, aisles: [2, 4] });
+  });
+
   it('leaves the lab PCs to register themselves', async () => {
     expect(await prisma.device.count()).toBe(0);
     expect(await prisma.deviceLogin.count()).toBe(0);

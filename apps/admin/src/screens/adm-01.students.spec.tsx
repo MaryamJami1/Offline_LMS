@@ -75,6 +75,16 @@ describe('ADM-01 the Students screen (A-02)', () => {
     expect(screen.getByText('1 shown')).toBeInTheDocument();
   });
 
+  it('keeps the search box and class filter named for screen readers, with the labels out of view as in the prototype', async () => {
+    renderAdmin(loggedInAsAdmin(), '/students');
+    await studentsTable();
+
+    expect(screen.getByRole('searchbox', { name: 'Search students' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Class' })).toBeInTheDocument();
+    expect(screen.getByText('Search students', { selector: 'label' })).toHaveClass('sr-only');
+    expect(screen.getByText('Class', { selector: 'label' })).toHaveClass('sr-only');
+  });
+
   it('filters by class, keeping the class in the address', async () => {
     const view = renderAdmin(loggedInAsAdmin(), '/students');
     await studentsTable();

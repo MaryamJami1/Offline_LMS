@@ -8,25 +8,26 @@ The tokens live in `packages/ui/src/tokens.ts`; `packages/ui/src/theme.css` turn
 
 **Colours**
 
-| Token                          | Hex                              | Used for                                         |
-| ------------------------------ | -------------------------------- | ------------------------------------------------ |
-| `bg`                           | #F4F6F9                          | Page background                                  |
-| `surface`                      | #FFFFFF                          | Cards, panels, seat tiles                        |
-| `border` / `border-strong`     | #DDE3EA / #CBD3DD                | Card borders / buttons and inputs                |
-| `ink`                          | #0E1726                          | Main text; dark bars                             |
-| `ink-muted`                    | #4A5565                          | Secondary text (passes 4.5:1 on white)           |
-| `primary` / `primary-tint`     | #1D4ED8 / #E8EEFC                | Main buttons, selection, links, Speaking         |
-| `live` / `live-tint`           | #B42318 / #FDECEA                | Live controls, End class, on-call, errors        |
-| `success` / `success-tint`     | #157F3D / #E7F5EC                | Online dot, correct answers, Reading             |
-| `warning` / `warning-tint`     | #B45309 (text #9A4508) / #FDF1E3 | Hand raised, drafts, Writing                     |
-| `listening` / `listening-tint` | #6D28D9 / #F1EAFD                | Listening module                                 |
-| `offline`                      | #A7B1BE                          | Offline and empty seat dots (never text)         |
-| `muted` / `empty`              | #EEF1F5 / #FAFBFC                | Offline seat, muted badge, tracks / empty seat   |
-| `border-hover`                 | #8D99A8                          | Hovered buttons, seats and options               |
-| `ink-subtle`                   | #5A6577                          | Tab rail labels                                  |
-| `on-primary`                   | #FFFFFF                          | Text on primary, danger and toasts               |
-| `primary-hover` / `selected`   | #1E40AF / #F5F8FF                | Hovered primary button / selected seat or option |
-| `live-hover`                   | #912018                          | Hovered danger button                            |
+| Token                          | Hex                              | Used for                                                                       |
+| ------------------------------ | -------------------------------- | ------------------------------------------------------------------------------ |
+| `bg`                           | #F4F6F9                          | Page background                                                                |
+| `surface`                      | #FFFFFF                          | Cards, panels, seat tiles                                                      |
+| `border` / `border-strong`     | #DDE3EA / #CBD3DD                | Card borders / buttons and inputs                                              |
+| `ink`                          | #0E1726                          | Main text; dark bars                                                           |
+| `ink-muted`                    | #4A5565                          | Secondary text (passes 4.5:1 on white)                                         |
+| `ink-raised`                   | #1B2638                          | Raised parts of the dark side menu: a hovered item, the status box at its foot |
+| `primary` / `primary-tint`     | #1D4ED8 / #E8EEFC                | Main buttons, selection, links, Speaking                                       |
+| `live` / `live-tint`           | #B42318 / #FDECEA                | Live controls, End class, on-call, errors                                      |
+| `success` / `success-tint`     | #157F3D / #E7F5EC                | Online dot, correct answers, Reading                                           |
+| `warning` / `warning-tint`     | #B45309 (text #9A4508) / #FDF1E3 | Hand raised, drafts, Writing                                                   |
+| `listening` / `listening-tint` | #6D28D9 / #F1EAFD                | Listening module                                                               |
+| `offline`                      | #A7B1BE                          | Offline and empty seat dots (never text)                                       |
+| `muted` / `empty`              | #EEF1F5 / #FAFBFC                | Offline seat, muted badge, tracks / empty seat                                 |
+| `border-hover`                 | #8D99A8                          | Hovered buttons, seats and options                                             |
+| `ink-subtle`                   | #5A6577                          | Tab rail labels                                                                |
+| `on-primary`                   | #FFFFFF                          | Text on primary, danger and toasts                                             |
+| `primary-hover` / `selected`   | #1E40AF / #F5F8FF                | Hovered primary button / selected seat or option                               |
+| `live-hover`                   | #912018                          | Hovered danger button                                                          |
 
 **Branding can change:** the software name, logo and `primary` colour are loaded from Settings (`GET /settings/branding`) when each app starts, so the institute can rebrand without a new build. Every other colour stays fixed so contrast always passes. `BrandingProvider` in `packages/ui` replaces `primary` and makes `primary-hover` (18% darker), `primary-tint` (90% toward white) and `selected` (96% toward white) from it; the default blue keeps the exact values above. A main colour is used only if white text on it, and it on its own tint, both reach 4.5:1 (`isUsableBrandColour` in `packages/shared`); otherwise the app keeps the default blue. Until the server answers, or if it cannot, an app shows "Lab" in the default blue.
 
@@ -87,12 +88,12 @@ The tokens live in `packages/ui/src/tokens.ts`; `packages/ui/src/theme.css` turn
 
 **Admin panel as built in Phase 1 (A-01 to A-04, A-07).** Nothing is shown that the server cannot say yet; each hidden part appears when its requirement is built:
 
-- **Side bar:** lists only the sections that exist (Dashboard, Students, Teachers, Classes, Lab and seats), each shown by its row of the shared permissions table. Content, Reports, Backups and Settings join it with A-05, A-08, A-09 and A-10; their addresses answer "Not here yet" until then. The prototype's "Server running" box and Switch role link are left out; the bottom of the bar says who is logged in, with Log out. The software name, institute and logo come from the branding.
+- **Side bar:** lists only the sections that exist (Dashboard, Students, Teachers, Classes, Lab and seats), each shown by its row of the shared permissions table. Content, Reports, Backups and Settings join it with A-05, A-08, A-09 and A-10; their addresses answer "Not here yet" until then. It is 240 px wide with 42 px items, as in the prototype. At the top: the logo square in the main colour (the institute's logo from the branding, or a headset), the software name, and "Admin" under it. At the foot, a box in `ink-raised`: "Server running · offline mode" while the server answers its health check (asked every 30 seconds), "Server not answering" when it stops; the institute's name; who is logged in; and Log out. The prototype's "Last backup" line comes with A-09 (ADM-08); Switch role belongs to the prototype only.
 - **Login:** the panel is for the admin. A teacher or student who logs in is logged out again with "This panel is for the admin. Teachers use the teacher console." A first-login account changes its password before anything else. A locked account is told when it opens again, in Karachi time.
-- **A-01 Dashboard:** Students, Teachers, Classes, and one "PCs online" card per lab. "Needs attention" lists offline PCs by lab and seat, and new PCs waiting for approval. The Lessons card (MOD-05), "In the lab now" (LAB-01) and "submissions to mark" (MOD-07) are hidden.
-- **A-02 Students:** ID, Name, Class, Today's seat (the latest seat since midnight, with "logged out" once that login has ended, or "Not today"), Status and Reset password. Status is the account's own state (Active, First login, Locked, Inactive). Attendance, Average and Present/Absent are hidden until LAB-03 and MOD-08. The class filter is part of the address (`/students?class=B-12`), so Manage students on Classes opens it.
+- **A-01 Dashboard:** today's date under the title ("Thursday, 5 November", the institute's day in Karachi time). Students, Teachers, Classes, and one "PCs online" card per lab. "Needs attention" lists offline PCs by lab and seat, and new PCs waiting for approval. The Lessons card (MOD-05), "In the lab now" (LAB-01) and "submissions to mark" (MOD-07) are hidden.
+- **A-02 Students:** ID, Name, Class, Today's seat (the latest seat since midnight, with "logged out" once that login has ended, or "Not today"), Status and Reset password. Status is the account's own state (Active, First login, Locked, Inactive). Attendance, Average and Present/Absent are hidden until LAB-03 and MOD-08. The class filter is part of the address (`/students?class=B-12`), so Manage students on Classes opens it, and the line under the title then names the class ("Class B-12 · 15 shown"). The search box and the class filter keep their labels for screen readers but, as in the prototype, not on screen.
 - **A-03 Teachers and A-04 Classes:** as in the prototype. New class has the batch, lab, days, start time, length and teachers. Courses and batches have no screen yet.
-- **A-07 Lab and seats:** a lab picker; the seat map with the back row at the top and "Front of room" at the bottom, and a walkway where the layout has one. A seat's details give its PC, IP address, app version, last seen (Karachi time) and who is logged in, with **Take PC off seat**, or **Bind PC** for a seat with none. **New PCs waiting** approves each new PC onto a free seat of the lab. Edit room layout, Check connection, new labs, and retiring or resetting a PC are not on the screen yet; the server already supports all but Check connection.
+- **A-07 Lab and seats:** a lab picker; the seat map with the back row at the top and "Front of room" at the bottom, and a walkway where the layout has one. Seats are the UI kit's compact tile, as in the prototype: the seat code beside a dot, the PC's name or "No PC" under it; the dot is the PC's own state (green on, grey off), an offline PC is also dashed on grey, and the seat's card says the state in words. Seats sit 6 px apart, 22 px across a walkway; the seeded Lab 1 has desks in pairs with a walkway after seats 2 and 4. A seat's details give its PC, IP address, app version, last seen (Karachi time) and who is logged in, with **Take PC off seat**, or **Bind PC** for a seat with none. **New PCs waiting** approves each new PC onto a free seat of the lab. Edit room layout, Check connection, new labs, and retiring or resetting a PC are not on the screen yet; the server already supports all but Check connection.
 - **First passwords** (Add student, Add teacher, Import, Reset password) are shown once, in the mono font, with a reminder to write them on the slip.
 
 ## Interaction rules and accessibility

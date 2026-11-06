@@ -84,40 +84,49 @@ function SeatMap({
   const aisles = new Set(lab.layout.aisles);
   return (
     <Card title="Seat map" className="min-w-0 flex-[2_1_520px]">
-      <div className="flex flex-col gap-2 overflow-x-auto">
-        {rowsOf(seats).map(({ row, seats: rowSeats }) => (
-          <div key={row} role="group" aria-label={`Row ${row}`} className="flex items-center gap-2">
-            <span aria-hidden="true" className="w-6 text-sm text-ink-muted">
-              {row}
-            </span>
-            {rowSeats.flatMap((seat) => {
-              const tile = (
-                <SeatTile
-                  key={seat.id}
-                  seatCode={seat.code}
-                  hostname={seat.device?.hostname}
-                  studentName={seat.student?.fullName}
-                  state={stateOf(seat)}
-                  selected={seat.id === selected}
-                  onSelect={() => onSelect(seat.id)}
-                />
-              );
-              return aisles.has(seat.position)
-                ? [
-                    tile,
-                    <span
-                      key={`${seat.id}-walkway`}
-                      data-walkway
-                      aria-hidden="true"
-                      className="w-6 shrink-0"
-                    />,
-                  ]
-                : [tile];
-            })}
+      {/* The prototype's measures: 6 px inside a pair, 22 px across a walkway, 10 px between rows. */}
+      <div className="overflow-x-auto">
+        <div className="flex w-max flex-col gap-2.5">
+          {rowsOf(seats).map(({ row, seats: rowSeats }) => (
+            <div
+              key={row}
+              role="group"
+              aria-label={`Row ${row}`}
+              className="flex items-center gap-1.5"
+            >
+              <span aria-hidden="true" className="mr-4 w-4 font-mono text-sm text-ink-muted">
+                {row}
+              </span>
+              {rowSeats.flatMap((seat) => {
+                const tile = (
+                  <SeatTile
+                    key={seat.id}
+                    size="compact"
+                    seatCode={seat.code}
+                    hostname={seat.device?.hostname}
+                    studentName={seat.student?.fullName}
+                    state={stateOf(seat)}
+                    selected={seat.id === selected}
+                    onSelect={() => onSelect(seat.id)}
+                  />
+                );
+                return aisles.has(seat.position)
+                  ? [
+                      tile,
+                      <span
+                        key={`${seat.id}-walkway`}
+                        data-walkway
+                        aria-hidden="true"
+                        className="w-2.5 shrink-0"
+                      />,
+                    ]
+                  : [tile];
+              })}
+            </div>
+          ))}
+          <div className="ml-[38px] rounded-control bg-muted py-1.5 text-center text-[13px] text-ink-muted">
+            Front of room
           </div>
-        ))}
-        <div className="ml-8 rounded-control bg-muted py-1.5 text-center text-[13px] text-ink-muted">
-          Front of room
         </div>
       </div>
     </Card>

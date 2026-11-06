@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
-import { buildWorld, loggedInAsAdmin } from '../test/fake-api.js';
+import { NOW, buildWorld, loggedInAsAdmin } from '../test/fake-api.js';
 import { renderAdmin } from '../test/render-admin.js';
 
 /**
@@ -10,7 +10,27 @@ import { renderAdmin } from '../test/render-admin.js';
  * showing numbers that are not real.
  */
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe('ADM-06 the dashboard (A-01)', () => {
+  it("says today's date under the title, as the prototype does", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(NOW);
+    renderAdmin(loggedInAsAdmin());
+
+    expect(await screen.findByText('Thursday, 5 November')).toBeInTheDocument();
+  });
+
+  it("goes by the institute's day, not the computer's: 01:00 in Karachi is already the next day", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-05T20:00:00.000Z'));
+    renderAdmin(loggedInAsAdmin());
+
+    expect(await screen.findByText('Friday, 6 November')).toBeInTheDocument();
+  });
+
   it('shows how many students, teachers and classes there are', async () => {
     renderAdmin(loggedInAsAdmin());
 

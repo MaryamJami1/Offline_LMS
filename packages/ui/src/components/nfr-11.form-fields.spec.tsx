@@ -52,9 +52,27 @@ describe('NFR-11 Text field', () => {
     expect(screen.getByRole('textbox')).toHaveFocus();
     expect(screen.getByRole('textbox')).toHaveClass('min-h-10', 'focus-visible:outline-primary');
   });
+
+  it('can hide its label from view and still be named by it, as the search box on A-02 is', () => {
+    render(<TextField label="Search students" hideLabel placeholder="Search by name or ID" />);
+
+    expect(screen.getByRole('textbox', { name: 'Search students' })).toBeInTheDocument();
+    expect(screen.getByText('Search students')).toHaveClass('sr-only');
+  });
 });
 
 describe('NFR-11 Select field', () => {
+  it('can hide its label from view and still be named by it', () => {
+    render(
+      <SelectField label="Class" hideLabel defaultValue="">
+        <option value="">All classes</option>
+      </SelectField>,
+    );
+
+    expect(screen.getByRole('combobox', { name: 'Class' })).toBeInTheDocument();
+    expect(screen.getByText('Class')).toHaveClass('sr-only');
+  });
+
   it('is a list box named by its label, with its choices', async () => {
     const user = userEvent.setup();
     render(

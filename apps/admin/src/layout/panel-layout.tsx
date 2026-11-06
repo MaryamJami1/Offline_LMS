@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, Navigate, Outlet, useLocation, useMatch } from 'react-router';
 import { may, type Action } from '@lingualab/shared';
 import { Button, SideNav, SideNavItem, useBranding } from '@lingualab/ui';
+import { useServerStatus } from '../api/queries.js';
 import { useAdmin, useSession } from '../auth/session.js';
 import { ChangePasswordScreen } from '../screens/change-password.js';
 
@@ -27,29 +28,76 @@ function NavItem({ to, children }: { to: string; children: ReactNode }) {
   );
 }
 
+/** A headset, the mark the prototype draws when the institute has no logo of its own. */
+function HeadsetIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+      <path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z" />
+    </svg>
+  );
+}
+
+/** The logo square in the main colour, the software name, and "Admin" under it (05, A-01). */
 function Brand() {
-  const { softwareName, instituteName, logoUrl } = useBranding();
+  const { softwareName, logoUrl } = useBranding();
   return (
     <div className="flex items-center gap-2.5">
-      {logoUrl !== null && <img src={logoUrl} alt="" className="size-8 rounded-control" />}
+      <span
+        data-brand-mark
+        className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-control bg-primary text-on-primary"
+      >
+        {logoUrl === null ? <HeadsetIcon /> : <img src={logoUrl} alt="" className="size-full" />}
+      </span>
       <div className="flex flex-col">
         <span className="font-bold">{softwareName}</span>
-        {instituteName !== '' && <span className="text-[13px]">{instituteName}</span>}
+        <span className="text-[13px] text-on-primary">Admin</span>
       </div>
     </div>
+  );
+}
+
+/** "Server running · offline mode" while the server answers its health check. */
+function ServerStatus() {
+  const status = useServerStatus();
+  if (status.isPending) {
+    return null;
+  }
+  const running = status.isSuccess;
+  return (
+    <span className="flex items-center gap-1.5">
+      <span
+        aria-hidden="true"
+        className={running ? 'size-2 rounded-full bg-success' : 'size-2 rounded-full bg-live'}
+      />
+      {running ? 'Server running · offline mode' : 'Server not answering'}
+    </span>
   );
 }
 
 function PanelFrame() {
   const admin = useAdmin();
   const { logOut } = useSession();
+  const { instituteName } = useBranding();
   return (
     <div className="flex min-h-screen bg-bg">
       <SideNav
         label="Admin sections"
         header={<Brand />}
         footer={
-          <div className="flex flex-col gap-2 text-[13px]">
+          <div className="flex flex-col gap-2 rounded-[10px] bg-ink-raised p-3 text-[13px]">
+            <ServerStatus />
+            {instituteName !== '' && <span>{instituteName}</span>}
             <span>
               Logged in as <span className="font-semibold">{admin.fullName}</span>
             </span>

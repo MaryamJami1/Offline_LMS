@@ -51,6 +51,7 @@ describe('T-NFR-11a the colour tokens', () => {
       'border-strong': '#CBD3DD',
       ink: '#0E1726',
       'ink-muted': '#4A5565',
+      'ink-raised': '#1B2638',
       primary: '#1D4ED8',
       'primary-tint': '#E8EEFC',
       live: '#B42318',

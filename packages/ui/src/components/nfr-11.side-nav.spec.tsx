@@ -43,6 +43,13 @@ describe('NFR-11 Side navigation', () => {
     expect(screen.getByText('Logged in as admin')).toBeInTheDocument();
   });
 
+  it("has the prototype's measures: 240 px wide, items 42 px tall", () => {
+    render(<Nav current="Dashboard" />);
+
+    expect(screen.getByRole('complementary')).toHaveClass('w-60');
+    expect(screen.getByRole('link', { name: 'Students' })).toHaveClass('min-h-[42px]');
+  });
+
   it('marks the open section as the current page, not by colour alone', () => {
     render(<Nav current="Students" />);
 
@@ -67,7 +74,7 @@ describe('NFR-11 Side navigation', () => {
     expect(onPick).toHaveBeenCalledWith('Students');
     expect(screen.getByRole('link', { name: 'Students' })).toHaveClass(
       'focus-visible:outline-on-primary',
-      'min-h-10',
+      'min-h-[42px]',
     );
   });
 
