@@ -66,6 +66,12 @@ JWT_SECRET=<at least 32 characters> pnpm --filter @lingualab/server start   # ht
 pnpm --filter @lingualab/admin preview       # the built panel at http://localhost:4173, under the lab's CSP
 ```
 
+**After a pull request is merged**, `scripts/dev-refresh.ps1` brings the laptop up to date in one go: it stops if there are uncommitted changes, switches to `main`, then runs `git pull --ff-only`, `pnpm install`, `pnpm build` and `pnpm --filter @lingualab/server db:migrate`, stopping at the first step that fails, and prints the commands to restart the server, the admin panel and the student app. A server left running from before the build still runs the old code, and the new admin panel then fails against it; so does a database one migration behind.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\dev-refresh.ps1
+```
+
 **The student app on a developer laptop.** `pnpm --filter @lingualab/student dev` opens it in an ordinary window you can close, with the screens on Vite's dev server; the server address comes from `apps/student/lingualab.config.dev.json` (`http://localhost:3000`) unless `LINGUALAB_CONFIG` names another file, and `LINGUALAB_KIOSK=1` tries kiosk mode, which then closes only with the exit PIN (Ctrl+Alt+Shift+Q). `pnpm --filter @lingualab/student build` writes the screens, the main process and the preload script to `apps/student/dist`. Both variables are ignored by an installed app.
 
 The server reads `DATABASE_URL` (default: the compose database), `JWT_SECRET` (required) and `PORT` (default 3000). `pnpm --filter @lingualab/admin dev` serves the panel at `http://localhost:5173` with hot reload instead; it sends no Content-Security-Policy, because hot reload needs inline scripts. Both send `/api` to `LINGUALAB_SERVER`, by default `http://localhost:3000`. Until the server joins docker-compose (Phase 2), Caddy has nothing behind it, so the panel is reached on these ports rather than at `https://<LAN_IP>`.
@@ -75,10 +81,17 @@ The server reads `DATABASE_URL` (default: the compose database), `JWT_SECRET` (r
 **Student app (each lab PC)**
 
 1. Log in to Windows as an administrator and run `LinguaLab-Student-Setup-<version>.exe` from a USB drive or from `https://192.168.10.2/downloads`.
-2. Enter the server address when asked. The installer writes it to `lingualab.config.json` next to the app, as `{ "serverUrl": "https://192.168.10.2" }`, and adds the root certificate, the firewall rules and auto-start. A student cannot change the file; to move the lab to another server, edit it as an administrator.
+2. Enter the server address when asked. The installer writes it to `lingualab.config.json` next to the app in Program Files, as `{ "serverUrl": "https://192.168.10.2" }`, and adds the root certificate, a firewall rule for the app and auto-start for every Windows account (`HKLM\...\Run`). A student cannot change the file; to move the lab to another server, edit it as an administrator. An update keeps the address the PC already has and does not ask again. The installer does not start the app when it finishes, since the kiosk would cover the administrator's own session; it starts at the next Windows login.
+
+   The root certificate is the file `lab-root.crt` put beside the installer on the USB drive (from step 10 above; until Settings › Security exists, copy it from the server with `docker compose -f infra/docker-compose.yml cp caddy:/data/caddy/pki/authorities/local/root.crt lab-root.crt`). Without it the app cannot reach `https://` and shows "The server cannot be reached". Uninstalling leaves the certificate, which the teacher console and the browser use too.
+
+   For many PCs, install silently from an administrator prompt: `LinguaLab-Student-Setup-<version>.exe /S /SERVER=https://192.168.10.2` (and `/CERT=<path>` if the certificate is elsewhere). A wrong address stops the installer with exit code 2.
+
 3. Create a standard (non-admin) Windows account for students that logs in automatically; the app starts with it.
 4. On first start the PC shows "Waiting for approval". In the admin panel, open Lab and seats, approve the PC and bind it to its seat (for example A1).
 5. The login screen now shows "This PC: LAB1-A1 · Seat A1". Test with a headset: the setup check plays a sound and records 3 seconds.
+
+**Building the installer** (on Windows, with internet the first time, for electron-builder's NSIS and Electron download): `pnpm --filter @lingualab/student installer` writes `apps/student/release/LinguaLab-Student-Setup-<version>.exe`. Check a new installer on a spare PC with `notes/stu-06-installer-check.md` before it goes to the lab; never on the laptop you develop on, as the app would start in kiosk mode at your next login.
 
 To set up 30 PCs quickly, install on one PC, check it, then clone the disk image; each clone still registers itself and needs approval. Each PC keeps its device key with its network card's MAC address, so a clone, whose card is different, throws the copied key away and registers as itself. Taking the image before the app's first start avoids carrying a key at all.
 

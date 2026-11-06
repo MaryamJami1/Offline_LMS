@@ -1,0 +1,31 @@
+{
+  "appId": "org.lingualab.student",
+  "productName": "LinguaLab Student",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": ["dist/**/*", "package.json"],
+  "asar": true,
+  "npmRebuild": false,
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "LinguaLab-Student-Setup-${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": true,
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": false,
+    "runAfterFinish": false,
+    "createDesktopShortcut": false,
+    "createStartMenuShortcut": true,
+    "deleteAppDataOnUninstall": false,
+    "include": "build/installer.nsh"
+  }
+}
