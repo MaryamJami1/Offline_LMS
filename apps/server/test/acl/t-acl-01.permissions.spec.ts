@@ -393,6 +393,22 @@ const rows: Row[] = [
     todo: true,
   },
   {
+    // Whether the seeded exit PIN still has to be changed (STU-06), for A-01.
+    action: 'manageSettings',
+    method: 'get',
+    path: () => '/api/settings/exit-pin',
+    expected: ADMIN_ONLY,
+  },
+  {
+    action: 'manageSettings',
+    method: 'put',
+    path: () => '/api/settings/exit-pin',
+    // The admin reaches the handler and is refused for the password, which is
+    // typed again; everyone else is refused for who they are.
+    body: { currentPassword: 'not-the-password', pin: '204816' },
+    expected: { ...ADMIN_ONLY, admin: 401 },
+  },
+  {
     // Also answered with no login at all, for the login screens: see t-acl-01.guards.spec.ts.
     action: 'seeBranding',
     method: 'get',

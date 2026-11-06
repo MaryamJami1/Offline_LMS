@@ -1,12 +1,20 @@
 import { DEFAULT_SETTINGS, buildSeatMap } from '@lingualab/shared';
 import type { PrismaClient } from '../generated/prisma/index.js';
 import { hashPassword } from '../auth/password.js';
+import { EXIT_PIN_KEY, exitPinValue } from '../settings/exit-pin.js';
 
 /**
  * The first password every seeded account gets. The admin changes it at first
  * login, and `SEED_PASSWORD` overrides it on a real install.
  */
 export const DEFAULT_SEED_PASSWORD = 'Lab-2026';
+
+/**
+ * The first admin PIN that closes the student app (STU-06). Until the admin
+ * changes it the dashboard says so, and `SEED_EXIT_PIN` overrides it on a
+ * real install.
+ */
+export const DEFAULT_SEED_EXIT_PIN = '135790';
 
 const LAB = { name: 'Lab 1', rows: 5, seatsPerRow: 6 } as const;
 
@@ -71,6 +79,8 @@ const STUDENT_NAMES = [
 export interface SeedOptions {
   /** First password for every seeded account. */
   password?: string;
+  /** First exit PIN for the student app: six digits. */
+  exitPin?: string;
 }
 
 export interface SeedSummary {
@@ -89,7 +99,7 @@ function studentId(index: number): string {
 /**
  * Fills a fresh database with the starting data from docs/docs/03-database.md:
  * one admin, two teachers, two classes of fifteen students, Lab 1 with its
- * 30-seat map, and the default settings.
+ * 30-seat map, the default settings, and a first exit PIN for the student app.
  *
  * Safe to run again: accounts, classes, seats and settings are matched on their
  * natural keys, and a password the user has already changed is left alone.
@@ -99,6 +109,10 @@ export async function seed(prisma: PrismaClient, options: SeedOptions = {}): Pro
   // Every seeded account starts with the same first password, so it is hashed
   // once instead of thirty-three times.
   const passwordHash = await hashPassword(password);
+  const exitPin = await exitPinValue(
+    options.exitPin ?? process.env['SEED_EXIT_PIN'] ?? DEFAULT_SEED_EXIT_PIN,
+    null,
+  );
 
   // Every row is written with createMany and skipDuplicates: nothing already in
   // the database is touched, which is both what "run it again" has to mean and
@@ -234,11 +248,15 @@ export async function seed(prisma: PrismaClient, options: SeedOptions = {}): Pro
   });
 
   await prisma.setting.createMany({
-    data: Object.entries(DEFAULT_SETTINGS).map(([key, value]) => ({
-      key,
-      value: value as never,
-      updatedBy: admin.id,
-    })),
+    data: [
+      ...Object.entries(DEFAULT_SETTINGS).map(([key, value]) => ({
+        key,
+        value: value as never,
+        updatedBy: admin.id,
+      })),
+      // Never overwritten: a PIN the admin has changed stays.
+      { key: EXIT_PIN_KEY, value: exitPin, updatedBy: admin.id },
+    ],
     skipDuplicates: true,
   });
 

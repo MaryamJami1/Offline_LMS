@@ -18,6 +18,7 @@ export {
 } from './contrast.js';
 export type { BrandPalette } from './contrast.js';
 export {
+  LOGOUT_REASONS,
   PASSWORD_MINIMUM_LENGTH,
   authUserSchema,
   changePasswordRequestSchema,
@@ -76,6 +77,7 @@ export type {
   CurrentSeat,
   LoginRequest,
   LoginResponse,
+  LogoutReason,
   LogoutRequest,
   MeResponse,
   RefreshRequest,
@@ -157,3 +159,12 @@ export type {
   UpdateDeviceRequest,
   UpdateLabRequest,
 } from './labs.js';
+export {
+  EXIT_PIN_LOCK_MINUTES,
+  EXIT_PIN_TRIES,
+  changeExitPinRequestSchema,
+  deviceExitRequestSchema,
+  exitPinSchema,
+  exitPinStatusSchema,
+} from './exit-pin.js';
+export type { ChangeExitPinRequest, DeviceExitRequest, ExitPinStatus } from './exit-pin.js';

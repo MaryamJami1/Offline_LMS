@@ -6,12 +6,16 @@ import { test, expect } from '@playwright/test';
  * Content-Security-Policy.
  *
  * Covers ADM-01 (log in, first password changed), ADM-02 (import students),
- * ADM-04 (approve a new PC and bind it to a seat) and NFR-13 (the panel runs
- * under the strict policy with no violation, and a reload keeps the login).
+ * ADM-04 (approve a new PC and bind it to a seat), STU-06 (the seeded exit PIN
+ * changed from the dashboard, and the approved PC closing its app with the new
+ * one) and NFR-13 (the panel runs under the strict policy with no violation,
+ * and a reload keeps the login).
  */
 
 const SEED_PASSWORD = 'Lab-2026';
 const NEW_PASSWORD = 'Journey-Pass-2026';
+const SEEDED_EXIT_PIN = '135790';
+const NEW_EXIT_PIN = '204816';
 const PC = { hostname: 'LAB1-E2E', mac: '02:00:00:00:e2:e2' } as const;
 
 const IMPORT_FILE = ['name,class,phone', 'Ayesha Noor,B-12,', 'Bilal Khan,B-99,', ''].join('\n');
@@ -41,6 +45,18 @@ test('the admin logs in, imports students, and approves a PC onto a seat', async
     'page',
   );
 
+  // The seeded exit PIN needs attention until the admin changes it.
+  const attention = page.getByRole('region', { name: 'Needs attention' });
+  const seededPin = 'The student app still has the first exit PIN';
+  await attention.getByRole('button', { name: `Change: ${seededPin}` }).click();
+  const pinDialog = page.getByRole('dialog', { name: 'Change the exit PIN' });
+  await pinDialog.getByLabel('New PIN', { exact: true }).fill(NEW_EXIT_PIN);
+  await pinDialog.getByLabel('New PIN again').fill(NEW_EXIT_PIN);
+  await pinDialog.getByLabel('Your password').fill(NEW_PASSWORD);
+  await pinDialog.getByRole('button', { name: 'Change PIN' }).click();
+  await expect(page.getByText('The exit PIN has been changed.', { exact: true })).toBeVisible();
+  await expect(attention.getByText(seededPin)).toHaveCount(0);
+
   // Import two students: one good row, one naming a class that does not exist.
   await navigation.getByRole('link', { name: 'Students' }).click();
   await page.getByRole('button', { name: 'Import from Excel' }).click();
@@ -61,6 +77,7 @@ test('the admin logs in, imports students, and approves a PC onto a seat', async
   // A new lab PC starts the student app and registers itself.
   const registered = await page.request.post('/api/devices/register', { data: PC });
   expect(registered.status()).toBe(201);
+  const deviceKey = ((await registered.json()) as { deviceKey: string }).deviceKey;
 
   // The admin approves it onto seat A1 of Lab 1.
   await navigation.getByRole('link', { name: 'Lab and seats' }).click();
@@ -79,6 +96,15 @@ test('the admin logs in, imports students, and approves a PC onto a seat', async
   await expect(
     page.getByRole('button', { name: `A1, PC ${PC.hostname}, empty seat` }),
   ).toBeVisible();
+
+  // The approved PC closes its student app with the new PIN, not the seeded one.
+  const exit = (pin: string) =>
+    page.request.post('/api/devices/exit', {
+      data: { pin },
+      headers: { 'X-Device-Key': deviceKey },
+    });
+  expect((await exit(SEEDED_EXIT_PIN)).status()).toBe(403);
+  expect((await exit(NEW_EXIT_PIN)).status()).toBe(204);
 
   expect(violations).toEqual([]);
 });

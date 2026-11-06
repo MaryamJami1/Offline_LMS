@@ -80,6 +80,16 @@ describe('T-ACL-01 the server denies by default', () => {
     expect((await get('/api/settings/branding')).status).toBe(200);
   });
 
+  it('lets a lab PC ask to close the student app by its device key, with no login (STU-06)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/devices/exit')
+      .send({ pin: '204816' });
+
+    // Refused for having no approved device key, not for having no login.
+    expect(res.status).toBe(403);
+    expect(errorCodeOf(res.body)).toBe('DEVICE_NOT_APPROVED');
+  });
+
   it('lets anybody log in', async () => {
     const res = await postLogin(app, { username: 'S-1001', password: TEST_PASSWORD });
 

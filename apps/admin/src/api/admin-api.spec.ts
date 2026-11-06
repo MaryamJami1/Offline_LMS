@@ -3,7 +3,7 @@ import { createHttpAdminApi } from './admin-api.js';
 import { REFRESH_TOKEN_KEY, createApiClient } from './client.js';
 
 /**
- * ADM-01, ADM-02, ADM-03, ADM-04, ADM-11 and ADM-07 (branding): every call the
+ * ADM-01, ADM-02, ADM-03, ADM-04, ADM-11 and ADM-07 (branding, exit PIN): every call the
  * panel makes goes to the endpoint and in the shape that
  * docs/docs/04-api-and-events.md gives it. The screens are tested against a
  * fake of this interface, so this is where the real paths are pinned down.
@@ -216,6 +216,22 @@ describe('The admin API calls the documented endpoints', () => {
     await api.resetPassword(ID);
 
     expect(calls[0]).toMatchObject({ method: 'POST', path: `/api/users/${ID}/reset-password` });
+  });
+
+  it('reads and changes the exit PIN of the student app', async () => {
+    const { api, calls } = setUp({ mustChange: false, changedAt: STAMP });
+
+    expect(await api.exitPinStatus()).toEqual({ mustChange: false, changedAt: STAMP });
+    await api.changeExitPin('Admin-pass-2026', '204816');
+
+    expect(calls).toEqual([
+      { method: 'GET', path: '/api/settings/exit-pin', body: undefined },
+      {
+        method: 'PUT',
+        path: '/api/settings/exit-pin',
+        body: { currentPassword: 'Admin-pass-2026', pin: '204816' },
+      },
+    ]);
   });
 
   it('lists classes and batches, and creates a class', async () => {

@@ -1,10 +1,18 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { Button, Card } from '@lingualab/ui';
-import { useAllLabSeats, useClasses, useDevices, useLabs, useUsers } from '../api/queries.js';
+import {
+  useAllLabSeats,
+  useClasses,
+  useDevices,
+  useExitPinStatus,
+  useLabs,
+  useUsers,
+} from '../api/queries.js';
 import { PageHeader } from '../layout/page-header.js';
 import { problemOf } from '../lib/format.js';
 import { Problem } from './problem.js';
+import { ExitPinDialog } from './exit-pin-dialog.js';
 
 /**
  * A-01. Only what the server can already say: the Lessons card, "In the lab
@@ -24,18 +32,31 @@ function Total({ title, value, note }: { title: string; value: ReactNode; note?:
   );
 }
 
-function Attention({ text, to }: { text: string; to: string }) {
+/** One thing to see to: a link to the screen that shows it, or a button that fixes it here. */
+function Attention({
+  text,
+  to,
+  onChange,
+}: { text: string } & ({ to: string; onChange?: never } | { to?: never; onChange: () => void })) {
   return (
     <li className="flex items-center justify-between gap-2 text-sm text-ink">
       <span>{text}</span>
-      <Button size="small" asChild>
-        <Link to={to} aria-label={`View: ${text}`}>
-          View
-        </Link>
-      </Button>
+      {to === undefined ? (
+        <Button size="small" onClick={onChange} aria-label={`Change: ${text}`}>
+          Change
+        </Button>
+      ) : (
+        <Button size="small" asChild>
+          <Link to={to} aria-label={`View: ${text}`}>
+            View
+          </Link>
+        </Button>
+      )}
     </li>
   );
 }
+
+const SEEDED_EXIT_PIN = 'The student app still has the first exit PIN';
 
 export function DashboardScreen() {
   const students = useUsers({ role: 'student', pageSize: 1 });
@@ -45,8 +66,10 @@ export function DashboardScreen() {
   const labList = labs.data?.items ?? [];
   const seatMaps = useAllLabSeats(labList.map((lab) => lab.id));
   const waiting = useDevices('waiting');
+  const exitPin = useExitPinStatus();
+  const [changingPin, setChangingPin] = useState(false);
 
-  const failed = [students, teachers, classes, labs, waiting, ...seatMaps].find(
+  const failed = [students, teachers, classes, labs, waiting, exitPin, ...seatMaps].find(
     (query) => query.error !== null,
   );
   if (failed !== undefined) {
@@ -72,7 +95,11 @@ export function DashboardScreen() {
     }))
     .filter((entry) => entry.codes.length > 0);
   const waitingCount = waiting.data?.items.length ?? 0;
-  const ready = seatMaps.every((query) => query.data !== undefined) && waiting.data !== undefined;
+  const pinToChange = exitPin.data?.mustChange === true;
+  const ready =
+    seatMaps.every((query) => query.data !== undefined) &&
+    waiting.data !== undefined &&
+    exitPin.data !== undefined;
 
   return (
     <>
@@ -123,7 +150,7 @@ export function DashboardScreen() {
         <Card title="Needs attention">
           {!ready ? (
             <p className="text-sm text-ink-muted">Checking…</p>
-          ) : offlineByLab.length === 0 && waitingCount === 0 ? (
+          ) : offlineByLab.length === 0 && waitingCount === 0 && !pinToChange ? (
             <p className="text-sm text-ink-muted">Nothing needs attention.</p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -140,10 +167,14 @@ export function DashboardScreen() {
                   to="/lab"
                 />
               )}
+              {pinToChange && (
+                <Attention text={SEEDED_EXIT_PIN} onChange={() => setChangingPin(true)} />
+              )}
             </ul>
           )}
         </Card>
       </div>
+      <ExitPinDialog open={changingPin} onClose={() => setChangingPin(false)} />
     </>
   );
 }

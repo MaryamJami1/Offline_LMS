@@ -54,6 +54,7 @@ describe('ADM-06 the dashboard (A-01)', () => {
   it('says so when nothing needs attention', async () => {
     const world = buildWorld();
     world.devices = world.devices.filter((pc) => pc.status === 'online');
+    world.exitPin.changedAt = '2026-11-04T09:00:00.000Z';
     renderAdmin(loggedInAsAdmin(world));
 
     const attention = await screen.findByRole('region', { name: 'Needs attention' });
