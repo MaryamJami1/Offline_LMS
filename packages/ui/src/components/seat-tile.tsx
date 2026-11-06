@@ -14,6 +14,12 @@ export interface SeatTileProps {
   /** Only when the viewer may see who sits here (ADM-04). */
   studentName?: string;
   state: SeatState;
+  /**
+   * full: the teacher's seat grid (T-02), the state in words. compact: the
+   * admin's seat map (A-07), the code by its dot and the PC's name under it;
+   * the seat's card beside the map says the state in words.
+   */
+  size?: 'full' | 'compact';
   handRaised?: boolean;
   selected?: boolean;
   /** Called on every seat, offline and empty ones too, so the screen can say why nothing happens. */
@@ -40,6 +46,7 @@ export function SeatTile({
   hostname,
   studentName,
   state,
+  size = 'full',
   handRaised = false,
   selected = false,
   onSelect,
@@ -55,6 +62,43 @@ export function SeatTile({
     .filter((part) => part !== undefined && part !== '')
     .join(', ');
 
+  const look = cn(
+    FOCUS_RING,
+    state === 'online' && 'border-border bg-surface text-ink hover:border-border-hover',
+    state === 'empty' && 'border-border bg-empty text-ink-muted',
+    state === 'offline' && 'border-dashed border-border bg-muted text-ink-muted',
+    state === 'no-pc' && 'border-dashed border-border bg-empty text-ink-muted',
+    handRaised && 'border-warning inset-ring inset-ring-warning',
+    selected && 'border-primary bg-selected inset-ring inset-ring-primary',
+  );
+  const dot = handRaised ? 'bg-warning' : text.dot;
+
+  if (size === 'compact') {
+    // On the admin's map the dot is the PC's own state: on, whoever sits there.
+    const pcDot = handRaised ? 'bg-warning' : state === 'empty' ? 'bg-success' : text.dot;
+    return (
+      <button
+        type="button"
+        aria-label={spoken}
+        aria-pressed={selected}
+        data-size="compact"
+        onClick={onSelect}
+        className={cn(
+          'flex w-24 shrink-0 cursor-pointer flex-col items-start gap-0.5 rounded-control border px-2.5 py-2 text-left',
+          look,
+        )}
+      >
+        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+          <span aria-hidden="true" className={cn('size-2 rounded-full', pcDot)} />
+          {seatCode}
+        </span>
+        <span className="font-mono text-[13px] leading-tight text-ink-muted">
+          {hostname ?? (state === 'no-pc' ? text.shown : '')}
+        </span>
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -63,21 +107,12 @@ export function SeatTile({
       onClick={onSelect}
       className={cn(
         'relative flex h-[102px] w-[108px] cursor-pointer flex-col items-start gap-1 rounded-control border px-2.5 py-2 text-left',
-        FOCUS_RING,
-        state === 'online' && 'border-border bg-surface text-ink hover:border-border-hover',
-        state === 'empty' && 'border-border bg-empty text-ink-muted',
-        state === 'offline' && 'border-dashed border-border bg-muted text-ink-muted',
-        state === 'no-pc' && 'border-dashed border-border bg-empty text-ink-muted',
-        handRaised && 'border-warning inset-ring inset-ring-warning',
-        selected && 'border-primary bg-selected inset-ring inset-ring-primary',
+        look,
       )}
     >
       <span
         aria-hidden="true"
-        className={cn(
-          'absolute top-2.5 right-2.5 size-2 rounded-full',
-          handRaised ? 'bg-warning' : text.dot,
-        )}
+        className={cn('absolute top-2.5 right-2.5 size-2 rounded-full', dot)}
       />
       <span className="font-mono text-[13px] font-semibold">{seatCode}</span>
       {hostname !== undefined && (

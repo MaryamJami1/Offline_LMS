@@ -15,6 +15,11 @@ interface FieldText {
   hint?: string;
   /** Shown next to the field and read with it; the field is marked invalid. */
   error?: string;
+  /**
+   * Keeps the label for screen readers but out of view, where the screen
+   * already says what the field is for (the search box and filter on A-02).
+   */
+  hideLabel?: boolean;
 }
 
 const CONTROL = cn(
@@ -51,11 +56,15 @@ function FieldFrame({
   hintId,
   error,
   errorId,
+  hideLabel = false,
   children,
 }: FieldText & { id: string; hintId?: string; errorId?: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-[13px] font-semibold text-ink">
+      <label
+        htmlFor={id}
+        className={cn('text-[13px] font-semibold text-ink', hideLabel && 'sr-only')}
+      >
         {label}
       </label>
       {children}
@@ -80,12 +89,12 @@ export type TextFieldProps = FieldText & Omit<InputHTMLAttributes<HTMLInputEleme
  * when the screen re-renders with an error (05, forms keep what was typed).
  */
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { label, hint, error, className, ...props },
+  { label, hint, error, hideLabel, className, ...props },
   ref,
 ) {
   const field = useField({ label, hint, error });
   return (
-    <FieldFrame {...field} label={label} hint={hint} error={error}>
+    <FieldFrame {...field} label={label} hint={hint} error={error} hideLabel={hideLabel}>
       <input
         ref={ref}
         id={field.id}
@@ -101,12 +110,12 @@ export type SelectFieldProps = FieldText & Omit<SelectHTMLAttributes<HTMLSelectE
 
 /** A labelled native select: the browser's own list works with the keyboard and screen readers. */
 export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(function SelectField(
-  { label, hint, error, className, children, ...props },
+  { label, hint, error, hideLabel, className, children, ...props },
   ref,
 ) {
   const field = useField({ label, hint, error });
   return (
-    <FieldFrame {...field} label={label} hint={hint} error={error}>
+    <FieldFrame {...field} label={label} hint={hint} error={error} hideLabel={hideLabel}>
       <select
         ref={ref}
         id={field.id}
@@ -183,10 +192,10 @@ export type TextAreaFieldProps = FieldText &
   Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id'>;
 
 export const TextAreaField = forwardRef<HTMLTextAreaElement, TextAreaFieldProps>(
-  function TextAreaField({ label, hint, error, className, ...props }, ref) {
+  function TextAreaField({ label, hint, error, hideLabel, className, ...props }, ref) {
     const field = useField({ label, hint, error });
     return (
-      <FieldFrame {...field} label={label} hint={hint} error={error}>
+      <FieldFrame {...field} label={label} hint={hint} error={error} hideLabel={hideLabel}>
         <textarea
           ref={ref}
           id={field.id}

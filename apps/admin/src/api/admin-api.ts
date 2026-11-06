@@ -39,6 +39,8 @@ import type { ApiClient } from './client.js';
  */
 export interface AdminApi {
   branding(): Promise<Branding>;
+  /** Resolves when the server answers its health check; the side menu says whether it is running. */
+  serverAnswers(): Promise<void>;
   /** Logs in and keeps the session. */
   login(username: string, password: string): Promise<LoginResponse>;
   /** Changes the password and keeps the new session the server gives back. */
@@ -91,6 +93,8 @@ export function createHttpAdminApi(client: ApiClient): AdminApi {
   return {
     branding: () =>
       client.request('GET', '/settings/branding', brandingSchema, undefined, { public: true }),
+    serverAnswers: () =>
+      client.request('GET', '/health', null, undefined, { public: true }).then(() => undefined),
     login: (username, password) =>
       startFrom(
         client.request(

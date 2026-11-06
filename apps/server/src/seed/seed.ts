@@ -8,7 +8,13 @@ import { hashPassword } from '../auth/password.js';
  */
 export const DEFAULT_SEED_PASSWORD = 'Lab-2026';
 
-const LAB = { name: 'Lab 1', rows: 5, seatsPerRow: 6 } as const;
+/** The prototype's Lab 1: desks in pairs, with a walkway after seats 2 and 4. */
+const LAB = {
+  name: 'Lab 1',
+  rows: 5,
+  seatsPerRow: 6,
+  layout: { pairs: true, aisles: [2, 4] },
+} as const;
 
 const COURSE = { name: 'Spoken English', description: 'Everyday speaking and listening' } as const;
 
@@ -161,7 +167,12 @@ export async function seed(prisma: PrismaClient, options: SeedOptions = {}): Pro
   const lab =
     existingLab ??
     (await prisma.labRoom.create({
-      data: { name: LAB.name, rows: LAB.rows, seatsPerRow: LAB.seatsPerRow },
+      data: {
+        name: LAB.name,
+        rows: LAB.rows,
+        seatsPerRow: LAB.seatsPerRow,
+        layout: { pairs: LAB.layout.pairs, aisles: [...LAB.layout.aisles] },
+      },
     }));
 
   await prisma.seat.createMany({

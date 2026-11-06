@@ -122,4 +122,94 @@ describe('NFR-11 Seat tile', () => {
 
     expect(screen.getByText('D5')).toHaveClass('font-mono');
   });
+  describe("compact, for the admin's seat map (A-07)", () => {
+    it("shows the seat code beside its status dot and the PC's name under it, as the prototype draws it", () => {
+      render(
+        <SeatTile
+          size="compact"
+          seatCode="D3"
+          hostname="LAB1-D3"
+          studentName="Ayesha Khan"
+          state="online"
+          onSelect={() => {}}
+        />,
+      );
+
+      const tile = screen.getByRole('button', { name: 'D3, PC LAB1-D3, Ayesha Khan, online' });
+      expect(tile).toHaveTextContent(/^D3LAB1-D3$/);
+      expect(screen.getByText('LAB1-D3')).toHaveClass('font-mono');
+      expect(tile).toHaveAttribute('data-size', 'compact');
+    });
+
+    it('says "No PC" where no PC is bound, and draws an offline PC dashed on grey, not by colour alone', () => {
+      render(
+        <>
+          <SeatTile size="compact" seatCode="E6" state="no-pc" onSelect={() => {}} />
+          <SeatTile
+            size="compact"
+            seatCode="B1"
+            hostname="LAB1-B1"
+            state="offline"
+            onSelect={() => {}}
+          />
+        </>,
+      );
+
+      expect(screen.getByRole('button', { name: 'E6, no PC' })).toHaveTextContent(/^E6No PC$/);
+      expect(screen.getByRole('button', { name: 'B1, PC LAB1-B1, PC offline' })).toHaveClass(
+        'bg-muted',
+        'border-dashed',
+      );
+    });
+
+    it("dots the PC's own state: green when it is on, with a student or without, grey when it is off", () => {
+      render(
+        <>
+          <SeatTile
+            size="compact"
+            seatCode="A1"
+            hostname="LAB1-A1"
+            state="empty"
+            onSelect={() => {}}
+          />
+          <SeatTile
+            size="compact"
+            seatCode="A2"
+            hostname="LAB1-A2"
+            studentName="Bilal Ahmed"
+            state="online"
+            onSelect={() => {}}
+          />
+          <SeatTile
+            size="compact"
+            seatCode="A3"
+            hostname="LAB1-A3"
+            state="offline"
+            onSelect={() => {}}
+          />
+        </>,
+      );
+
+      const dot = (code: string) =>
+        screen
+          .getByRole('button', { name: new RegExp(`^${code},`) })
+          .querySelector('[aria-hidden="true"]');
+      expect(dot('A1')).toHaveClass('bg-success');
+      expect(dot('A2')).toHaveClass('bg-success');
+      expect(dot('A3')).toHaveClass('bg-offline');
+    });
+
+    it('is still selected with a click and says so', async () => {
+      const onSelect = vi.fn();
+      render(<SeatTile size="compact" seatCode="A1" state="no-pc" selected onSelect={onSelect} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'A1, no PC' }));
+
+      expect(onSelect).toHaveBeenCalledOnce();
+      expect(screen.getByRole('button', { name: 'A1, no PC' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+  });
 });

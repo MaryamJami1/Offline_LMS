@@ -55,6 +55,8 @@ export interface FakeWorld {
   nextImport: ImportResponse | ApiError | null;
   /** Who is logged in now, if anyone. */
   session: AuthUser | null;
+  /** Whether the server answers its health check. */
+  serverUp: boolean;
 }
 
 function account(
@@ -277,6 +279,7 @@ export function buildWorld(): FakeWorld {
     ],
     nextImport: null,
     session: null,
+    serverUp: true,
   };
 }
 
@@ -349,6 +352,11 @@ export function createFakeAdminApi(world: FakeWorld = buildWorld()): FakeAdminAp
   const api: FakeAdminApi = {
     world,
     branding: async () => world.branding,
+    serverAnswers: async () => {
+      if (!world.serverUp) {
+        throw new ApiError(0, 'NETWORK', 'The server is not answering');
+      }
+    },
     login: async (username, password) => {
       const user = world.accounts.find(
         (candidate) => candidate.username.toLowerCase() === username.toLowerCase(),

@@ -15,7 +15,7 @@ export interface SideNavProps {
 /** The dark side bar of the admin panel (A-01 to A-11). */
 export function SideNav({ label, header, footer, children }: SideNavProps) {
   return (
-    <aside className="flex min-h-screen w-60 shrink-0 flex-col gap-5 bg-ink px-3.5 py-5 text-on-primary">
+    <aside className="flex min-h-screen w-60 shrink-0 flex-col gap-[18px] bg-ink px-3.5 py-[18px] text-on-primary">
       {header !== undefined && <div className="px-1.5">{header}</div>}
       <nav aria-label={label}>
         <ul className="flex flex-col gap-0.5">{children}</ul>
@@ -43,10 +43,10 @@ export const SideNavItem = forwardRef<HTMLButtonElement, SideNavItemProps>(funct
         ref={ref}
         aria-current={current ? 'page' : undefined}
         className={cn(
-          'flex min-h-10 w-full items-center rounded-control px-3 text-left text-sm font-medium text-on-primary',
+          'flex min-h-[42px] w-full items-center rounded-control px-3 text-left text-sm font-medium text-on-primary',
           // The main colour's ring would vanish on the dark bar; white shows.
           'focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-on-primary',
-          current ? 'bg-primary font-semibold' : 'hover:bg-ink-muted',
+          current ? 'bg-primary font-semibold' : 'hover:bg-ink-raised',
           className,
         )}
         {...props}

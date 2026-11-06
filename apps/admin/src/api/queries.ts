@@ -33,6 +33,17 @@ export function useBatches() {
   return useQuery({ queryKey: keys.batches, queryFn: () => api.listBatches() });
 }
 
+/** Asked again every 30 seconds, so the side menu notices the server stopping. */
+export function useServerStatus() {
+  const api = useAdminApi();
+  return useQuery({
+    queryKey: ['server-status'],
+    queryFn: () => api.serverAnswers().then(() => true),
+    refetchInterval: 30_000,
+    retry: false,
+  });
+}
+
 export function useLabs() {
   const api = useAdminApi();
   return useQuery({ queryKey: keys.labs, queryFn: () => api.listLabs() });

@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { Button, Card } from '@lingualab/ui';
 import { useAllLabSeats, useClasses, useDevices, useLabs, useUsers } from '../api/queries.js';
 import { PageHeader } from '../layout/page-header.js';
-import { problemOf } from '../lib/format.js';
+import { instituteDay, problemOf } from '../lib/format.js';
 import { Problem } from './problem.js';
 
 /**
@@ -52,7 +52,7 @@ export function DashboardScreen() {
   if (failed !== undefined) {
     return (
       <>
-        <PageHeader title="Dashboard" />
+        <PageHeader title="Dashboard" subtitle={instituteDay(new Date())} />
         <Problem>{problemOf(failed.error)}</Problem>
       </>
     );
@@ -76,7 +76,7 @@ export function DashboardScreen() {
 
   return (
     <>
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Dashboard" subtitle={instituteDay(new Date())} />
       <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
         <Total
           title="Students"

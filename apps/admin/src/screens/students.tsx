@@ -90,6 +90,7 @@ export function StudentsScreen() {
         <div className="max-w-[420px] flex-[1_1_280px]">
           <TextField
             label="Search students"
+            hideLabel
             type="search"
             placeholder="Search by name or ID"
             value={typed}
@@ -99,6 +100,7 @@ export function StudentsScreen() {
         <div className="min-w-[220px]">
           <SelectField
             label="Class"
+            hideLabel
             value={classCode ?? ''}
             onChange={(event) =>
               setSearch(event.target.value === '' ? {} : { class: event.target.value })

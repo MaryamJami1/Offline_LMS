@@ -110,6 +110,14 @@ describe('The admin API calls the documented endpoints', () => {
     expect(calls).toEqual([{ method: 'GET', path: '/api/settings/branding', body: undefined }]);
   });
 
+  it('asks the public health endpoint whether the server answers, for the side menu', async () => {
+    const { api, calls } = setUp({ server: 'ok', database: 'ok', livekit: 'ok' });
+
+    await api.serverAnswers();
+
+    expect(calls).toEqual([{ method: 'GET', path: '/api/health', body: undefined }]);
+  });
+
   it('logs in and keeps the session, and logs out with the refresh token', async () => {
     const { api, calls, client } = setUp({
       accessToken: 'access-9',
