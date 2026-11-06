@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { sourceResolve } from '../../source-condition.js';
 
 // Every server spec talks to the test database, never the development one, so a
 // spec that asserts exact counts cannot be thrown off by a developer's data and
@@ -9,6 +10,7 @@ const databaseUrl = new URL(
 databaseUrl.pathname = '/lingualab_test';
 
 export default defineConfig({
+  ...sourceResolve,
   test: {
     globals: true,
     passWithNoTests: true,

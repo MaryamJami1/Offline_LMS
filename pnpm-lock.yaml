@@ -129,6 +129,9 @@ importers:
       '@prisma/client':
         specifier: 7.10.1
         version: 7.10.1(prisma@7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@5.9.3))(typescript@5.9.3)
+      '@prisma/client-runtime-utils':
+        specifier: 7.10.1
+        version: 7.10.1
       pg:
         specifier: ^8.16.3
         version: 8.23.1
@@ -166,9 +169,6 @@ importers:
       supertest:
         specifier: ^7.3.1
         version: 7.3.1
-      tsx:
-        specifier: 4.23.15
-        version: 4.23.15
 
   apps/student: {}
 
@@ -179,6 +179,15 @@ importers:
       '@playwright/test':
         specifier: ^1.64.1
         version: 1.64.1
+      '@types/node':
+        specifier: 22.20.5
+        version: 22.20.5
+      '@types/pg':
+        specifier: ^8.15.4
+        version: 8.23.1
+      pg:
+        specifier: ^8.16.3
+        version: 8.23.1
 
   packages/shared:
     dependencies:
@@ -5000,6 +5009,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.28.2
       '@esbuild/win32-ia32': 0.28.2
       '@esbuild/win32-x64': 0.28.2
+    optional: true
 
   escape-html@1.0.3: {}
 
@@ -6053,6 +6063,7 @@ snapshots:
       esbuild: 0.28.2
     optionalDependencies:
       fsevents: 2.3.3
+    optional: true
 
   turbo@2.11.10:
     optionalDependencies:

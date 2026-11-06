@@ -56,7 +56,17 @@ The release comes as an offline bundle (`lingualab-server-<version>.zip`) with t
 
 **Upgrades:** copy the new bundle, `docker load`, then `docker compose up -d`. Database migrations run automatically, and a backup is taken first.
 
-**Developing the admin panel:** `pnpm --filter @lingualab/admin dev` serves it at `http://localhost:5173` and sends `/api` to the server on port 3000 of the same machine; `pnpm --filter @lingualab/admin build` writes the static files to `apps/admin/dist`, which the server's image will serve. The server's own build and start script come with Phase 1 task 10c.
+**Running the server and the admin panel on a developer laptop.** With the stack up (`docker compose -f infra/docker-compose.yml up -d`):
+
+```sh
+pnpm build                                   # compiles shared and the server, builds the admin panel
+pnpm --filter @lingualab/server db:migrate   # applies the migrations to the development database
+pnpm --filter @lingualab/server db:seed      # 1 admin, 2 teachers, 30 students, Lab 1; first password Lab-2026
+JWT_SECRET=<at least 32 characters> pnpm --filter @lingualab/server start   # http://localhost:3000
+pnpm --filter @lingualab/admin preview       # the built panel at http://localhost:4173, under the lab's CSP
+```
+
+The server reads `DATABASE_URL` (default: the compose database), `JWT_SECRET` (required) and `PORT` (default 3000). `pnpm --filter @lingualab/admin dev` serves the panel at `http://localhost:5173` with hot reload instead; it sends no Content-Security-Policy, because hot reload needs inline scripts. Both send `/api` to `LINGUALAB_SERVER`, by default `http://localhost:3000`. Until the server joins docker-compose (Phase 2), Caddy has nothing behind it, so the panel is reached on these ports rather than at `https://<LAN_IP>`.
 
 ## Installing the teacher and student apps
 

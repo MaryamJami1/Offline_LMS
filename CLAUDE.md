@@ -87,7 +87,7 @@ pnpm dev             # server + admin + apps in dev mode
 - [ ] Admin panel screens A-01 to A-04 and A-07, matching the prototype — move the permissions table out of the T-ACL-01 test into `packages/shared` as part of this, so the panel hides buttons from the same source the server refuses by. Three pull requests:
   - [x] (a) `PERMISSIONS` and `may()` in `packages/shared`, checked by T-ACL-01 against 06 and against every endpoint; `seatToday` on `GET /users`; Select field, Checkbox group, Side navigation and the "no PC" seat tile
   - [x] (b) `apps/admin`: login and the five screens, test-first against a fake `AdminApi`; an API client that keeps the access token in memory and the refresh token in sessionStorage and sends requests refused at once to one refresh; columns and cards with no data yet stay hidden (05); a mandatory password change before anything else
-  - [ ] (c) real builds for `packages/shared` and the server, the Playwright journey, and a strict Content-Security-Policy in the Caddyfile
+  - [x] (c) real builds for `packages/shared` and the server (`pnpm build`; the server's `start` and `PORT`; the seed compiled, `tsx` gone), with `@lingualab/source` keeping tests and Vite on the source; the Playwright journey T-E2E-01 on a database made for each run and dropped after it; and the Content-Security-Policy in the Caddyfile (T-SEC-05), which `vite preview` also sends, allowing nothing inline but Radix's `<style>` elements. The parent box is ticked once Maryam has checked every screen against the prototype
 - [ ] Student app shell: auto-start, kiosk mode, login screen, idle logout (STU-06, STU-07)
 
 **Deliverables:** admin panel for setup; student app that logs in.
@@ -100,12 +100,12 @@ Both exit criteria met. Broadcast and voice passed on 2 PCs (NFR-03 at 204 ms of
 
 ### Still open, carried into Phase 1
 
-- [ ] When the server gets its real build and Docker image: `packages/shared` needs a proper `tsc` build, and `pnpm db:seed` must run from the compiled output inside the container, without `tsx`
+- [ ] When the server gets its Docker image: `pnpm db:seed` must run from the compiled output inside the container. The `tsc` builds and the compiled seed came with task 10c
 - [ ] Confirm the hardware list with the institute — Maryam's, outside the code
 - [ ] Short video of the 2-PC spike — a Phase 0 deliverable, never recorded
 - [ ] GitHub milestones per phase and one issue per requirement ID — `gh` is authenticated now, so this is unblocked
 - [x] **Server branch coverage** was 66.66% against the 70% target; the database and seed tests of Phase 1 task 1 lifted it to 83.33%, with lines at 94.79% against 80%. `pnpm test:coverage` runs in CI and fails the build when a threshold is missed. What remains uncovered is structural: `platform() === 'win32' ? …` in `src/health/disk.ts` can only ever cover one side per operating system
-- [ ] Testing Library and Playwright are installed but never exercised — no component test and no end-to-end test exists yet. `pnpm test:e2e` passes only because of `--pass-with-no-tests`
+- [x] Testing Library and Playwright are exercised: the admin panel's component tests (task 10b) and the end-to-end journey T-E2E-01 (task 10c); `--pass-with-no-tests` is gone from `pnpm test:e2e`
 - [ ] Gate 1 (end of week 9) still owes the wired lab network, real headsets, and an echo check, which the one-way spike could not do
 
 ## Working method
