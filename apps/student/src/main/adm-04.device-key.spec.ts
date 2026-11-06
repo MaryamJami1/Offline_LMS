@@ -70,6 +70,38 @@ describe('ADM-04 what the PC says about itself', () => {
     expect(identity.macs).toEqual(['aa:bb:cc:00:00:01', 'aa:bb:cc:00:00:02']);
   });
 
+  it('skips virtual adapters, whose address can change after a restart', () => {
+    // Hyper-V and WSL (00:15:5d), VMware (00:50:56), VirtualBox (08:00:27),
+    // Docker (02:42…) and any locally administered address, such as a
+    // random Wi-Fi address, are not the PC's own card.
+    const identity = pcIdentity({
+      hostname: 'TTVC-LAPTOP2',
+      interfaces: {
+        'vEthernet (WSL)': [nic('00:15:5d:15:20:03')],
+        'VMware Network Adapter VMnet1': [nic('00:50:56:c0:00:01')],
+        'VirtualBox Host-Only Network': [nic('0a:00:27:00:00:0c')],
+        'vEthernet (docker)': [nic('02:42:ac:11:00:02')],
+        'Wi-Fi': [nic('3c:a9:f4:12:34:56')],
+      },
+      osVersion: 'w',
+      appVersion: 'v',
+    });
+
+    expect(identity.mac).toBe('3c:a9:f4:12:34:56');
+    expect(identity.macs).toEqual(['3c:a9:f4:12:34:56']);
+  });
+
+  it('falls back to a virtual adapter when the PC has nothing else', () => {
+    const identity = pcIdentity({
+      hostname: 'LAB1-A1',
+      interfaces: { 'vEthernet (Default Switch)': [nic('00:15:5d:01:02:03')] },
+      osVersion: 'w',
+      appVersion: 'v',
+    });
+
+    expect(identity.mac).toBe('00:15:5d:01:02:03');
+  });
+
   it('makes a host name the server accepts out of any Windows name', () => {
     const identity = pcIdentity({
       hostname: 'lab pc_07.local',
