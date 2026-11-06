@@ -133,6 +133,7 @@ class FakeWebContents extends EventEmitter {
 
 class FakeWindow extends EventEmitter {
   webContents = new FakeWebContents();
+  setClosable = vi.fn();
 }
 
 function preventable() {
@@ -159,6 +160,25 @@ describe('STU-06 guarding the window', () => {
     const second = preventable();
     win.emit('close', second);
     expect(second.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('becomes closable again once the PIN is accepted, so quitting can close it', () => {
+    // Windows ignores close() on a window made with `closable: false`, which
+    // would cancel the quit even after the right PIN (found by T-STU-06).
+    const { win, gate } = guarded();
+    expect(win.setClosable).not.toHaveBeenCalled();
+
+    gate.allow();
+
+    expect(win.setClosable).toHaveBeenCalledWith(true);
+  });
+
+  it('becomes closable when Windows shuts down or logs off', () => {
+    const { win } = guarded();
+
+    win.emit('session-end');
+
+    expect(win.setClosable).toHaveBeenCalledWith(true);
   });
 
   it('closes freely outside kiosk mode', () => {

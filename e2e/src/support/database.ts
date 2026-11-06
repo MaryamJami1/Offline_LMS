@@ -5,7 +5,7 @@ import pg from 'pg';
  * it, so the journey starts from the seed every time and never touches the
  * development or test databases. Only a name of this shape is ever dropped.
  */
-export const RUN_DATABASE = /^lingualab_e2e_\d+_\d+$/;
+export const RUN_DATABASE = /^lingualab_e2e_\d+_\d+(_kiosk)?$/;
 
 /** The same server and account, on the database every PostgreSQL has. */
 function maintenanceUrl(databaseUrl: string): string {
