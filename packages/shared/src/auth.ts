@@ -33,7 +33,16 @@ export const refreshResponseSchema = z.object({
   refreshToken: z.string(),
 });
 
-export const logoutRequestSchema = refreshRequestSchema;
+/**
+ * Why a student's app ends its login: by hand, or after 30 idle minutes
+ * (STU-07). End class is recorded by the server itself (LAB-03), so an app
+ * cannot claim it.
+ */
+export const LOGOUT_REASONS = ['manual', 'idle'] as const;
+
+export const logoutRequestSchema = refreshRequestSchema.extend({
+  reason: z.enum(LOGOUT_REASONS).optional(),
+});
 
 export const changePasswordRequestSchema = z.object({
   currentPassword: z.string().min(1),
@@ -69,6 +78,7 @@ export type LoginResponse = z.infer<typeof loginResponseSchema>;
 export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
 export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 export type LogoutRequest = z.infer<typeof logoutRequestSchema>;
+export type LogoutReason = (typeof LOGOUT_REASONS)[number];
 export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
 export type CurrentSeat = z.infer<typeof currentSeatSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;

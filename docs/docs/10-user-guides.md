@@ -92,6 +92,8 @@ Open `https://192.168.10.2` (or `https://lingualab.local`) in any browser on the
 
 **Passwords:** **Students** or **Teachers** › find the person › **Reset password** gives a new first-login password. Teachers can also reset passwords for students in their own classes. Locked accounts unlock after 10 minutes, or straight away from the same page.
 
+**The exit PIN:** a six-digit PIN closes the student app on a lab PC. Change the first one straight after installing: on the **Dashboard**, under **Needs attention**, press **Change** beside "The student app still has the first exit PIN", type the new PIN twice and your own password. Every lab PC uses the new PIN at once. Five wrong PINs at one PC lock that PC out for 15 minutes. Keep the PIN to the admin and the lab technician.
+
 **Branding:** Settings › Branding changes the software name, logo and main colour. All apps pick up the change the next time they start.
 
 **A second lab:** Lab and seats › **New lab**, draw its seat map, then install and approve its PCs. Classes can then be set to the new lab.

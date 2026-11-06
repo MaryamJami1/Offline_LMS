@@ -276,10 +276,10 @@ export class AuthService {
 
   /**
    * Ends one login: the refresh token is revoked and the seat it was using is
-   * freed. A token this server never issued is simply nothing to end, so the
+   * freed, by hand or because the student was idle (STU-07). A token this server never issued is simply nothing to end, so the
    * answer is the same either way; a token belonging to somebody else is not.
    */
-  async logout(user: User, { refreshToken }: LogoutRequest): Promise<void> {
+  async logout(user: User, { refreshToken, reason = 'manual' }: LogoutRequest): Promise<void> {
     const now = this.clock.now();
     const stored = await this.prisma.refreshToken.findFirst({
       where: { tokenHash: this.tokens.hashRefreshToken(refreshToken) },
@@ -298,7 +298,7 @@ export class AuthService {
       }),
       this.prisma.deviceLogin.updateMany({
         where: { studentId: user.id, loggedOutAt: null },
-        data: { loggedOutAt: now, logoutReason: 'manual' },
+        data: { loggedOutAt: now, logoutReason: reason },
       }),
     ]);
   }

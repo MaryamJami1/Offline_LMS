@@ -1,11 +1,12 @@
 // Covers ADM-01 (accounts and first passwords), ADM-03 (course, batch, classes
 // and enrolments), ADM-04 (Lab 1 and its seat map) and ADM-07 (default settings,
-// software name "Lab").
+// software name "Lab") and STU-06 (a first exit PIN the admin must change).
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import { SETTING_KEYS } from '@lingualab/shared';
 import type { PrismaClient } from '../../src/generated/prisma/index.js';
 import { verifyPassword } from '../../src/auth/password.js';
-import { DEFAULT_SEED_PASSWORD, seed } from '../../src/seed/seed.js';
+import { DEFAULT_SEED_EXIT_PIN, DEFAULT_SEED_PASSWORD, seed } from '../../src/seed/seed.js';
+import { EXIT_PIN_KEY, readExitPin, storeExitPin } from '../../src/settings/exit-pin.js';
 import { createTestPrisma, resetDatabase } from './database.js';
 
 let prisma: PrismaClient;
@@ -146,9 +147,44 @@ describe('Seed: settings', () => {
     const settings = await prisma.setting.findMany();
 
     expect(settings.map((setting) => setting.key).sort()).toEqual(
-      Object.values(SETTING_KEYS).sort(),
+      [...Object.values(SETTING_KEYS), EXIT_PIN_KEY].sort(),
     );
     expect(settings.every((setting) => setting.updatedBy === admin.id)).toBe(true);
+  });
+});
+
+describe('Seed: the exit PIN (STU-06)', () => {
+  it('stores a first PIN, hashed, that the admin must change', async () => {
+    const stored = await readExitPin(prisma);
+
+    expect(stored?.changedAt).toBeNull();
+    expect(stored?.hash).not.toContain(DEFAULT_SEED_EXIT_PIN);
+    expect(await verifyPassword(stored?.hash ?? '', DEFAULT_SEED_EXIT_PIN)).toBe(true);
+  });
+
+  it('takes the first PIN from the install when one is given', async () => {
+    await resetDatabase(prisma);
+    await seed(prisma, { exitPin: '864209' });
+
+    expect(await verifyPassword((await readExitPin(prisma))?.hash ?? '', '864209')).toBe(true);
+  });
+
+  it('refuses a first PIN that is not six digits', async () => {
+    await resetDatabase(prisma);
+
+    await expect(seed(prisma, { exitPin: '1234' })).rejects.toThrow(/six digits/);
+  });
+
+  it('keeps a PIN the admin has already changed', async () => {
+    const admin = await prisma.user.findUniqueOrThrow({ where: { username: 'admin' } });
+    const changedAt = new Date('2026-11-06T09:00:00.000Z');
+    await storeExitPin(prisma, { pin: '975310', updatedBy: admin.id, changedAt });
+
+    await seed(prisma);
+
+    const stored = await readExitPin(prisma);
+    expect(stored?.changedAt).toBe(changedAt.toISOString());
+    expect(await verifyPassword(stored?.hash ?? '', '975310')).toBe(true);
   });
 });
 

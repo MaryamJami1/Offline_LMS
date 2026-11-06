@@ -55,6 +55,8 @@ export interface FakeWorld {
   nextImport: ImportResponse | ApiError | null;
   /** Who is logged in now, if anyone. */
   session: AuthUser | null;
+  /** The student app's exit PIN; `changedAt` null while it is the seeded one. */
+  exitPin: { pin: string; changedAt: string | null };
 }
 
 function account(
@@ -277,6 +279,7 @@ export function buildWorld(): FakeWorld {
     ],
     nextImport: null,
     session: null,
+    exitPin: { pin: '135790', changedAt: null },
   };
 }
 
@@ -497,6 +500,24 @@ export function createFakeAdminApi(world: FakeWorld = buildWorld()): FakeAdminAp
         fullName: user.fullName,
         generatedPassword: 'Moon-7314-desk',
       };
+    },
+
+    exitPinStatus: async () => ({
+      mustChange: world.exitPin.changedAt === null,
+      changedAt: world.exitPin.changedAt,
+    }),
+    changeExitPin: async (currentPassword, pin) => {
+      const user =
+        world.accounts.find((candidate) => candidate.id === world.session?.id) ??
+        refuse(401, 'UNAUTHENTICATED', 'Please log in');
+      if (user.password !== currentPassword) {
+        refuse(401, 'INVALID_CREDENTIALS', 'The password is wrong');
+      }
+      if (!/^[0-9]{6}$/.test(pin)) {
+        refuse(400, 'VALIDATION_FAILED', 'Check the form', { pin: 'Use six digits' });
+      }
+      world.exitPin = { pin, changedAt: STAMP };
+      return { mustChange: false, changedAt: STAMP };
     },
 
     listClasses: async () => ({

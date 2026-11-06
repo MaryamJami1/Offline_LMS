@@ -80,6 +80,8 @@ Lab PCs reach the server by its IP address, and TLS forbids an IP literal in the
 
 **Student app lock-down:** starts with Windows, runs in kiosk mode, blocks Alt+F4 and Task Manager while a teacher control is running, and needs the admin PIN to exit. Students use standard (non-admin) Windows accounts.
 
+**The admin PIN (STU-06)** is six digits, stored as an argon2 hash in the `lab.exit_pin` setting and checked only by the server (`POST /devices/exit`), never on the PC: a lab PC holds neither the PIN nor its hash, so nobody can try PINs against a copy offline. Only an approved PC may ask, five wrong PINs in a row lock that PC out for fifteen minutes, and every PIN the server checks is in the audit log against the PC. The seed stores a first PIN (`SEED_EXIT_PIN`), and the dashboard lists it under "Needs attention" until the admin changes it, which needs their own password typed again. The cost of checking on the server is that with the server down the app cannot be closed with the PIN; the admin then uses Ctrl+Alt+Del, which no app can block, to switch to their own Windows account.
+
 ## Data protection, privacy and audit
 
 - **All data stays in the institute.** Nothing is sent to the internet; there is no telemetry.

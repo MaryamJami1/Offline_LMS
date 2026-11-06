@@ -49,7 +49,7 @@ The release comes as an offline bundle (`lingualab-server-<version>.zip`) with t
    Windows needs this spelled out because running the server in Docker hides the problem: Docker's own process holds the ports, so a firewall rule that allowed `livekit-server.exe` as a program does not cover it, and a network Windows has classified as **Public** denies inbound by default. The server answers perfectly on its own `localhost` throughout, so nothing looks wrong until a lab PC tries to connect and simply hangs. Checked on the dev laptop on 2026-10-28, where exactly this stopped the second PC; written up in `spike-results.md`.
 
 7. Create the database and seed data: `docker compose exec server pnpm db:migrate && docker compose exec server pnpm db:seed`
-8. Open `https://192.168.10.2` in a browser, log in as `admin` with the printed first password, and change it.
+8. Open `https://192.168.10.2` in a browser, log in as `admin` with the printed first password, and change it. Then change the exit PIN of the student app: the dashboard lists it under **Needs attention** until you do. Set `SEED_EXIT_PIN` (six digits) before seeding to choose the first PIN; otherwise it is `135790`.
 9. In Settings, set the branding (software name, logo, main colour), institute name and backup time. Plug in the second disk and check that the first backup runs.
 10. Download the local root certificate from Settings › Security; the lab PC installer includes it.
 11. Check `https://192.168.10.2/api/health`: server, database, LiveKit and disk should all show OK. From a **lab PC**, not only from the server itself — that is what proves step 6.
@@ -61,7 +61,7 @@ The release comes as an offline bundle (`lingualab-server-<version>.zip`) with t
 ```sh
 pnpm build                                   # compiles shared and the server, builds the admin panel
 pnpm --filter @lingualab/server db:migrate   # applies the migrations to the development database
-pnpm --filter @lingualab/server db:seed      # 1 admin, 2 teachers, 30 students, Lab 1; first password Lab-2026
+pnpm --filter @lingualab/server db:seed      # 1 admin, 2 teachers, 30 students, Lab 1; first password Lab-2026, exit PIN 135790
 JWT_SECRET=<at least 32 characters> pnpm --filter @lingualab/server start   # http://localhost:3000
 pnpm --filter @lingualab/admin preview       # the built panel at http://localhost:4173, under the lab's CSP
 ```

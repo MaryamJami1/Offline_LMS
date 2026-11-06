@@ -145,24 +145,28 @@ model Seat {
 }
 
 model Device {
-  id            String    @id @default(uuid(7)) @db.Uuid
+  id                 String    @id @default(uuid(7)) @db.Uuid
   /// Bound by the admin at approval; a PC waiting for approval has no seat.
-  seatId        String?   @unique @map("seat_id") @db.Uuid
-  hostname      String
-  mac           String    @unique
-  ip            String?   @db.Inet
-  osVersion     String?   @map("os_version")
-  appVersion    String?   @map("app_version")
+  seatId             String?   @unique @map("seat_id") @db.Uuid
+  hostname           String
+  mac                String    @unique
+  ip                 String?   @db.Inet
+  osVersion          String?   @map("os_version")
+  appVersion         String?   @map("app_version")
   /// Issued to the PC when it registers and accepted only once the admin has
   /// approved it; cleared when the admin resets or retires the PC.
-  deviceKeyHash String?   @map("device_key_hash")
-  approved      Boolean   @default(false)
-  lastSeenAt    DateTime? @map("last_seen_at") @db.Timestamptz(3)
+  deviceKeyHash      String?   @map("device_key_hash")
+  approved           Boolean   @default(false)
+  lastSeenAt         DateTime? @map("last_seen_at") @db.Timestamptz(3)
   /// Taken out of service. The row stays, because device_logins keep the
   /// history of who sat at it.
-  retiredAt     DateTime? @map("retired_at") @db.Timestamptz(3)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  retiredAt          DateTime? @map("retired_at") @db.Timestamptz(3)
+  /// Wrong exit PINs sent from this PC since the last right one (STU-06).
+  exitPinFailures    Int       @default(0) @map("exit_pin_failures")
+  /// Set while the PC may not try the exit PIN again.
+  exitPinLockedUntil DateTime? @map("exit_pin_locked_until") @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   seat          Seat?          @relation(fields: [seatId], references: [id], onDelete: SetNull)
   refreshTokens RefreshToken[]

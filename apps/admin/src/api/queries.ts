@@ -16,6 +16,7 @@ export const keys = {
   labSeats: (labId: string) => ['labs', labId, 'seats'] as const,
   devices: (status?: DeviceStatus) => ['devices', status ?? 'all'] as const,
   allDevices: ['devices'] as const,
+  exitPin: ['settings', 'exit-pin'] as const,
 };
 
 export function useUsers(query: Partial<ListUsersQuery>) {
@@ -68,4 +69,10 @@ export function useRefresh() {
   const queryClient = useQueryClient();
   return (...touched: (readonly unknown[])[]) =>
     Promise.all(touched.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+}
+
+/** Whether the seeded exit PIN of the student app must still be changed (STU-06). */
+export function useExitPinStatus() {
+  const api = useAdminApi();
+  return useQuery({ queryKey: keys.exitPin, queryFn: () => api.exitPinStatus() });
 }

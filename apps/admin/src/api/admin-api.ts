@@ -4,6 +4,7 @@ import {
   classViewSchema,
   createUserResponseSchema,
   deviceViewSchema,
+  exitPinStatusSchema,
   importResponseSchema,
   labSeatsResponseSchema,
   labViewSchema,
@@ -19,6 +20,7 @@ import {
   type CreateUserResponse,
   type DeviceStatus,
   type DeviceView,
+  type ExitPinStatus,
   type ImportResponse,
   type Items,
   type LabSeatsResponse,
@@ -63,6 +65,10 @@ export interface AdminApi {
   labSeats(labId: string): Promise<LabSeatsResponse>;
   listDevices(status?: DeviceStatus): Promise<Items<DeviceView>>;
   updateDevice(deviceId: string, request: UpdateDeviceRequest): Promise<DeviceView>;
+
+  /** Whether the seeded exit PIN of the student app must still be changed (STU-06). */
+  exitPinStatus(): Promise<ExitPinStatus>;
+  changeExitPin(currentPassword: string, pin: string): Promise<ExitPinStatus>;
 }
 
 function itemsOf<T>(schema: z.ZodType<T>) {
@@ -146,5 +152,9 @@ export function createHttpAdminApi(client: ApiClient): AdminApi {
       client.request('GET', `/devices${queryString({ status })}`, itemsOf(deviceViewSchema)),
     updateDevice: (deviceId, request) =>
       client.request('PATCH', `/devices/${deviceId}`, deviceViewSchema, request),
+
+    exitPinStatus: () => client.request('GET', '/settings/exit-pin', exitPinStatusSchema),
+    changeExitPin: (currentPassword, pin) =>
+      client.request('PUT', '/settings/exit-pin', exitPinStatusSchema, { currentPassword, pin }),
   };
 }
