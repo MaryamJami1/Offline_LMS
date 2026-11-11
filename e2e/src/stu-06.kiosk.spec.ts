@@ -127,12 +127,18 @@ test('the student app cannot be closed without the admin PIN', async ({ page }) 
   await expect(window.getByRole('heading', { level: 1 })).toHaveText('Waiting for approval', {
     timeout: 30_000,
   });
-  expect(
-    await app.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows()[0];
-      return { kiosk: win?.isKiosk(), onTop: win?.isAlwaysOnTop(), closable: win?.isClosable() };
-    }),
-  ).toEqual({ kiosk: true, onTop: true, closable: false });
+  const flags = await app.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows()[0];
+    return { kiosk: win?.isKiosk(), onTop: win?.isAlwaysOnTop(), closable: win?.isClosable() };
+  });
+  expect(flags.kiosk).toBe(true);
+  // Staying on top and having no close button are Windows window flags:
+  // Electron does not implement `closable` on Linux, and xvfb has no window
+  // manager to keep a window on top. The lab PCs run Windows, and CI's
+  // Windows job checks both on the packaged app (stu-06.packaged.spec.ts).
+  if (process.platform === 'win32') {
+    expect(flags).toEqual({ kiosk: true, onTop: true, closable: false });
+  }
 
   // Approved onto A1, the PC shows its seat at the next check-in.
   const hostname = await approveWaitingPc(page);

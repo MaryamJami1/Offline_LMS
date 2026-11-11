@@ -55,8 +55,10 @@ test('the packaged app is a kiosk and reads its config from beside the exe', asy
     await app.evaluate(({ app: electronApp, BrowserWindow }) => ({
       packaged: electronApp.isPackaged,
       kiosk: BrowserWindow.getAllWindows()[0]?.isKiosk(),
+      onTop: BrowserWindow.getAllWindows()[0]?.isAlwaysOnTop(),
+      closable: BrowserWindow.getAllWindows()[0]?.isClosable(),
     })),
-  ).toEqual({ packaged: true, kiosk: true });
+  ).toEqual({ packaged: true, kiosk: true, onTop: true, closable: false });
 
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.close());
   await window.waitForTimeout(1_000);
