@@ -77,9 +77,31 @@ jobs:
       - name: Allow Chromium's sandbox
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      # Electron needs a display; xvfb comes with Playwright's dependencies.
+      # The student app keeps its device key with safeStorage, which on Linux
+      # needs an unlocked keyring; with none, it refuses to keep the key (as it
+      # should), so the runner gets a real one rather than the app a weaker path.
+      - name: Install a keyring for Electron's safeStorage
+        run: sudo apt-get install -y --no-install-recommends gnome-keyring
+
+      # Electron needs a display (xvfb comes with Playwright's dependencies)
+      # and a D-Bus session for the keyring. XDG_CURRENT_DESKTOP makes
+      # Chromium choose libsecret rather than its plain-text store.
       - name: End-to-end tests
-        run: xvfb-run --auto-servernum pnpm test:e2e
+        env:
+          XDG_CURRENT_DESKTOP: GNOME
+        run: |
+          dbus-run-session -- bash -c '
+            echo -n "ci-only" | gnome-keyring-daemon --unlock --components=secrets > /dev/null
+            xvfb-run --auto-servernum pnpm test:e2e
+          '
+
+      - name: End-to-end results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: e2e/test-results/
+          retention-days: 7
 
       - name: Stack logs on failure
         if: failure()

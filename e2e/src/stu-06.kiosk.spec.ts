@@ -122,8 +122,9 @@ test('the student app cannot be closed without the admin PIN', async ({ page }) 
   });
   const window = await app.firstWindow();
 
-  // A new PC registers itself and waits for the admin.
-  await expect(window.getByRole('heading', { name: 'Waiting for approval' })).toBeVisible({
+  // A new PC registers itself and waits for the admin. Matching the screen's
+  // heading, a failure names the screen the app showed instead.
+  await expect(window.getByRole('heading', { level: 1 })).toHaveText('Waiting for approval', {
     timeout: 30_000,
   });
   expect(
