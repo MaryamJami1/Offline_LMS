@@ -67,8 +67,41 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @lingualab/e2e exec playwright install --with-deps chromium
 
+      # T-STU-06 drives the built student app in Electron. Fail here, clearly,
+      # if Electron's postinstall did not download its binary.
+      - name: Check the Electron binary
+        run: pnpm --filter @lingualab/student exec node -e "console.log(require('electron'))"
+
+      # Ubuntu 24.04 stops unprivileged user namespaces, which Chromium's
+      # sandbox needs; the app keeps its sandbox rather than run without it.
+      - name: Allow Chromium's sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      # The student app keeps its device key with safeStorage, which on Linux
+      # needs an unlocked keyring; with none, it refuses to keep the key (as it
+      # should), so the runner gets a real one rather than the app a weaker path.
+      - name: Install a keyring for Electron's safeStorage
+        run: sudo apt-get install -y --no-install-recommends gnome-keyring
+
+      # Electron needs a display (xvfb comes with Playwright's dependencies)
+      # and a D-Bus session for the keyring. XDG_CURRENT_DESKTOP makes
+      # Chromium choose libsecret rather than its plain-text store.
       - name: End-to-end tests
-        run: pnpm test:e2e
+        env:
+          XDG_CURRENT_DESKTOP: GNOME
+        run: |
+          dbus-run-session -- bash -c '
+            echo -n "ci-only" | gnome-keyring-daemon --unlock --components=secrets > /dev/null
+            xvfb-run --auto-servernum pnpm test:e2e
+          '
+
+      - name: End-to-end results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: e2e/test-results/
+          retention-days: 7
 
       - name: Stack logs on failure
         if: failure()
@@ -77,3 +110,35 @@ jobs:
       - name: Stop the server stack
         if: always()
         run: docker compose -f infra/docker-compose.yml down -v
+
+  # 08: a Windows job builds the student app's installer and smoke-tests the
+  # packaged app, which only Windows can do. The installer is kept for a week,
+  # to try on a spare lab PC (notes/stu-06-installer-check.md).
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build the student app installer
+        run: pnpm --filter @lingualab/student installer
+
+      - name: Smoke-test the packaged student app
+        env:
+          LINGUALAB_E2E: packaged
+        run: pnpm --filter @lingualab/e2e exec playwright test
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: student-installer
+          path: apps/student/release/LinguaLab-Student-Setup-*.exe
+          retention-days: 7

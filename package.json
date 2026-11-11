@@ -12,7 +12,7 @@
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "test:watch": "vitest",
-    "test:e2e": "turbo run build --filter=@lingualab/server --filter=@lingualab/admin && pnpm --filter @lingualab/e2e exec playwright test",
+    "test:e2e": "turbo run build --filter=@lingualab/server --filter=@lingualab/admin --filter=@lingualab/student && pnpm --filter @lingualab/e2e exec playwright test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",

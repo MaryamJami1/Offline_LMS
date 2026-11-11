@@ -27,6 +27,7 @@ spikes/broadcast/dist/
 # Electron
 apps/teacher/out/
 apps/student/out/
+apps/student/release/
 
 # Vite
 apps/admin/.vite/

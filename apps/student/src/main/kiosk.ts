@@ -93,6 +93,7 @@ interface Preventable {
 /** What is used of Electron's BrowserWindow and its webContents. */
 export interface GuardedWindow {
   on(event: 'close', listener: (event: Preventable) => void): unknown;
+  setClosable(closable: boolean): void;
   on(event: 'session-end', listener: () => void): unknown;
   webContents: {
     on(
@@ -115,16 +116,25 @@ export interface GuardedApp {
 export interface QuitGate {
   allow(): void;
   allowed(): boolean;
+  /** Runs when the gate opens, or at once if it is open already. */
+  onAllow(listener: () => void): void;
   guardApp(app: GuardedApp, kiosk: boolean): void;
 }
 
 export function createQuitGate(): QuitGate {
   let open = false;
+  const listeners: (() => void)[] = [];
   return {
     allow() {
+      if (open) return;
       open = true;
+      for (const listener of listeners) listener();
     },
     allowed: () => open,
+    onAllow(listener) {
+      if (open) listener();
+      else listeners.push(listener);
+    },
     guardApp(app, kiosk) {
       app.on('before-quit', (event) => {
         if (kiosk && !open) {
@@ -148,6 +158,9 @@ export function guardWindow(
   });
   // Shutting down or logging off Windows must never be held up by the app.
   win.on('session-end', () => gate.allow());
+  // Windows ignores close() on a window made with `closable: false`, so
+  // quitting after the right PIN would be cancelled without this.
+  gate.onAllow(() => win.setClosable(true));
 
   win.webContents.on('before-input-event', (event, input) => {
     const action = keyAction(input, kiosk);
