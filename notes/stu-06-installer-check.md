@@ -38,6 +38,31 @@ report a failure as an issue against STU-06.
 
 ## Results
 
-| Date | Version | PC  | Failed steps |
-| ---- | ------- | --- | ------------ |
-|      |         |     |              |
+| Date       | Version               | PC        | Failed steps                                                   |
+| ---------- | --------------------- | --------- | -------------------------------------------------------------- |
+| 2026-11-19 | 0.1.0, main `f83b8b5` | Second PC | 7 (F1), 11–12 (F2); no admin way in (F3); the rest not run yet |
+
+### 2026-11-19, step by step
+
+Only what was seen is written here; no step is marked OK. The second PC had a
+single Windows account, so there was no `student-test`. The findings are in
+`notes/phase1-second-pc-findings.md` (F1 #88, F2 #89, F3 #90).
+
+| #     | Seen                                                                                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Windows SmartScreen stopped the unsigned installer; after More info › Run anyway it ran and finished OK                                                 |
+| 2     | Not run yet: blocked by F1                                                                                                                              |
+| 3     | The installer finished OK (step 1). Whether the app stayed closed and what the config file holds: not run yet, blocked by F1                            |
+| 4     | Not run yet: blocked by F1                                                                                                                              |
+| 5     | Not run yet: blocked by F1                                                                                                                              |
+| 6     | Not run yet: blocked by F1                                                                                                                              |
+| 7     | Failed (F1): the app started in the kiosk window, on the PC's only account, but showed "The server cannot be reached" instead of "Waiting for approval" |
+| 8     | Not run yet: blocked by F1                                                                                                                              |
+| 9     | Not run yet: blocked by F1                                                                                                                              |
+| 10    | Not run yet: blocked by F1                                                                                                                              |
+| 11–12 | Failed (F2): Ctrl+Alt+Shift+Q opened the PIN box, and the PIN was refused while the server was unreachable, so the app did not close                    |
+| 13    | Not as written (F3): Sign out / Sign in restarted the app, but on the PC's only account and without the app having been closed in step 12               |
+| 14    | Not run yet: blocked by F1                                                                                                                              |
+| 15    | Not run yet: blocked by F1                                                                                                                              |
+| 16    | Not run yet: blocked by F1                                                                                                                              |
+| —     | Not a step (F3): Task Manager opened behind the app, which stayed on top                                                                                |
